@@ -1,0 +1,11 @@
+#/bin/bash
+
+echo hello
+echo send hello
+echo connect foo:2334455
+echo connect $1
+echo send hello
+echo send goodbye
+echo connect $1
+echo quit
+
