@@ -1,0 +1,17 @@
+1-25-2013 
+Attendees: Katsutoshi Kawakami, Samir Ahmed, Will Seltzer
+Questions:
+- Makefile
+- What does git stash do?
+- What is tagbar toggle?
+- What is capture the flag?
+Decisions:
+- Finish the completion of the skeleton code
+Todo:
+- README = Will 
+- Testing = Will
+- Complete Log file = Katsutoshi
+<each item should have an owner>
+Comments/Notes:
+We completed the first homework assignment and spent approximately four hours.
+
