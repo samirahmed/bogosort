@@ -7,7 +7,7 @@ all: $(targets)
 .PHONY : all
 
 libdagame.a: $(objs)
-	r -c -r libdagame.a $(objs)
+	ar -c -r libdagame.a $(objs)
 
 $(objs) : $(src)
 
