@@ -1,0 +1,22 @@
+getInput:
+zeros the data buffer before allocating it
+reads at most buflen bytes into globals.in from the user
+then it removes newlines that exist (presumably from the user hitting "enter" on the command line)
+
+doVerbose:
+
+doConnect:
+if already connected (connected == 1), throw error. Else, we check the globals.in.data which stores the user's command and convert all semicolons to spaces.
+Then we use sscanf to get both the server name and port number. Read these in to the variables globals.server and globals.port.
+Then we throw an error if globals.server or globals.port haven't been assigned.
+prompt:
+
+sendStr:
+pack the string into netwrk byte order. Write a string of len many bytes to the connection. Error if it isn't succesful. Then write the message to the connection.
+Then allocate a char* array of the same length to await echo from server and read the echo from the connection. Then write the echo to stdout. Free the memory and return.
+doSend:
+
+doQuit:
+
+main:
+keep prompting unless we have received the "quit" command or have errored.

@@ -8,10 +8,13 @@ Questions:
 Decisions:
 - Finish the completion of the skeleton code
 Todo:
-- README = Will 
-- Testing = Will
-- Complete Log file = Katsutoshi
+- Will: finish READMEs.
+- Will: provided testing files submit all of the commands in csimple as one string. Figure out why.
+- Katsutoshi: Complete Log file
+- Will: figure out why running the "quit" command gives us the following error on the server:
+str_echo: ERROR failed to read len: 0!=4 ... closing connection 
 <each item should have an owner>
+
 Comments/Notes:
 We completed the first homework assignment and spent approximately four hours.
 Most of the commits are under Katsutoshi's account but the work was done collaboratively by all of us.
