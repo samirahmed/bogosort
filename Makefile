@@ -1,11 +1,3 @@
-
-clean:
-	cd lib; make clean;
-	cd ..;
-	cd client; make clean;
-	cd ..;
-	cd server; make clean;
-
 all:
 	cd lib; make;
 	cd ..;
@@ -13,3 +5,10 @@ all:
 	cd ..;
 	cd server; make;
 
+
+clean:
+	cd lib; make clean;
+	cd ..;
+	cd client; make clean;
+	cd ..;
+	cd server; make clean;
