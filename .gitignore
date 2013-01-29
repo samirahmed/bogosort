@@ -1,4 +1,6 @@
 # C gitignore
+client/client
+server/server
 
 # Object files
 *.o
