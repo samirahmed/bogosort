@@ -2,7 +2,7 @@ CFLAGS := -g
 targets=client
 src = client.c
 objs = $(patsubst %.c,%.o,$(src))
-libs = -L ../lib -ldagame
+libs = -L../lib -ldagame
 
 all: $(targets)
 .PHONY: all
