@@ -68,6 +68,7 @@ str_echo(int sockfd)
 	fprintf(stderr, "%s: ERROR failed to read msg: %d!=%d"
 		" .. closing connection\n" , __func__, n, len);
 	// shouldn't we deallocate memory here before breaking? smells like a memory leak
+      free(buf);
 	break;
       }
       VPRINTF("got: %d '%s'\n", len, buf);
