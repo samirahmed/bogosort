@@ -8,11 +8,7 @@ Questions:
 Decisions:
 - Finish the completion of the skeleton code
 Todo:
-- Will: finish READMEs.
-- Will: provided testing files submit all of the commands in csimple as one string. Figure out why.
-- Katsutoshi: Complete Log file
-- Will: figure out why running the "quit" command gives us the following error on the server:
-str_echo: ERROR failed to read len: 0!=4 ... closing connection 
+
 <each item should have an owner>
 
 Comments/Notes:
