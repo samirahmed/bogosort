@@ -22,107 +22,102 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <pthread.h>
+#include <sys/types.h>
+#include <poll.h>
+#include "../lib/types.h"
+#include "../lib/protocol_server.h"
+#include "../lib/protocol_utils.h"
 
-#include "../lib/net.h"
-
-#define MAXLINE 80
-
-struct Globals {
-  int verbose;
-} globals;
-
-#define VPRINTF(fmt, ...)					  \
-  {								  \
-    if (globals.verbose==1) fprintf(stderr, "%s: " fmt,           \
-				    __func__, ##__VA_ARGS__);	  \
-  }
-
-void
-str_echo(int sockfd)
+int 
+doUpdateClients(void)
 {
-  int n;
-  int  len;
-  char *buf;
-  
-  while (1) {
-    //MISSING AND IMPORTANT LINE HERE
-    n = net_readn(sockfd, &len, sizeof(int) );
-	if (n != sizeof(int)) {
-      fprintf(stderr, "%s: ERROR failed to read len: %d!=%d"
-	      " ... closing connection\n", __func__, n, (int)sizeof(int));
-      break;
-    } 
-	// WHAT DOES THE NEXT LINE DO?
-	// It Unpacks from network to host byte ordering
-    len = ntohl(len);
+  Proto_Session *s;
+  Proto_Msg_Hdr hdr;
 
-	// Now if len is greater than zero. we read len number characters in to our char* buf
-    if (len) {
-      buf = (char *)malloc(len);
-      n = net_readn(sockfd, buf, len);
-      if ( n != len ) {
-	fprintf(stderr, "%s: ERROR failed to read msg: %d!=%d"
-		" .. closing connection\n" , __func__, n, len);
-	// shouldn't we deallocate memory here before breaking? smells like a memory leak
-      free(buf);
-	break;
-      }
-      VPRINTF("got: %d '%s'\n", len, buf);
-      net_writen(sockfd, buf, len);
-      free(buf);
-    }
+  s = proto_server_event_session();
+  hdr.type = PROTO_MT_EVENT_BASE_UPDATE;
+  proto_session_hdr_marshall(s, &hdr);
+  proto_server_post_event();  
+  return 1;
+}
+
+char MenuString[] =
+  "d/D-debug on/off u-update clients q-quit";
+
+int 
+docmd(char cmd)
+{
+  int rc = 1;
+
+  switch (cmd) {
+  case 'd':
+    proto_debug_on();
+    break;
+  case 'D':
+    proto_debug_off();
+    break;
+  case 'u':
+    rc = doUpdateClients();
+    break;
+  case 'q':
+    rc=-1;
+    break;
+  case '\n':
+  case ' ':
+    rc=1;
+    break;
+  default:
+    printf("Unkown Command\n");
   }
-  close(sockfd);
-  return;
+  return rc;
+}
+
+int
+prompt(int menu) 
+{
+  int ret;
+  int c=0;
+
+  if (menu) printf("%s:", MenuString);
+  fflush(stdout);
+  c=getchar();;
+  return c;
 }
 
 void *
-doit(void *arg)
+shell(void *arg)
 {
-  long val = (long)arg;
-  pthread_detach(pthread_self());
-  str_echo(val);
-  close(val);
+  int c;
+  int rc=1;
+  int menu=1;
+
+  while (1) {
+    if ((c=prompt(menu))!=0) rc=docmd(c);
+    if (rc<0) break;
+    if (rc==1) menu=1; else menu=0;
+  }
+  fprintf(stderr, "terminating\n");
+  fflush(stdout);
   return NULL;
 }
 
 int
 main(int argc, char **argv)
-{
-  int listenfd, port=0;
-  long connfd;
-  pthread_t tid;
-
-  bzero(&globals, sizeof(globals));
-
-  if (!net_setup_listen_socket( &listenfd , &port )) {
-    fprintf(stderr, "net_setup_listen_socket FAILED!\n");
+{ 
+  if (proto_server_init()<0) {
+    fprintf(stderr, "ERROR: failed to initialize proto_server subsystem\n");
     exit(-1);
   }
 
-  printf("listening on port=%d\n", port);
+  fprintf(stderr, "RPC Port: %d, Event Port: %d\n", proto_server_rpcport(), 
+	  proto_server_eventport());
 
-  if (net_listen(listenfd) < 0) {
-    fprintf(stderr, "Error: server listen failed (%d)\n", errno);
+  if (proto_server_start_rpc_loop()<0) {
+    fprintf(stderr, "ERROR: failed to start rpc loop\n");
     exit(-1);
   }
+    
+  shell(NULL);
 
-  for (;;) {
-    connfd = net_accept(listenfd);
-    if (connfd < 0) {
-      fprintf(stderr, "Error: server accept failed (%d)\n", errno);
-    } else {
-	// EXPLAIN WHAT IS HAPPENING HERE IN YOUR LOG
-	// We create a new pthread (not yet detached)
-	// The pthread has start routine set to the doit function
-	// The pthread is assigned connfd as an argument for the doit function
-      pthread_create(&tid, NULL, &doit, (void *)connfd);
-    }
-  }
-
-  VPRINTF("Exiting\n");
+  return 0;
 }

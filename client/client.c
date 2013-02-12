@@ -21,257 +21,247 @@
 *****************************************************************************/
 
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <string.h>
+#include "../lib/types.h"
+#include "../lib/protocol_client.h"
+#include "../lib/protocol_utils.h"
 
-#include "../lib/net.h"
-
-#define TEAMNAME "bogosort" 
-
-#define BUFLEN 16384
-#define STRLEN 80
-#define XSTR(s) STR(s)
-#define STR(s) #s
-
-struct LineBuffer {
-  char data[BUFLEN];
-  int  len;
-  int  newline;
-};
+#define STRLEN 81
 
 struct Globals {
-  struct LineBuffer in;
-  char server[STRLEN];
+  char host[STRLEN];
   PortType port;
-  FDType serverFD;
-  int connected;
-  int verbose;
 } globals;
 
-#define VPRINTF(fmt, ...)					  \
-  {								  \
-    if (globals.verbose==1) fprintf(stderr, "%s: " fmt,           \
-				    __func__, ##__VA_ARGS__);	  \
+
+typedef struct ClientState  {
+  int data;
+  Proto_Client_Handle ph;
+} Client;
+
+static int
+clientInit(Client *C)
+{
+  bzero(C, sizeof(Client));
+
+  // initialize the client protocol subsystem
+  if (proto_client_init(&(C->ph))<0) {
+    fprintf(stderr, "client: main: ERROR initializing proto system\n");
+    return -1;
   }
+  return 1;
+}
+
+
+static int
+update_event_handler(Proto_Session *s)
+{
+  Client *C = proto_session_get_data(s);
+
+  fprintf(stderr, "%s: called", __func__);
+  return 1;
+}
+
 
 int 
-getInput()
+startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
 {
-  int len;
-  char *ret;
-
-  //STUDY THIS CODE AND EXPLAIN WHAT IT DOES AND WHY IN YOUR LOG FILE
-
-  // to make debugging easier we zero the data of the buffer
-  bzero(globals.in.data, sizeof(globals.in.data));
-  globals.in.newline = 0;
-
-  // read at most BUFLEN bytes into globals.in from user input (bad use of sizeof for static buffer)
-  ret = fgets(globals.in.data, sizeof(globals.in.data), stdin);
-
-  // remove newline if it exists
-  len = (ret != NULL) ? strlen(globals.in.data) : 0;
-
-  // Remove the new line ?
-  if (len && globals.in.data[len-1] == '\n') {
-    globals.in.data[len-1]=0;
-    globals.in.newline=1;
-  } 
-  globals.in.len = len;
-  return len;
+  if (globals.host[0]!=0 && globals.port!=0) {
+    if (proto_client_connect(C->ph, host, port)!=0) {
+      fprintf(stderr, "failed to connect\n");
+      return -1;
+    }
+    proto_session_set_data(proto_client_event_session(C->ph), C);
+#if 0
+    if (h != NULL) {
+      proto_client_set_event_handler(C->ph, PROTO_MT_EVENT_BASE_UPDATE, 
+				     h);
+    }
+#endif
+    return 1;
+  }
+  return 0;
 }
+
 
 int
 prompt(int menu) 
 {
-  static char MenuString[] = "\n" XSTR(TEAMNAME) "$ ";
-  int len;
+  static char MenuString[] = "\nclient> ";
+  int ret;
+  int c=0;
 
   if (menu) printf("%s", MenuString);
   fflush(stdout);
-
-  len = getInput();
-
-  return (len) ? 1 : -1;
+  c = getchar();
+  return c;
 }
 
+
+// FIXME:  this is ugly maybe the speration of the proto_client code and
+//         the game code is dumb
 int
-doVerbose(void)
+game_process_reply(Client *C)
 {
-  globals.verbose = (globals.verbose) ? 0 : 1;
+  Proto_Session *s;
+
+  s = proto_client_rpc_session(C->ph);
+
+  fprintf(stderr, "%s: do something %p\n", __func__, s);
+
   return 1;
 }
 
-int
-doConnect(void)
+
+int 
+doRPCCmd(Client *C, char c) 
 {
-  globals.port=0;
-  globals.server[0]=0;
-  int i, len = strlen(globals.in.data);
+  int rc=-1;
 
-  VPRINTF("BEGIN: %s\n", globals.in.data);
-
-  if (globals.connected==1) {
-    //Add some code here ... probably a useful error message to stderr
-    //  eg. 
-	fprintf(stderr, "Connection already established ...");
-	
-  } else {
-    // be sure you understand what the next two lines are doing
-    for (i=0; i<len; i++) { 
-		if (globals.in.data[i]==':') globals.in.data[i]=' ';
-	}
-	// Scan the char buffer in.data
-	// for some string, a string of length STRLEN and a number
-	// Write the 2nd string matched to globals.server
-	// Write the number to globals.port
-    sscanf(globals.in.data, "%*s %" XSTR(STRLEN) "s %d", globals.server,
-	   &globals.port);
-    
-    if (strlen(globals.server)==0 || globals.port==0) {
-      //Add some code here ... probably a useful error message to stderr
-      ///eg. 
-	  fprintf(stderr, "Server and port not specified in correct format <server-name>:<port> ...");
-    } else {
-      VPRINTF("connecting to: server=%s port=%d...", 
-	      globals.server, globals.port);
-      if (net_setup_connection( &globals.serverFD , globals.server, globals.port )<0){ //probably need to pass proper args here)<0) {
-	fprintf(stderr, " failed NOT connected server=%s port=%d\n", 
-		globals.server, globals.port);
-      } else {
-	globals.connected=1;
-	VPRINTF("connected serverFD=%d\n", globals.serverFD);
-      }
+  switch (c) {
+  case 'h':  
+    {
+      rc = proto_client_hello(C->ph);
+      printf("hello: rc=%x\n", rc);
+      if (rc > 0) game_process_reply(C);
     }
+    break;
+  case 'm':
+    scanf("%c", &c);
+    rc = proto_client_move(C->ph, c);
+    break;
+  case 'g':
+    rc = proto_client_goodbye(C->ph);
+    break;
+  default:
+    printf("%s: unknown command %c\n", __func__, c);
   }
-
-  VPRINTF("END: %s %d %d\n", globals.server, globals.port, globals.serverFD);
-  return 1;
-}
-
-int 
-sendStr(char *str, int fd)
-{
-  int len=0, nlen=0;
-  char *buf;
-  
-  //  STUDY THIS FUNCTION AND EXPAIN IN YOUR LOG FILE WHAT IT DOES AND HOW
-
-  // Pack the length of the string into network byte order  
-  len = strlen(str);
-  if (len==0) return 1;
-  nlen = htonl(len);
-
-  // write this 'len' to the connection ensuring that all the bytes are written successfully
-  if (net_writen(fd, &nlen, sizeof(int)) != sizeof(int)) return -1;
-
-  // Write len chars from the str character array ensuring that all 'len' characters are written successfully
-  if (net_writen(fd, str, len) != len) return -1;
-
-  // Allocate a new cstring of equal size to the str sent
-  buf = (char *)malloc(len);
-
-  // Read from the connection, 'len' bytes into the buffer
-  if (net_readn(fd, buf, len) != len) {
-	
-	// if failure free the memory
-    free(buf); 
-    return -1; 
-  }
-
-  // Write the stdout the string just recieved
-  write(STDOUT_FILENO, buf, len);
-
-  // discard the string
-  free(buf);
-
-  return 1;
-}
-
-int
-doSend(void)
-{
-  int len=0, nlen=0;
-  int n;
-  char *str, buf[BUFLEN];
- 
-  VPRINTF("BEGIN %d\n", globals.connected);
- 
-  if (globals.connected) {
-    if (strlen(globals.in.data)<=strlen("send")+1) {
-      fprintf(stderr, "ERROR: send <string>\n");
-    } else {
-	str = &(globals.in.data[strlen("send")+1]);
-    send:	
-	if (sendStr(str, globals.serverFD)<0) {
-	  fprintf(stderr, "send failed %d!=%ld... lost connection\n",
-		  n, sizeof(int));
-	  globals.connected = 0;
-	  close(globals.serverFD);
-	} else if (!globals.in.newline) {
-	  getInput();
-	  str = globals.in.data;
-	  goto send;
-	}
-    } 
-  }
-
-  VPRINTF("END %d\n", len);
-  return 1;  
-}
-
-int
-doQuit(void)
-{
-  return -1;
-}
-
-int 
-doCmd(void)
-{
-  int rc = 1;
-
-  if (strlen(globals.in.data)==0) return rc;
-  else if (strncmp(globals.in.data, "connect", 
-		   sizeof("connect")-1)==0) rc = doConnect();// add a call to the right func
-  else if (strncmp(globals.in.data, "send", 
-		   sizeof("send")-1)==0) rc = doSend(); //add a call to the right func
-  else if (strncmp(globals.in.data, "quit", 
-		   sizeof("quit")-1)==0) rc = doQuit();  //add a call to the right func
-  else if (strncmp(globals.in.data, "verbose", 
-		   sizeof("verbose")-1)==0) rc = doVerbose(); // add a call to the right func
-  else printf("Unknown Command\n");
-
+  // NULL MT OVERRIDE ;-)
+  printf("%s: rc=0x%x\n", __func__, rc);
+  if (rc == 0xdeadbeef) rc=1;
   return rc;
 }
 
 int
-main(int argc, char **argv)
+doRPC(Client *C)
 {
-  int rc, menu=1;
+  int rc;
+  char c;
 
-  bzero(&globals, sizeof(globals));
+  printf("enter (h|m<c>|g): ");
+  scanf("%c", &c);
+  rc=doRPCCmd(C,c);
+
+  printf("doRPC: rc=0x%x\n", rc);
+
+  return rc;
+}
+
+
+int 
+docmd(Client *C, char cmd)
+{
+  int rc = 1;
+
+  switch (cmd) {
+  case 'd':
+    proto_debug_on();
+    break;
+  case 'D':
+    proto_debug_off();
+    break;
+  case 'r':
+    rc = doRPC(C);
+    break;
+  case 'q':
+    rc=-1;
+    break;
+  case '\n':
+    rc=1;
+    break;
+  default:
+    printf("Unkown Command\n");
+  }
+  return rc;
+}
+
+void *
+shell(void *arg)
+{
+  Client *C = arg;
+  char c;
+  int rc;
+  int menu=1;
 
   while (1) {
-    if (prompt(menu)>=0) 
-		rc=doCmd(); 
-	else 
-		rc=-1;
-    if (rc<0) 
-		break;
-    //What do you think the next line is for
-	//idk ?
-    // Keeps prompting you unless there is an error? 
-	if (rc==1) 
-		menu=1; 
-	else 
-		menu=0;
+    if ((c=prompt(menu))!=0) rc=docmd(C, c);
+    if (rc<0) break;
+    if (rc==1) menu=1; else menu=0;
   }
 
-  VPRINTF("Exiting\n");
+  fprintf(stderr, "terminating\n");
   fflush(stdout);
+  return NULL;
+}
+
+void 
+usage(char *pgm)
+{
+  fprintf(stderr, "USAGE: %s <port|<<host port> [shell] [gui]>>\n"
+           "  port     : rpc port of a game server if this is only argument\n"
+           "             specified then host will default to localhost and\n"
+	   "             only the graphical user interface will be started\n"
+           "  host port: if both host and port are specifed then the game\n"
+	   "examples:\n" 
+           " %s 12345 : starts client connecting to localhost:12345\n"
+	  " %s localhost 12345 : starts client connecting to locaalhost:12345\n",
+	   pgm, pgm, pgm, pgm);
+ 
+}
+
+void
+initGlobals(int argc, char **argv)
+{
+  bzero(&globals, sizeof(globals));
+
+  if (argc==1) {
+    usage(argv[0]);
+    exit(-1);
+  }
+
+  if (argc==2) {
+    strncpy(globals.host, "localhost", STRLEN);
+    globals.port = atoi(argv[1]);
+  }
+
+  if (argc>=3) {
+    strncpy(globals.host, argv[1], STRLEN);
+    globals.port = atoi(argv[2]);
+  }
+
+}
+
+int 
+main(int argc, char **argv)
+{
+  Client c;
+
+  initGlobals(argc, argv);
+
+  if (clientInit(&c) < 0) {
+    fprintf(stderr, "ERROR: clientInit failed\n");
+    return -1;
+  }    
+
+  // ok startup our connection to the server
+  if (startConnection(&c, globals.host, globals.port, update_event_handler)<0) {
+    fprintf(stderr, "ERROR: startConnection failed\n");
+    return -1;
+  }
+
+  shell(&c);
 
   return 0;
 }
+
