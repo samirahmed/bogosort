@@ -1,19 +1,55 @@
-1-25-2013 
-Attendees: Katsutoshi Kawakami, Samir Ahmed, Will Seltzer
-Questions:
+## 2-12-2013
+
+### Attendees:
+
+Katsutoshi K, Samir A, Will S.
+
+### Questions:
+
+- Who actually calls marshall on the header? since the slen is already set when we send message therefore
+the actual body has already been written.
+- How does the client/server interface with the Protoclient
+- Why does the unmarshall_ll and unmarshal_l code use `htonl` and not `ntohl`
+- What is the difference between `htonll` and `htonl` they seem to be used interchangably
+
+### Todo:
+
+Everything else, we are very confused.
+
+### Comments/Notes:
+
+Our understanding of the architecture
+
+![imgur](ihttp://i.imgur.com/8gWPQYy.jpg)
+
+
+## 1-25-2013 
+
+### Attendees: 
+
+Katsutoshi Kawakami, Samir Ahmed, Will Seltzer
+
+### Questions:
+
 - Makefile
 - What does git stash do?
 - What is tagbar toggle?
 - What is capture the flag?
-Decisions:
+
+### Decisions:
+
 - Finish the completion of the skeleton code
-Todo:
+
+### Todo:
 
 <each item should have an owner>
 
-Comments/Notes:
+### Comments/Notes:
+
 We completed the first homework assignment and spent approximately four hours.
-Most of the commits are under Katsutoshi's account but the work was done collaboratively by all of us.
+Most of the commits are under Katsutoshis account but the work was done collaboratively by all of us.
+
+```c
 client/client.c:65:		
 	int getInput(){
 	  int len;
@@ -76,4 +112,4 @@ server/server.c:118:
 	// The pthread is assigned connfd as an argument for the doit function
       pthread_create(&tid, NULL, &doit, (void *)connfd);
     }
-
+```
