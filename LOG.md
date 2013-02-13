@@ -20,7 +20,7 @@ Everything else, we are very confused.
 
 Our understanding of the architecture
 
-![imgur](ihttp://i.imgur.com/8gWPQYy.jpg)
+![image](http://i.imgur.com/8gWPQYy.jpg)
 
 
 ## 1-25-2013 
