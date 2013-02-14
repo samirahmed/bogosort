@@ -32,6 +32,9 @@
 #include "protocol_utils.h"
 #include "protocol_session.h"
 
+
+// Debugging Helper that prints all the fields in the Protocol Session Object
+// Dumps the Send and Receive Headers/Buffers and length
 extern void
 proto_session_dump(Proto_Session *s)
 {
@@ -44,12 +47,16 @@ proto_session_dump(Proto_Session *s)
   proto_dump_msghdr(&(s->rhdr));
 }
 
+// Clears the Session Struct zeroing everything
+// This includes the headers and buffers
 extern void
 proto_session_init(Proto_Session *s)
 {
   if (s) bzero(s, sizeof(Proto_Session));
 }
 
+// Zeros The Send Header and resets the buffer length
+// essentially clearing the send Buffer
 extern void
 proto_session_reset_send(Proto_Session *s)
 {
@@ -57,6 +64,8 @@ proto_session_reset_send(Proto_Session *s)
   s->slen = 0;
 }
 
+// Reset the recieve Header and the receive buffer
+// by setting the rlen to zero
 extern void
 proto_session_reset_receive(Proto_Session *s)
 {
@@ -64,18 +73,31 @@ proto_session_reset_receive(Proto_Session *s)
   s->rlen = 0;
 }
 
+/*******************************************/
+/* HEADER MARSHALL/UNMARSHALLING FUNCTIONS */
+/*******************************************/
+
+// HOST->NETWORK
+// Copies the State Version from the Proto_Session in the object v
+// Uses long long because the of the size of the state version
 static void
 proto_session_hdr_marshall_sver(Proto_Session *s, Proto_StateVersion v)
 {
   s->shdr.sver.raw = htonll(v.raw);
 }
 
+// NETWORK->HOST
+// Copies the State version from the recieved Header in to the object v
+// note again the use of the ntohll
 static void
 proto_session_hdr_unmarshall_sver(Proto_Session *s, Proto_StateVersion *v)
 {
   v->raw = ntohll(s->rhdr.sver.raw);
 }
 
+// HOST->NETWORK
+// Copies and converts each int from the player state object into the
+// Proto_Session's send header pstate
 static void
 proto_session_hdr_marshall_pstate(Proto_Session *s, Proto_Player_State *ps)
 {
@@ -85,6 +107,9 @@ proto_session_hdr_marshall_pstate(Proto_Session *s, Proto_Player_State *ps)
     s->shdr.pstate.v3.raw  = htonl(ps->v3.raw);
 }
 
+// NETWORK->HOST
+// Copies and converts the Recieved Headers player state
+// into the ps Player State object 
 static void
 proto_session_hdr_unmarshall_pstate(Proto_Session *s, Proto_Player_State *ps)
 {
@@ -94,6 +119,8 @@ proto_session_hdr_unmarshall_pstate(Proto_Session *s, Proto_Player_State *ps)
     ps->v3.raw = ntohll(s->rhdr.pstate.v3.raw);
 }
 
+// HOST->NETWORK
+// Sets the Send Header Gstate from the gs object
 static void
 proto_session_hdr_marshall_gstate(Proto_Session *s, Proto_Game_State *gs)
 {
@@ -102,6 +129,8 @@ proto_session_hdr_marshall_gstate(Proto_Session *s, Proto_Game_State *gs)
     s->shdr.gstate.v2.raw  = htonl(gs->v2.raw);
 }
 
+// NETWORK->HOST
+// Copies and converts the Received Header into the gs object
 static void
 proto_session_hdr_unmarshall_gstate(Proto_Session *s, Proto_Game_State *gs)
 {
@@ -110,31 +139,41 @@ proto_session_hdr_unmarshall_gstate(Proto_Session *s, Proto_Game_State *gs)
     gs->v2.raw = ntohll(s->rhdr.gstate.v2.raw);
 }
 
+// NETWORK->HOST
+// Return current length of the Reciever Buffer
 static int
 proto_session_hdr_unmarshall_blen(Proto_Session *s)
 {
-  s->rhdr.blen.raw = ntohll(s->shdr.blen.raw);
+  return ntohll(s->rhdr.blen.raw);
 }
 
+// HOST->NETWORK
+// Copy the MT into the Proto_session Send Header 
 static void
 proto_session_hdr_marshall_type(Proto_Session *s, Proto_Msg_Types t)
 {
   s->shdr.type = htonl(t);   
 }
 
+// NETWORK->HOST
+// Deserialize and return the Received Message's Type
 extern Proto_Msg_Types
 proto_session_hdr_unmarshall_type(Proto_Session *s)
 {
     return ntohll(s->rhdr.type)
 }
 
+// NETWORK->HOST
+// Return the Protocol version of the recieved message
 static int
 proto_session_hdr_unmarshall_version(Proto_Session *s)
 {
     return ntohll(s->rhdr.version);
 }
 
-
+// Given an (presumably empty) Header object
+// Copy all the fields from the Proto_Session response message into this header
+// This header is now a Host formatted Header
 extern void
 proto_session_hdr_unmarshall(Proto_Session *s, Proto_Msg_Hdr *h)
 {
@@ -147,6 +186,8 @@ proto_session_hdr_unmarshall(Proto_Session *s, Proto_Msg_Hdr *h)
   h->blen = proto_session_hdr_unmarshall_blen(s);
 }
    
+// Given an Header struct that has been configured by the user. Copy all the
+// fields into the Proto Sessions Send Header struct.
 extern void
 proto_session_hdr_marshall(Proto_Session *s, Proto_Msg_Hdr *h)
 {
@@ -160,6 +201,15 @@ proto_session_hdr_marshall(Proto_Session *s, Proto_Msg_Hdr *h)
   // on the send path to the amount of body data that was
   // marshalled.
 }
+
+/****************************************/
+/* Body Marshalling/ UnMarshalling Code */
+/****************************************/
+
+// All the following code does is serialize into the buffer
+// Or deserialize from the buffer
+// Note that serializing into the body will increment the buffer size slen
+// Also note that bounds are checkout before memory access
 
 extern int 
 proto_session_body_marshall_ll(Proto_Session *s, long long v)
@@ -278,6 +328,8 @@ proto_session_send_msg(Proto_Session *s, int reset)
   s->shdr.blen = htonl(s->slen);
 
   // write request
+  // Write request to protosessions fd. First serialize the header into it, then the body
+  // We could do this explicitly as in. Send each field in the header and then the body
   ADD CODE
   
   if (proto_debug()) {
@@ -298,6 +350,10 @@ proto_session_rcv_msg(Proto_Session *s)
   proto_session_reset_receive(s);
 
   // read reply
+  // Read Header the Protosession recv header
+  // Read the message into the protosession recv buffer
+  // Don't unmarshall header, that can be done later by the protoclient/server
+  // Because only they now what to do from reading the header
   ADD CODE
 
   if (proto_debug()) {
@@ -307,6 +363,9 @@ proto_session_rcv_msg(Proto_Session *s)
   return 1;
 }
 
+// According to Professor Jappavoo
+// This function is supposed to be a wrapper 
+// that sends and receives in a single function call.
 extern int
 proto_session_rpc(Proto_Session *s)
 {
