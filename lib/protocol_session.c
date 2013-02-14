@@ -177,7 +177,7 @@ proto_session_body_unmarshall_ll(Proto_Session *s, int offset, long long *v)
 {
   if (s && ((s->rlen - (offset + sizeof(long long))) >=0 )) {
     *v = *((long long *)(s->rbuf + offset));
-    *v = htonl(*v);
+    *v = ntohll(*v);
     return offset + sizeof(long long);
   }
   return -1;
@@ -199,7 +199,7 @@ proto_session_body_unmarshall_int(Proto_Session *s, int offset, int *v)
 {
   if (s && ((s->rlen  - (offset + sizeof(int))) >=0 )) {
     *v = *((int *)(s->rbuf + offset));
-    *v = htonl(*v);
+    *v = ntohl(*v);
     return offset + sizeof(int);
   }
   return -1;
