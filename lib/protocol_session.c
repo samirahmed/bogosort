@@ -330,8 +330,17 @@ proto_session_send_msg(Proto_Session *s, int reset)
 {
   s->shdr.blen = htonl(s->slen);
 
-  NOT_IMPL;//ADD CODE
+  // write request
+  // Write request to protosessions fd. First serialize the header into it, then the body
+  // We could do this explicitly as in. Send each field in the header and then the body
   
+  // ADD CODE
+  // Writing Header
+  if (net_writen( s->fd, &(s->shdr), sizeof( s->shdr )) != sizeof( s->shdr) ) return 0;
+
+  // Write the Body
+  if (net_writen( s->fd, (s->sbuf) , s->slen )!= s->slen ) return 0;
+ 
   if (proto_debug()) {
     fprintf(stderr, "%p: proto_session_send_msg: SENT:\n", pthread_self());
     proto_session_dump(s);
@@ -349,7 +358,21 @@ proto_session_rcv_msg(Proto_Session *s)
   
   proto_session_reset_receive(s);
 
-  NOT_IMPL;//ADD CODE
+  // read reply
+  // Read Header the Protosession recv header
+  // Read the message into the protosession recv buffer
+  // Don't unmarshall header, that can be done later by the protoclient/server
+  // Because only they now what to do from reading the header
+
+  // ADD CODE
+  // Read Header
+  if (net_readn( s->fd, &(s->rhdr) , sizeof( s->rhdr)) != sizeof(s->rhdr) ) return 0;
+
+  // Set the RLEN
+  s->rlen = proto_session_hdr_unmarshall_blen(s);
+
+  // Read Body
+  if (net_readn( s->fd, &(s->rbuf) , s->rlen ) != s->rlen ) return 0;
 
   if (proto_debug()) {
     fprintf(stderr, "%p: proto_session_rcv_msg: RCVED:\n", pthread_self());
@@ -366,7 +389,15 @@ proto_session_rpc(Proto_Session *s)
 {
   int rc;
   
-  NOT_IMPL;//ADD CODE
+  //ADD CODE
+  //Send Message
+  proto_session_send_msg(s,1);
+
+  //Recv Message
+  proto_session_recv_msg(s);
+ 
+  // Pull result 
+  proto_session_body_unmarshall_int( s, 0, &rc);
 
   return rc;
 }
