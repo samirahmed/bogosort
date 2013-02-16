@@ -32,6 +32,11 @@
 #include "protocol_utils.h"
 #include "protocol_session.h"
 
+
+
+#include "assert.h"
+#define NOT_IMPL assert(0)
+
 extern void
 proto_session_dump(Proto_Session *s)
 {
@@ -113,7 +118,7 @@ proto_session_hdr_unmarshall_gstate(Proto_Session *s, Proto_Game_State *gs)
 static int
 proto_session_hdr_unmarshall_blen(Proto_Session *s)
 {
-  s->rhdr.blen.raw = ntohll(s->shdr.blen.raw);
+  s->rhdr.blen = ntohll(s->shdr.blen);
 }
 
 static void
@@ -125,7 +130,7 @@ proto_session_hdr_marshall_type(Proto_Session *s, Proto_Msg_Types t)
 extern Proto_Msg_Types
 proto_session_hdr_unmarshall_type(Proto_Session *s)
 {
-    return ntohll(s->rhdr.type)
+    return ntohll(s->rhdr.type);
 }
 
 static int
@@ -278,7 +283,7 @@ proto_session_send_msg(Proto_Session *s, int reset)
   s->shdr.blen = htonl(s->slen);
 
   // write request
-  ADD CODE
+  NOT_IMPL;//ADD CODE
   
   if (proto_debug()) {
     fprintf(stderr, "%p: proto_session_send_msg: SENT:\n", pthread_self());
@@ -298,7 +303,7 @@ proto_session_rcv_msg(Proto_Session *s)
   proto_session_reset_receive(s);
 
   // read reply
-  ADD CODE
+  NOT_IMPL;//ADD CODE
 
   if (proto_debug()) {
     fprintf(stderr, "%p: proto_session_rcv_msg: RCVED:\n", pthread_self());
@@ -312,7 +317,7 @@ proto_session_rpc(Proto_Session *s)
 {
   int rc;
   
-  ADD CODE
+  NOT_IMPL;//ADD CODE
 
   return rc;
 }
