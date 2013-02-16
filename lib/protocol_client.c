@@ -31,6 +31,9 @@
 #include "protocol_utils.h"
 #include "protocol_client.h"
 
+
+
+#include "assert.h"
 #define NOT_IMPL assert(0)
 
 
@@ -111,8 +114,9 @@ proto_client_event_dispatcher(void * arg)
 
   pthread_detach(pthread_self());
 
-  c = NOT_IMPL;//ADD CODE
-  s = NOT_IMPL;//ADD CODE
+  NOT_IMPL;
+  //c = ADD CODE
+  //s = ADD CODE
 
   for (;;) {
     if (proto_session_rcv_msg(s)==1) {
@@ -192,12 +196,14 @@ do_generic_dummy_rpc(Proto_Client_Handle ch, Proto_Msg_Types mt)
   int rc;
   Proto_Session *s;
   Proto_Client *c = ch;
-
-  s = NOT_IMPL; //ADD CODE
+  
+  NOT_IMPL; //ADD CODE
+  //s = ADD CODE
   // marshall
 
   marshall_mtonly(s, mt);
-  rc = NOT_IMPL;//proto_session_ADD CODE
+  NOT_IMPL;//ADD CODE
+  //rc = proto_session_ADD CODE
 
   if (rc==1) {
     proto_session_body_unmarshall_int(s, 0, &rc);
