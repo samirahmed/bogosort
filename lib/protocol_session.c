@@ -33,6 +33,9 @@
 #include "protocol_session.h"
 
 
+#include "assert.h"
+#define NOT_IMPL assert(0)
+
 // Debugging Helper that prints all the fields in the Protocol Session Object
 // Dumps the Send and Receive Headers/Buffers and length
 extern void
@@ -144,7 +147,7 @@ proto_session_hdr_unmarshall_gstate(Proto_Session *s, Proto_Game_State *gs)
 static int
 proto_session_hdr_unmarshall_blen(Proto_Session *s)
 {
-  return ntohll(s->rhdr.blen.raw);
+  return ntohll(s->rhdr.blen);
 }
 
 // HOST->NETWORK
@@ -160,7 +163,7 @@ proto_session_hdr_marshall_type(Proto_Session *s, Proto_Msg_Types t)
 extern Proto_Msg_Types
 proto_session_hdr_unmarshall_type(Proto_Session *s)
 {
-    return ntohll(s->rhdr.type)
+    return ntohll(s->rhdr.type);
 }
 
 // NETWORK->HOST
@@ -327,10 +330,7 @@ proto_session_send_msg(Proto_Session *s, int reset)
 {
   s->shdr.blen = htonl(s->slen);
 
-  // write request
-  // Write request to protosessions fd. First serialize the header into it, then the body
-  // We could do this explicitly as in. Send each field in the header and then the body
-  ADD CODE
+  NOT_IMPL;//ADD CODE
   
   if (proto_debug()) {
     fprintf(stderr, "%p: proto_session_send_msg: SENT:\n", pthread_self());
@@ -349,12 +349,7 @@ proto_session_rcv_msg(Proto_Session *s)
   
   proto_session_reset_receive(s);
 
-  // read reply
-  // Read Header the Protosession recv header
-  // Read the message into the protosession recv buffer
-  // Don't unmarshall header, that can be done later by the protoclient/server
-  // Because only they now what to do from reading the header
-  ADD CODE
+  NOT_IMPL;//ADD CODE
 
   if (proto_debug()) {
     fprintf(stderr, "%p: proto_session_rcv_msg: RCVED:\n", pthread_self());
@@ -371,7 +366,7 @@ proto_session_rpc(Proto_Session *s)
 {
   int rc;
   
-  ADD CODE
+  NOT_IMPL;//ADD CODE
 
   return rc;
 }

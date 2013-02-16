@@ -32,6 +32,11 @@
 #include "protocol_client.h"
 
 
+
+#include "assert.h"
+#define NOT_IMPL assert(0)
+
+
 typedef struct {
   Proto_Session rpc_session;
   Proto_Session event_session;
@@ -73,7 +78,7 @@ proto_client_set_event_handler(Proto_Client_Handle ch, Proto_Msg_Types mt,
   if (mt>PROTO_MT_EVENT_BASE_RESERVED_FIRST && 
       mt<PROTO_MT_EVENT_BASE_RESERVED_LAST) {
     i=mt - PROTO_MT_EVENT_BASE_RESERVED_FIRST - 1;
-    ADD CODE
+    //ADD CODE
     return 1;
   } else {
     return -1;
@@ -109,19 +114,20 @@ proto_client_event_dispatcher(void * arg)
 
   pthread_detach(pthread_self());
 
-  c = ADD CODE
-  s = ADD CODE
+  NOT_IMPL;
+  //c = ADD CODE
+  //s = ADD CODE
 
   for (;;) {
     if (proto_session_rcv_msg(s)==1) {
       mt = proto_session_hdr_unmarshall_type(s);
       if (mt > PROTO_MT_EVENT_BASE_RESERVED_FIRST && 
 	  mt < PROTO_MT_EVENT_BASE_RESERVED_LAST) {
-	ADD CODE
+	NOT_IMPL;//ADD CODE
 	if (hdlr(s)<0) goto leave;
       }
     } else {
-      ADD CODE
+      NOT_IMPL;//ADD CODE
       goto leave;
     }
   }
@@ -145,7 +151,7 @@ proto_client_init(Proto_Client_Handle *ch)
 
   for (mt=PROTO_MT_EVENT_BASE_RESERVED_FIRST+1;
        mt<PROTO_MT_EVENT_BASE_RESERVED_LAST; mt++)
-    ADD CODE
+    NOT_IMPL;//ADD CODE
 
   *ch = c;
   return 1;
@@ -190,17 +196,19 @@ do_generic_dummy_rpc(Proto_Client_Handle ch, Proto_Msg_Types mt)
   int rc;
   Proto_Session *s;
   Proto_Client *c = ch;
-
-  s = ADD CODE
+  
+  NOT_IMPL; //ADD CODE
+  //s = ADD CODE
   // marshall
 
   marshall_mtonly(s, mt);
-  rc = proto_session_ADD CODE
+  NOT_IMPL;//ADD CODE
+  //rc = proto_session_ADD CODE
 
   if (rc==1) {
     proto_session_body_unmarshall_int(s, 0, &rc);
   } else {
-    ADD CODE
+    NOT_IMPL;//ADD CODE
   }
   
   return rc;
