@@ -21,24 +21,24 @@
 typedef enum  {
 
   // Requests
-  PROTO_MT_REQ_BASE_RESERVED_FIRST,
-  PROTO_MT_REQ_BASE_HELLO,
-  PROTO_MT_REQ_BASE_MOVE,
-  PROTO_MT_REQ_BASE_GOODBYE,
+  PROTO_MT_REQ_BASE_RESERVED_FIRST, 
+  PROTO_MT_REQ_BASE_HELLO, // establish connection to server and add player to game
+  PROTO_MT_REQ_BASE_MOVE, // attempt to mark square as client who submitted request
+  PROTO_MT_REQ_BASE_GOODBYE, //disconnect client from server
   // RESERVED LAST REQ MT PUT ALL NEW REQ MTS ABOVE
   PROTO_MT_REQ_BASE_RESERVED_LAST,
   
   // Replys
   PROTO_MT_REP_BASE_RESERVED_FIRST,
-  PROTO_MT_REP_BASE_HELLO,
-  PROTO_MT_REP_BASE_MOVE,
-  PROTO_MT_REP_BASE_GOODBYE,
+  PROTO_MT_REP_BASE_HELLO, //1  if succesful, 0 if player is already in game, -1 if fails
+  PROTO_MT_REP_BASE_MOVE, // 1 if square is empty and was marked succesfully, 0 if square is already full and cannot be marked, -1 if fail
+  PROTO_MT_REP_BASE_GOODBYE, // 1 if succesful, -1 if fails
   // RESERVED LAST REP MT PUT ALL NEW REP MTS ABOVE
   PROTO_MT_REP_BASE_RESERVED_LAST,
 
   // Events  
   PROTO_MT_EVENT_BASE_RESERVED_FIRST,
-  PROTO_MT_EVENT_BASE_UPDATE,
+  PROTO_MT_EVENT_BASE_UPDATE, //game state was updated: 1 if game was won and is over, 0 if another square was marked
   PROTO_MT_EVENT_BASE_RESERVED_LAST
 
 } Proto_Msg_Types;
@@ -66,8 +66,21 @@ typedef union {
 } Proto_PV3;
 
 typedef struct {
+  //player 1 (X) marking states
   Proto_PV0    v0;
+  // 1st byte: row 1
+  // never mark the most significant bit in the byte
+  // so 0 1 1 1: all of row 1 marked
+  // 0 0 1 1: two right-hand boxes marked
+  // 0 1 0 1: first and 3rd box marked etc. 
+  // 2nd byte: row 2
+  // 3rd byte: row 3
+  
+  //player 2 (O) marking states
+  //same encoding as above
   Proto_PV1    v1;
+
+
   Proto_PV2    v2;
   Proto_PV3    v3;
 } __attribute__((__packed__)) Proto_Player_State;
@@ -85,9 +98,21 @@ typedef union {
 } Proto_GV2;
 
 typedef struct {
-  Proto_GV0       v0;
-  Proto_GV1       v1;
+  Proto_GV0       v0;  
+ //1: game is over, stalemate
+ //2: game has been won by player 1 (X)
+ //3: game has been won by player 2 (O)
+ //
+  Proto_GV1       v1; 
+  //0: player 1's turn (X's turn)
+  //1: player 2's turn (O's turn)
+  //
   Proto_GV2       v2;
+  //0: Game hasn't started (no players added)
+  //1: Game has started (1 player added (X))
+  //2: Game has started (2 players added(O))
+  //3: Game has started (player 1 disconnected)
+  //4: Game has started (player 2 disconnected) 
 } __attribute__((__packed__)) Proto_Game_State;
 
 typedef struct {
