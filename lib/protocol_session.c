@@ -394,7 +394,7 @@ proto_session_rpc(Proto_Session *s)
   proto_session_send_msg(s,1);
 
   //Recv Message
-  proto_session_recv_msg(s);
+  proto_session_rcv_msg(s);
  
   // Pull result 
   proto_session_body_unmarshall_int( s, 0, &rc);
