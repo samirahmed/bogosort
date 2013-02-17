@@ -99,15 +99,24 @@ proto_server_record_event_subscriber(int fd, int *num)
   if (Proto_Server.EventLastSubscriber < PROTO_SERVER_MAX_EVENT_SUBSCRIBERS
       && Proto_Server.EventSubscribers[Proto_Server.EventLastSubscriber]
       ==-1) {
-    NOT_IMPL;//ADD CODE
+	  Proto_Server.EventSubscribers[ Proto_Server.EventLastSubscriber] = fd;
+	  Proto_Server.EventNumSubscribers++;
+	  *num = Proto_Server.EventLastSubscriber;
+	  Proto_Server.EventLastSubscriber++;
+    /*NOT_IMPL;//ADD CODE*/
     rc = 1;
   } else {
     int i;
     for (i=0; i< PROTO_SERVER_MAX_EVENT_SUBSCRIBERS; i++) {
-      if (Proto_Server.EventSubscribers[i]==-1) {
-	NOT_IMPL;//ADD CODE
-	*num=i;
-	rc=1;
+      if (Proto_Server.EventSubscribers[i]==-1) {	
+	  Proto_Server.EventLastSubscriber = i ;
+	  Proto_Server.EventSubscribers[ Proto_Server.EventLastSubscriber] = fd;
+	  Proto_Server.EventNumSubscribers++;
+	  Proto_Server.EventLastSubscriber++;
+	  /*NOT_IMPL;//ADD CODE*/
+	  *num=i;
+	  rc=1;
+	  break;
       }
     }
   }
@@ -137,8 +146,7 @@ proto_server_event_listen(void *arg)
     } else {
       int i;
       fprintf(stderr, "EventListen: connfd=%d -> ", connfd);
-	NOT_IMPL;// ADD_CODE
-      if (1<0) { //ADD CODE
+	  if ( proto_server_record_event_subscriber( connfd, &i )<0) { //ADD CODE
 	fprintf(stderr, "oops no space for any more event subscribers\n");
 	close(connfd);
       } else {
