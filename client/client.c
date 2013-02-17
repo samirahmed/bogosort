@@ -68,8 +68,9 @@ int
 startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
 {
   if (globals.host[0]!=0 && globals.port!=0) {
-    if (proto_client_connect(C->ph, host, port)!=0) {
-      fprintf(stderr, "failed to connect\n");
+    int res;
+	if (( res = proto_client_connect(C->ph, host, port))!=0) {
+      fprintf(stderr, "failed to connect\n : Error code %d",res);
       return -1;
     }
     proto_session_set_data(proto_client_event_session(C->ph), C);
