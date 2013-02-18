@@ -211,7 +211,9 @@ proto_server_req_dispatcher(void * arg)
 
   for (;;) {
     if (proto_session_rcv_msg(&s)==1) {
-      NOT_IMPL;//ADD CODE
+ 		mt = proto_session_hdr_unmarshall_type(&s);
+		 hdlr = Proto_Server.base_req_handlers[mt-PROTO_MT_REQ_BASE_RESERVED_FIRST-1];
+	  /*NOT_IMPL;//ADD CODE*/
 	if (hdlr(&s)<0) goto leave;
       }
      else {
@@ -219,7 +221,8 @@ proto_server_req_dispatcher(void * arg)
     }
   }
  leave:
-  NOT_IMPL;//Proto_Server.ADD CODE
+  Proto_Server.session_lost_handler(&s); 
+  /*NOT_IMPL;//Proto_Server.ADD CODE*/
   close(s.fd);
   return NULL;
 }
