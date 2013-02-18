@@ -129,7 +129,8 @@ proto_client_event_dispatcher(void * arg)
 	if (hdlr(s)<0) goto leave;
       }
     } else {
-      NOT_IMPL;//ADD CODE
+      c->session_lost_handler(s);
+	  /*NOT_IMPL;//ADD CODE*/
       goto leave;
     }
   }
@@ -201,18 +202,21 @@ do_generic_dummy_rpc(Proto_Client_Handle ch, Proto_Msg_Types mt)
   Proto_Session *s;
   Proto_Client *c = ch;
   
-  NOT_IMPL; //ADD CODE
-  //s = ADD CODE
+  /*NOT_IMPL; //ADD CODE*/
+  s = &(c->rpc_session);//s = ADD CODE
   // marshall
 
   marshall_mtonly(s, mt);
-  NOT_IMPL;//ADD CODE
+  /*NOT_IMPL;//ADD CODE*/
+  rc = proto_session_send_msg(s,1);
+  rc = proto_session_rcv_msg(s);
   //rc = proto_session_ADD CODE
 
   if (rc==1) {
     proto_session_body_unmarshall_int(s, 0, &rc);
   } else {
-    NOT_IMPL;//ADD CODE
+    rc = NULL;
+	/*NOT_IMPL;//ADD CODE*/
   }
   
   return rc;
