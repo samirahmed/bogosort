@@ -129,7 +129,8 @@ proto_client_event_dispatcher(void * arg)
 	if (hdlr(s)<0) goto leave;
       }
     } else {
-      NOT_IMPL;//ADD CODE
+      c->session_lost_handler(s);
+	  /*NOT_IMPL;//ADD CODE*/
       goto leave;
     }
   }
