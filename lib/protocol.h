@@ -75,7 +75,6 @@ typedef struct {
   // 0 1 0 1: first and 3rd box marked etc. 
   // 2nd byte: row 2
   // 3rd byte: row 3
-  
   //player 2 (O) marking states
   //same encoding as above
   Proto_PV1    v1;
@@ -99,20 +98,16 @@ typedef union {
 
 typedef struct {
   Proto_GV0       v0;  
- //1: game is over, stalemate
- //2: game has been won by player 1 (X)
- //3: game has been won by player 2 (O)
- //
+ //0: game hasn't started
+ //1: game has been won by player 1 (X)
+ //2: game has been won by player 2 (O)
+ //3: game is over (stalemate)
+ //4: game is over (won by player 1)
+ //5: game is over (won by player 2)
+ //6: game has started (player 1 disconnected)
+ //7: game has started (player 2 disconnected)
   Proto_GV1       v1; 
-  //0: player 1's turn (X's turn)
-  //1: player 2's turn (O's turn)
-  //
   Proto_GV2       v2;
-  //0: Game hasn't started (no players added)
-  //1: Game has started (1 player added (X))
-  //2: Game has started (2 players added(O))
-  //3: Game has started (player 1 disconnected)
-  //4: Game has started (player 2 disconnected) 
 } __attribute__((__packed__)) Proto_Game_State;
 
 typedef struct {
