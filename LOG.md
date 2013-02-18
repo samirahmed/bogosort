@@ -10,11 +10,16 @@ Katsutoshi K, Samir A, Will S.
 
 -Attempt to finish the client and server side code in next meeting (Monday).
 
-## Comments/Notes:
+### Comments/Notes:
 We're understanding the architecture a bit better now that we understand that there are sessions for both events and RPC
 calls.
-
-
+#### Game Encoding:
+Player 1 and Player 2 are each given an int (PV0 and PV1 respectively).
+In that int, the first byte corresponds to row 1, the 2nd byte to row 2,
+and the third byte to row 3 (we ignore the 4th byte). In each byte, the first bit being set to 1 corresponds to the
+first box in that row being marked  or that player,
+the second bit being set to 1 corresponds to the second box in that row being
+marked, for that player etc. (we ignore the most significant bit)
 
 
 ## 2-12-2013
