@@ -23,9 +23,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <strings.h>
 #include <errno.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include "net.h"
 #include "protocol.h"
@@ -157,6 +159,18 @@ proto_server_event_listen(void *arg)
 } 
 
 void
+proto_server_lost_event_helper(int i)
+{
+	// must have lost an event connection
+	close(Proto_Server.EventSession.fd);
+	Proto_Server.EventSubscribers[i]=-1;
+	Proto_Server.EventNumSubscribers--;
+	/*NOT_IMPL;*/
+	Proto_Server.session_lost_handler( &Proto_Server.EventSession);
+	//Proto_Server.ADD CODE
+}
+
+void
 proto_server_post_event(void) 
 {
   int i;
@@ -170,20 +184,15 @@ proto_server_post_event(void)
     Proto_Server.EventSession.fd = Proto_Server.EventSubscribers[i];
     if (Proto_Server.EventSession.fd != -1) {
       num--;
-      NOT_IMPL;
-      if ((0)<0) {//ADD CODE
-	// must have lost an event connection
-	close(Proto_Server.EventSession.fd);
-	Proto_Server.EventSubscribers[i]=-1;
-	Proto_Server.EventNumSubscribers--;
-	NOT_IMPL;
-	//Proto_Server.ADD CODE
-      } 
-      // FIXME: add ack message here to ensure that game is updated 
+      /*NOT_IMPL;*/
+      if (proto_session_send_msg(&Proto_Server.EventSession,0)<0) {//ADD CODE
+      	proto_server_lost_event_helper(i);
+	  } 
+	  // FIXME: add ack message here to ensure that game is updated 
       // correctly everywhere... at the risk of making server dependent
       // on client behaviour  (use time out to limit impact... drop
       // clients that misbehave but be carefull of introducing deadlocks
-    }
+	} 
     i++;
   }
   proto_session_reset_send(&Proto_Server.EventSession);
@@ -351,3 +360,4 @@ proto_server_init(void)
 
   return 0;
 }
+

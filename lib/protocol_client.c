@@ -202,7 +202,7 @@ do_generic_dummy_rpc(Proto_Client_Handle ch, Proto_Msg_Types mt)
   Proto_Session *s;
   Proto_Client *c = ch;
   
-  NOT_IMPL; //ADD CODE
+  /*NOT_IMPL; //ADD CODE*/
   s = &(c->rpc_session);//s = ADD CODE
   // marshall
 
