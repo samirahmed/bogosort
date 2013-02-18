@@ -1,3 +1,22 @@
+## 2-16-2013
+### Attendees:
+Katsutoshi K, Samir A, Will S.
+
+### Questions:
+- How do the event handlers work? 
+- How do we encode player moves?
+
+### Todo:
+
+-Attempt to finish the client and server side code in next meeting (Monday).
+
+## Comments/Notes:
+We're understanding the architecture a bit better now that we understand that there are sessions for both events and RPC
+calls.
+
+
+
+
 ## 2-12-2013
 
 ### Attendees:
