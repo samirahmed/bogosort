@@ -388,7 +388,7 @@ extern int
 proto_session_rpc(Proto_Session *s)
 {
   int rc;
-  
+  rc = NULL;  
   //ADD CODE
   //Send Message
   proto_session_send_msg(s,1);
