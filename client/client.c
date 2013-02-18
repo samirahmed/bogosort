@@ -151,6 +151,7 @@ doRPC(Client *C)
   char c;
 
   printf("enter (h|m<c>|g): ");
+  getchar();
   scanf("%c", &c);
   rc=doRPCCmd(C,c);
 

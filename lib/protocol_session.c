@@ -116,10 +116,10 @@ proto_session_hdr_marshall_pstate(Proto_Session *s, Proto_Player_State *ps)
 static void
 proto_session_hdr_unmarshall_pstate(Proto_Session *s, Proto_Player_State *ps)
 {
-    ps->v0.raw = ntohll(s->rhdr.pstate.v0.raw);
-    ps->v1.raw = ntohll(s->rhdr.pstate.v1.raw);
-    ps->v2.raw = ntohll(s->rhdr.pstate.v2.raw);
-    ps->v3.raw = ntohll(s->rhdr.pstate.v3.raw);
+    ps->v0.raw = ntohl(s->rhdr.pstate.v0.raw);
+    ps->v1.raw = ntohl(s->rhdr.pstate.v1.raw);
+    ps->v2.raw = ntohl(s->rhdr.pstate.v2.raw);
+    ps->v3.raw = ntohl(s->rhdr.pstate.v3.raw);
 }
 
 // HOST->NETWORK
@@ -137,9 +137,9 @@ proto_session_hdr_marshall_gstate(Proto_Session *s, Proto_Game_State *gs)
 static void
 proto_session_hdr_unmarshall_gstate(Proto_Session *s, Proto_Game_State *gs)
 {
-    gs->v0.raw = ntohll(s->rhdr.gstate.v0.raw);
-    gs->v1.raw = ntohll(s->rhdr.gstate.v1.raw);
-    gs->v2.raw = ntohll(s->rhdr.gstate.v2.raw);
+    gs->v0.raw = ntohl(s->rhdr.gstate.v0.raw);
+    gs->v1.raw = ntohl(s->rhdr.gstate.v1.raw);
+    gs->v2.raw = ntohl(s->rhdr.gstate.v2.raw);
 }
 
 // NETWORK->HOST
@@ -147,7 +147,7 @@ proto_session_hdr_unmarshall_gstate(Proto_Session *s, Proto_Game_State *gs)
 static int
 proto_session_hdr_unmarshall_blen(Proto_Session *s)
 {
-  return ntohll(s->rhdr.blen);
+  return ntohl(s->rhdr.blen);
 }
 
 // HOST->NETWORK
@@ -163,7 +163,7 @@ proto_session_hdr_marshall_type(Proto_Session *s, Proto_Msg_Types t)
 extern Proto_Msg_Types
 proto_session_hdr_unmarshall_type(Proto_Session *s)
 {
-    return ntohll(s->rhdr.type);
+    return ntohl(s->rhdr.type);
 }
 
 // NETWORK->HOST
@@ -171,7 +171,7 @@ proto_session_hdr_unmarshall_type(Proto_Session *s)
 static int
 proto_session_hdr_unmarshall_version(Proto_Session *s)
 {
-    return ntohll(s->rhdr.version);
+    return ntohl(s->rhdr.version);
 }
 
 // Given an (presumably empty) Header object
@@ -388,7 +388,7 @@ extern int
 proto_session_rpc(Proto_Session *s)
 {
   int rc;
-  
+  rc = NULL;  
   //ADD CODE
   //Send Message
   proto_session_send_msg(s,1);
