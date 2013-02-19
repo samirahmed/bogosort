@@ -128,16 +128,16 @@ void board_init(Board *b, Proto_Msg_Hdr *h)
 			b->move = (2 == playerid );
 			break;
 		case 3:
-			b->over = 1;
-			b->tie = 1;
-			break;
-		case 4:
 			b->iwin = (1 ==playerid);
 			b->over = 1;
 			break;
-		case 5:
+		case 4:
 			b->iwin = (2 ==playerid);
 			b->over = 1;
+			break;
+		case 5:
+			b->over = 1;
+			b->tie = 1;
 			break;
 		case 6:
 			b->over = 1;
@@ -227,18 +227,19 @@ game_process_move(Client *C)
 	Proto_Session *s;
 	s = proto_client_rpc_session(C->ph);
 	proto_session_body_unmarshall_int(s,0,&data);
-	fprintf(stderr,"Move response : %d",data);
+	if (proto_debug()) fprintf(stderr,"Move response : %d",data);
     if (data == 0xdeadbeef) printf("Server Ignored Request \n");
 	if (data == 0) printf("Not Your Move! Wait Your Turn \n");
 	if (data < 0) printf("Invalid Move! Try Again \n");
 	if (data > 0) printf("Move Accepted!\n");
+	return 1;
 }
 
 int
 game_process_hello(Client *C, int rc)
 {
   Proto_Session *s;
-  fprintf(stderr, "%s: Assigning Player ID %d\n", __func__, rc );
+  printf("Assigning Player ID %d\n", rc );
   
   switch ( rc )
   {
@@ -272,8 +273,8 @@ doRPCCmd(Client *C, char c)
   case 'h':  
     {
       rc = proto_client_hello(C->ph);
-      printf("hello: rc=%x\n", rc);
-      if (rc == 0xdeadbeef) printf("Server Ignored Request \n");
+      if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);
+      /*if (rc == 0xdeadbeef) printf("Server Ignored Request \n");*/
 	  if (rc > 0) game_process_hello(C,rc);
     }
     break;
@@ -289,7 +290,7 @@ doRPCCmd(Client *C, char c)
     printf("%s: unknown command %c\n", __func__, c);
   }
   // NULL MT OVERRIDE ;-)
-  printf("%s: rc=0x%x\n", __func__, rc);
+  if(proto_debug()) fprintf(stderr,"%s: rc=0x%x\n", __func__, rc);
   if (rc == 0xdeadbeef) rc=1;
   return rc;
 }
@@ -301,11 +302,11 @@ doRPC(Client *C)
   char c;
 
   printf("enter (h|m<c>|g): ");
-  getchar();
+  /*getchar();*/
   scanf("%c", &c);
   rc=doRPCCmd(C,c);
 
-  printf("doRPC: rc=0x%x\n", rc);
+  if(proto_debug())fprintf(stderr,"doRPC: rc=0x%x\n", rc);
 
   return rc;
 }
