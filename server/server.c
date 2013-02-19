@@ -34,7 +34,7 @@
 static Proto_Msg_Hdr Game;
 
 void init_game(void);
-int updateClients(Proto_Msg_Hdr * h);
+int updateClients(void);
 
 int hello_handler( Proto_Session * s)
 {
@@ -58,7 +58,7 @@ int hello_handler( Proto_Session * s)
 	else if ( Game.gstate.v2.raw == 0 )
 	{
 		Game.gstate.v2.raw = 2;
-		updateClients(&h);
+		updateClients();
 		return reply(s,PROTO_MT_REP_BASE_HELLO,2);
 	}
 	// UNLOCK
@@ -81,7 +81,7 @@ int winner(int position)
 }
 
 // Make sure this is locked when called
-int updateClients(Proto_Msg_Hdr *h )
+int updateClients( )
 { 
 	if ( Game.gstate.v1.raw == -1 || Game.gstate.v2.raw == -1 )
 	{
@@ -95,8 +95,8 @@ int updateClients(Proto_Msg_Hdr *h )
 	{
 		int p1;
 		int p2;
-		p1 = h->pstate.v0.raw ;
-		p2 = h->pstate.v1.raw ;
+		p1 = Game.pstate.v0.raw ;
+		p2 = Game.pstate.v1.raw ;
 		int state = Game.gstate.v0.raw;
 		if ( winner(p1) )
 		{
@@ -143,7 +143,7 @@ int goodbye_handler( Proto_Session *s)
 	if ( client_id == 1) Game.gstate.v1.raw = -1;
 	else  Game.gstate.v2.raw = -1;
 	
-	updateClients(&h);
+	updateClients();
 
 	// UNLOCK
 	return 0;
@@ -203,7 +203,7 @@ int move_handler( Proto_Session *s )
 	Game.pstate.v0.raw = p1;
 	Game.pstate.v1.raw = p2;
 
-	updateClients(&h);
+	updateClients();
 	
 	// UNLOCK
 	

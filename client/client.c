@@ -58,16 +58,17 @@ void board_print(Board *b)
 {
 	if ( !b->started )
 	{
-		printf( "Game not started ");
+		printf( "\nGame not started\n");
 		return;
 	}
 
+	printf("\n");
 	printf(" %c | %c | %c \n", b->pos[0] , b->pos[1] , b->pos[2] );
 	printf("---|---|--- \n");
 	printf(" %c | %c | %c \n", b->pos[3] , b->pos[4] , b->pos[5] );
 	printf("---|---|--- \n");
 	printf(" %c | %c | %c \n", b->pos[6] , b->pos[7] , b->pos[8] );
-	
+
 	if ( b->over )
 	{
 	 	printf("\n Game Over - ");
@@ -81,6 +82,8 @@ void board_print(Board *b)
 		if ( b->move ) printf("\n Your Move");
 		else printf("\n Waiting for other player");
 	}
+	printf("\nclient> ");
+
 }
 
 void board_init(Board *b, Proto_Msg_Hdr *h)
