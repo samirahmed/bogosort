@@ -108,6 +108,7 @@ typedef struct {
  //3: player 1 wins
  //4: player 2 wins
  //5: stalemate
+ //6: gameover due to lost connection
   Proto_GV1       v1; 
 // id for player 1
   Proto_GV2       v2;
