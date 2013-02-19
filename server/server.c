@@ -53,7 +53,7 @@ int hello_handler( Proto_Session * s)
 	if ( Game.gstate.v2.raw == 0 )
 	{
 		Game.gstate.v2.raw = 2;
-		return reply(s,PROTO_MT_REP_BASE_HELLO,1);
+		return reply(s,PROTO_MT_REP_BASE_HELLO,2);
 	}
 	Proto_Msg_Hdr h;
 	bzero(&h, sizeof(Proto_Msg_Hdr));
