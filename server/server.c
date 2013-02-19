@@ -41,25 +41,30 @@ int hello_handler( Proto_Session * s)
 	// LOCK
 	
 	// If game is in a completed state, and somebody issues a hello, we reset the game
+	int value;
+	value = 1;
+	Proto_Msg_Hdr h;
+	bzero(&h, sizeof(Proto_Msg_Hdr));
 	if ( Game.gstate.v0.raw > 2 )
 	{
 		init_game();
+		value = 1;
 	}
 	if ( Game.gstate.v1.raw == 0 )
 	{
 		Game.gstate.v1.raw = 1;
 		return reply(s,PROTO_MT_REP_BASE_HELLO,1);
 	}
-	if ( Game.gstate.v2.raw == 0 )
+	else if ( Game.gstate.v2.raw == 0 )
 	{
 		Game.gstate.v2.raw = 2;
+		updateClients(&h);
 		return reply(s,PROTO_MT_REP_BASE_HELLO,2);
 	}
-	Proto_Msg_Hdr h;
-	bzero(&h, sizeof(Proto_Msg_Hdr));
-	updateClients(&h);
 	// UNLOCK
-	return reply(s,PROTO_MT_REP_BASE_HELLO,0);
+	
+	// no player slot are open, respond with a zero.
+	return reply(s,PROTO_MT_REP_BASE_HELLO,value,0);
 }
 
 int winner(int position)
