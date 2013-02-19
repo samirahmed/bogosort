@@ -147,7 +147,7 @@ static int
 clientInit(Client *C)
 {
   bzero(C, sizeof(Client));
-
+  C->playerid = 0;
   // initialize the client protocol subsystem
   if (proto_client_init(&(C->ph))<0) {
     fprintf(stderr, "client: main: ERROR initializing proto system\n");
@@ -202,6 +202,19 @@ prompt(int menu)
   return c;
 }
 
+int 
+game_process_move(Client *C)
+{
+	int data;
+	Proto_Session *s;
+	s = proto_client_rpc_session(C);
+	proto_session_body_unmarshall_int(s,0,&data);
+    if (data == 0xdeadbeef) printf("Server Ignored Request \n");
+	if (data == 0) printf("Not Your Move! Wait Your Turn \n");
+	if (data < 0) printf("Invalid Move! Try Again \n");
+	if (data > 0) printf("Move Accepted!\n");
+}
+
 int
 game_process_hello(Client *C, int rc)
 {
@@ -247,7 +260,8 @@ doRPCCmd(Client *C, char c)
     break;
   case 'm':
     scanf("%c", &c);
-    rc = proto_client_move(C->ph, c);
+    rc = proto_client_move(C->ph, C->playerid, c);
+	if (rc > 0) game_process_move(C);
     break;
   case 'g':
     rc = proto_client_goodbye(C->ph);

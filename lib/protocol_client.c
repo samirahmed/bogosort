@@ -228,9 +228,37 @@ proto_client_hello(Proto_Client_Handle ch)
 }
 
 extern int 
-proto_client_move(Proto_Client_Handle ch, char data)
+proto_client_move(Proto_Client_Handle ch, int id, char data)
 {
-  return do_generic_dummy_rpc(ch,PROTO_MT_REQ_BASE_MOVE);  
+  // Setup Hdr and Body 
+  int rc;
+  int position;
+  Proto_Msg_Hdr h;
+  rc = 1;
+  
+  // Get Session Handle
+  Proto_Session *s;
+  Proto_Client *c = ch;
+  s = &(c->rpc_session);
+  
+  // Setup Header and Marshall
+  bzero(&h, sizeof(h));
+  h.type = PROTO_MT_REQ_BASE_MOVE;
+  h.pstate.v2.raw = id;
+  proto_session_hdr_marshall(s, &h);
+
+  // Setup body and marshall
+  position = ((int)data - 48);
+  proto_session_body_marshall_int(s , position); 
+  
+  // Send Msg
+  rc = proto_session_send_msg( s, 1);
+  if (rc < 0) return rc;
+  
+  // Recv Response
+  rc = proto_session_rcv_msg(s);
+  return rc;
+
 }
 
 extern int 
