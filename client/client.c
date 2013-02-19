@@ -37,8 +37,111 @@ struct Globals {
 
 typedef struct ClientState  {
   int data;
+  int playerid;
   Proto_Client_Handle ph;
 } Client;
+
+// An Easy Struct for Printing
+typedef struct {
+	char pos[9];
+	int move;
+	int tie;
+	int over;
+	int started;
+	int iwin;
+	int error;
+	int timestamp;
+} Board; 
+
+void board_print(Board *b)
+{
+	if ( !b->started )
+	{
+		printf( "Game not started ");
+		return;
+	}
+
+	printf(" %c | %c | %c \n", b->pos[0] , b->pos[1] , b->pos[2] );
+	printf(" ---|----|--- \n");
+	printf(" %c | %c | %c \n", b->pos[3] , b->pos[4] , b->pos[5] );
+	printf(" ---|----|--- \n");
+	printf(" %c | %c | %c \n", b->pos[6] , b->pos[7] , b->pos[8] );
+	
+	if ( b->over )
+	{
+	 	printf("\n Game Over - ");
+
+		if ( b->iwin ) printf(" You Win ");
+		else if (b->tie )printf( "Tie Game");
+		else printf(" You Lost Sorry ");
+	}
+	else
+	{
+		if ( b->move ) printf("\n Your Move");
+		else printf("\n Waiting for other player");
+	}
+}
+
+void board_init(Board *b, Client *C, Proto_Msg_Hdr *h)
+{
+	bzero(b, sizeof(Board));
+
+	int ii;
+	
+	for( ii =0 ; ii < 9; ii++ ) b->pos[ii] = (char)( ii + 48); 
+
+	int player = h->pstate.v0.raw;
+	int mask = 1;
+	
+	for( ii =0 ; ii < 9; ii++ )
+	{
+		if ( (player & mask)) b->pos[ii]='x';
+		player = player >> 1;
+	}
+
+	player = h->pstate.v1.raw;
+	for( ii =0 ; ii < 9; ii++ )
+	{
+		if ( (player & mask)) b->pos[ii]='o';
+		player = player >> 1;
+	}
+	
+	b->move = 0;
+	b->started = 1;
+	b->over = 0;
+	b->iwin = 0;
+	b->tie = 0;
+	b->error =1;
+	switch ( h->gstate.v0.raw )
+	{
+		case 0:
+			b->started = 0;
+			break;
+		case 1: 
+			b->move = (1 == C->playerid );
+			break;
+		case 2: 
+			b->move = (2 == C->playerid );
+			break;
+		case 3:
+			b->over = 1;
+			b->tie = 1;
+			break;
+		case 4:
+			b->iwin = (1 == C->playerid);
+			b->over = 1;
+			break;
+		case 5:
+			b->iwin = (2 == C->playerid);
+			b->over = 1;
+			break;
+		case 6:
+			b->over = 1;
+			b->error = 1;
+		default:
+			break;
+	}
+}
 
 static int
 clientInit(Client *C)
@@ -99,17 +202,30 @@ prompt(int menu)
   return c;
 }
 
-
-// FIXME:  this is ugly maybe the speration of the proto_client code and
-//         the game code is dumb
 int
-game_process_reply(Client *C)
+game_process_hello(Client *C, int rc)
 {
   Proto_Session *s;
+  fprintf(stderr, "%s: Assigning Player ID %d\n", __func__, rc );
+  
+  switch ( rc )
+  {
+  	case 1:
+		C->playerid = 1;
+		break;
+	case 2:
+		C->playerid = 2;	
+		break;
+	default:
+		C->playerid = 0;
+		break;
+  }
+  
+  /*fprintf(stderr, "%s: Sending  %p\n", __func__, s);*/
 
-  s = proto_client_rpc_session(C->ph);
+  /*s = proto_client_rpc_session(C->ph);*/
 
-  fprintf(stderr, "%s: do something %p\n", __func__, s);
+  /*fprintf(stderr, "%s: do something %p\n", __func__, s);*/
 
   return 1;
 }
@@ -125,7 +241,8 @@ doRPCCmd(Client *C, char c)
     {
       rc = proto_client_hello(C->ph);
       printf("hello: rc=%x\n", rc);
-      if (rc > 0) game_process_reply(C);
+      if (rc == 0xdeadbeef) printf("Server Ignored Request \n");
+	  if (rc > 0) game_process_hello(C,rc);
     }
     break;
   case 'm':
@@ -218,7 +335,7 @@ usage(char *pgm)
 	   "examples:\n" 
            " %s 12345 : starts client connecting to localhost:12345\n"
 	  " %s localhost 12345 : starts client connecting to locaalhost:12345\n",
-	   pgm, pgm, pgm, pgm);
+	   pgm, pgm, pgm);
  
 }
 
@@ -266,4 +383,3 @@ main(int argc, char **argv)
 
   return 0;
 }
-
