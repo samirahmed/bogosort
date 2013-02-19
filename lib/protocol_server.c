@@ -366,3 +366,21 @@ proto_server_init(void)
   return 0;
 }
 
+extern int
+reply( Proto_Session * s, Proto_Msg_Types mt , int response)
+{
+  int rc=1;
+  Proto_Msg_Hdr h;
+  if (proto_debug()) proto_session_dump(s);
+
+  // setup dummy reply header : set correct reply message type and 
+  // everything else empty
+  bzero(&h, sizeof(s));
+  h.type = mt;
+  proto_session_hdr_marshall(s, &h);
+
+  // setup a dummy body that just has a return code 
+  proto_session_body_marshall_int(s, response);
+  rc=proto_session_send_msg(s,1);
+  return rc;
+}
