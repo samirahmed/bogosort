@@ -225,8 +225,9 @@ game_process_move(Client *C)
 {
 	int data;
 	Proto_Session *s;
-	s = proto_client_rpc_session(C);
+	s = proto_client_rpc_session(C->ph);
 	proto_session_body_unmarshall_int(s,0,&data);
+	fprintf(stderr,"Move response : %d",data);
     if (data == 0xdeadbeef) printf("Server Ignored Request \n");
 	if (data == 0) printf("Not Your Move! Wait Your Turn \n");
 	if (data < 0) printf("Invalid Move! Try Again \n");

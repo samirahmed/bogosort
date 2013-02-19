@@ -215,7 +215,7 @@ do_generic_dummy_rpc(Proto_Client_Handle ch, Proto_Msg_Types mt)
   if (rc==1) {
     proto_session_body_unmarshall_int(s, 0, &rc);
   } else {
-    rc = NULL;
+    rc = -1;
 	/*NOT_IMPL;//ADD CODE*/
   }
   
