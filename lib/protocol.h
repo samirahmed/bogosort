@@ -101,14 +101,13 @@ typedef union {
 
 typedef struct {
   Proto_GV0       v0;  
- //0: game hasn't started
- //1: game has been won by player 1 (X)
- //2: game has been won by player 2 (O)
- //3: game is over (stalemate)
- //4: game is over (won by player 1)
- //5: game is over (won by player 2)
- //6: game has started (player 1 disconnected)
- //7: game has started (player 2 disconnected)
+ //-1: player has dropped connection
+ //0: game hasn't started (none connected)
+ //1: player 1's turn
+ //2: player 2's turn
+ //3: player 1 wins
+ //4: player 2 wins
+ //5: stalemate
   Proto_GV1       v1; 
 // id for player 1
   Proto_GV2       v2;
