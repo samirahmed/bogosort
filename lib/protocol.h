@@ -107,7 +107,9 @@ typedef struct {
  //6: game has started (player 1 disconnected)
  //7: game has started (player 2 disconnected)
   Proto_GV1       v1; 
+// id for player 1
   Proto_GV2       v2;
+// id for player 2
 } __attribute__((__packed__)) Proto_Game_State;
 
 typedef struct {
