@@ -35,9 +35,10 @@ struct Globals {
 } globals;
 
 
+static int playerid;
+
 typedef struct ClientState  {
   int data;
-  int playerid;
   Proto_Client_Handle ph;
 } Client;
 
@@ -62,9 +63,9 @@ void board_print(Board *b)
 	}
 
 	printf(" %c | %c | %c \n", b->pos[0] , b->pos[1] , b->pos[2] );
-	printf(" ---|----|--- \n");
+	printf("---|---|--- \n");
 	printf(" %c | %c | %c \n", b->pos[3] , b->pos[4] , b->pos[5] );
-	printf(" ---|----|--- \n");
+	printf("---|---|--- \n");
 	printf(" %c | %c | %c \n", b->pos[6] , b->pos[7] , b->pos[8] );
 	
 	if ( b->over )
@@ -82,7 +83,7 @@ void board_print(Board *b)
 	}
 }
 
-void board_init(Board *b, Client *C, Proto_Msg_Hdr *h)
+void board_init(Board *b, Proto_Msg_Hdr *h)
 {
 	bzero(b, sizeof(Board));
 
@@ -118,21 +119,21 @@ void board_init(Board *b, Client *C, Proto_Msg_Hdr *h)
 			b->started = 0;
 			break;
 		case 1: 
-			b->move = (1 == C->playerid );
+			b->move = (1 == playerid );
 			break;
 		case 2: 
-			b->move = (2 == C->playerid );
+			b->move = (2 == playerid );
 			break;
 		case 3:
 			b->over = 1;
 			b->tie = 1;
 			break;
 		case 4:
-			b->iwin = (1 == C->playerid);
+			b->iwin = (1 ==playerid);
 			b->over = 1;
 			break;
 		case 5:
-			b->iwin = (2 == C->playerid);
+			b->iwin = (2 ==playerid);
 			b->over = 1;
 			break;
 		case 6:
@@ -143,16 +144,30 @@ void board_init(Board *b, Client *C, Proto_Msg_Hdr *h)
 	}
 }
 
+int update_handler(Proto_Session *s )
+{
+	Board b;
+	bzero(&b, sizeof(Board));
+	Proto_Msg_Hdr h;
+	proto_session_hdr_unmarshall(s,&h);
+	board_init(&b,&h);
+	board_print(&b);
+	return 1;
+}
+
 static int
 clientInit(Client *C)
 {
   bzero(C, sizeof(Client));
-  C->playerid = 0;
+  playerid = 0;
   // initialize the client protocol subsystem
   if (proto_client_init(&(C->ph))<0) {
     fprintf(stderr, "client: main: ERROR initializing proto system\n");
     return -1;
   }
+  
+  proto_client_set_event_handler(C->ph, PROTO_MT_EVENT_BASE_UPDATE, update_handler );
+
   return 1;
 }
 
@@ -224,13 +239,13 @@ game_process_hello(Client *C, int rc)
   switch ( rc )
   {
   	case 1:
-		C->playerid = 1;
+		playerid = 1;
 		break;
 	case 2:
-		C->playerid = 2;	
+		playerid = 2;	
 		break;
 	default:
-		C->playerid = 0;
+		playerid = 0;
 		break;
   }
   
@@ -260,7 +275,7 @@ doRPCCmd(Client *C, char c)
     break;
   case 'm':
     scanf("%c", &c);
-    rc = proto_client_move(C->ph, C->playerid, c);
+    rc = proto_client_move(C->ph, playerid, c);
 	if (rc > 0) game_process_move(C);
     break;
   case 'g':
