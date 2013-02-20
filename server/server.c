@@ -35,6 +35,9 @@
 static Proto_Msg_Hdr Game;
 static pthread_mutex_t GameLock;
 
+void drop_client(int);
+int client_lost_handler(Proto_Session *);
+void clear_game_state(void);
 void init_game(void);
 int updateClients(void);
 
@@ -51,8 +54,7 @@ int hello_handler( Proto_Session * s)
 	// If game is in a completed state, and somebody issues a hello, we reset the game
 	if ( Game.gstate.v0.raw > 2 ) // LAST GAME IS OVER 
 	{
-		init_game();
-		value = 1;
+		clear_game_state();
 	}
 
 	if ( Game.gstate.v1.raw == 0 || Game.gstate.v2.raw==0 ) // If Open slot
@@ -150,19 +152,15 @@ int updateClients( )
 
 int goodbye_handler( Proto_Session *s)
 {
-	// LOCK
 	
+	int client_id ;
 	Proto_Msg_Hdr h;
 	bzero(&h, sizeof(Proto_Msg_Hdr));
 	proto_session_hdr_unmarshall(s, &h);
 	
-	int client_id = h.pstate.v2.raw;
-	if ( client_id == 1) Game.gstate.v1.raw = -1;
-	else  Game.gstate.v2.raw = -1;
-	
-	updateClients();
+	client_id = h.pstate.v2.raw;
+	drop_client( client_id );
 
-	// UNLOCK
 	return 0;
 }
 
@@ -237,18 +235,27 @@ int move_handler( Proto_Session *s )
 	
 }
 
-	// If this is valid. Update the Game
-	Game.pstate.v0.raw = p1;
-	Game.pstate.v1.raw = p2;
+extern int client_lost_handler( Proto_Session * s)
+{
+	fprintf(stderr, "Session lost - Dropping Client ...:\n");
+	drop_client(1);	
+	if (proto_debug()) proto_session_dump(s);
+	return -1;
+}
 
+extern void drop_client(int client_id)
+{
+	// LOCK
+	pthread_mutex_lock(&GameLock);
+	if ( client_id == 1) Game.gstate.v1.raw = -1;
+	else  Game.gstate.v2.raw = -1;
 	updateClients();
 	
 	// UNLOCK
-	
-	return reply(s, PROTO_MT_REP_BASE_MOVE, 1);
+	pthread_mutex_unlock(&GameLock);
 }
 
-extern void init_game(void)
+extern void clear_game_state(void)
 {
 	// Create new game and set player ids to -1
 	bzero(&Game, sizeof(Proto_Msg_Hdr));
@@ -257,6 +264,9 @@ extern void init_game(void)
 	Game.type = PROTO_MT_EVENT_BASE_UPDATE;
 }
 
+extern void init_game(void)
+{
+	clear_game_state();
 	// Setup handler for Hello event
  	proto_server_set_req_handler( PROTO_MT_REQ_BASE_HELLO , &(hello_handler) );
  	proto_server_set_req_handler( PROTO_MT_REQ_BASE_MOVE , &(move_handler) );
