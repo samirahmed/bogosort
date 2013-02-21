@@ -29,6 +29,10 @@
 
 #define STRLEN 81
 
+//Function Headers
+void initGlobals(int argc, char **argv);
+
+
 struct Globals {
   char host[STRLEN];
   PortType port;
@@ -207,8 +211,8 @@ startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
   return 0;
 }
 
-int
-prompt(int menu,char* input) 
+char*
+prompt(int menu) 
 {
   if (menu) printf("%s", MenuString);
   fflush(stdout);
@@ -217,9 +221,13 @@ prompt(int menu,char* input)
   int bytes_read;
   int nbytes = 0;
   char *my_string;
-  bytes_read = getline (&input, &nbytes, stdin);
+  bytes_read = getline (&my_string, &nbytes, stdin);
 
-  return (bytes_read>0);
+  if(bytes_read>0)
+	  return my_string;
+  else
+	  return 0;
+
 }
 
 int 
@@ -316,6 +324,17 @@ docmd(Client *C, char* cmd)
 {
   int rc = 1;
 
+  if(strncmp(cmd,"connect",sizeof("connect")-1)==0){
+  	initGlobals(2,&cmd);
+  	exit(0);
+  	rc=doRPCCmd(C,'h');
+  }
+
+
+
+
+/*
+
   switch (*cmd) {
   case 'd':
     proto_debug_on();
@@ -335,6 +354,7 @@ docmd(Client *C, char* cmd)
   default:
     printf("Unkown Command\n");
   }
+  */
   return rc;
 }
 
@@ -347,7 +367,7 @@ shell(void *arg)
   int menu=1;
 
   while (1) {
-    if ((prompt(menu,c))!=0) rc=docmd(C, c);
+    if ((c = prompt(menu))!=0) rc=docmd(C, c);
     if (rc == -2) break; //only terminate when client issues 'q'
     //if (rc<0) break;
     //if (rc==1) menu=1; else menu=0;
@@ -399,8 +419,8 @@ int
 main(int argc, char **argv)
 {
   Client c;
-
-  initGlobals(argc, argv);
+	
+ // initGlobals(argc, argv); //NOT NEEDED - Katsu
 
   if (clientInit(&c) < 0) {
     fprintf(stderr, "ERROR: clientInit failed\n");
