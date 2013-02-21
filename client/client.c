@@ -328,7 +328,7 @@ docmd(Client *C, char cmd)
     rc = doRPC(C);
     break;
   case 'q':
-    rc=-1;
+    rc=-2; 
     break;
   case '\n':
     rc=1;
@@ -349,8 +349,9 @@ shell(void *arg)
 
   while (1) {
     if ((c=prompt(menu))!=0) rc=docmd(C, c);
-    if (rc<0) break;
-    if (rc==1) menu=1; else menu=0;
+    if (rc == -2) break; //only terminate when client issues 'q'
+    //if (rc<0) break;
+    //if (rc==1) menu=1; else menu=0;
   }
 
   fprintf(stderr, "terminating\n");
