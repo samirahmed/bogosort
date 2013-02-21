@@ -186,8 +186,8 @@ int move_handler( Proto_Session *s )
 	client_id = h.pstate.v2.raw; 						// client making move
 
 	if ( current_state == 0 ) rc = reply(s, PROTO_MT_REP_BASE_MOVE, -1 ); // GAME NOT STARTED
-	else if ( current_state != client_id ) return  reply(s, PROTO_MT_REP_BASE_MOVE, 0 ); // NOT YOUR TURN
-	else if ( desired > 8 || desired < 0) return  reply(s, PROTO_MT_REP_BASE_MOVE, -1 ); // INVALID BOARD POSITION
+	else if ( current_state != client_id ) rc = reply(s, PROTO_MT_REP_BASE_MOVE, 0 ); // NOT YOUR TURN
+	else if ( desired > 8 || desired < 0) rc = reply(s, PROTO_MT_REP_BASE_MOVE, -1 ); // INVALID BOARD POSITION
 	else 
 	{
 		p1 = Game.pstate.v0.raw; // Player1 positions
