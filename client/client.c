@@ -75,6 +75,7 @@ void board_print(Board *b)
 
 		if ( b->iwin ) printf(" You Win ");
 		else if (b->tie )printf( "Tie Game");
+		else if (b->error) printf( "Opponent Quit - Restart Game");
 		else printf(" You Lost Sorry ");
 	}
 	else
@@ -115,7 +116,7 @@ void board_init(Board *b, Proto_Msg_Hdr *h)
 	b->over = 0;
 	b->iwin = 0;
 	b->tie = 0;
-	b->error =1;
+	b->error =0;
 	switch ( h->gstate.v0.raw )
 	{
 		case 0:
