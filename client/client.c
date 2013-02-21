@@ -240,27 +240,22 @@ int
 game_process_hello(Client *C, int rc)
 {
   Proto_Session *s;
-  printf("Assigning Player ID %d\n", rc );
   
   switch ( rc )
   {
   	case 1:
 		playerid = 1;
+  		printf("Assigning Player X\n");
 		break;
 	case 2:
 		playerid = 2;	
+  		printf("Assigning Player O\n");
 		break;
 	default:
 		playerid = 0;
 		break;
   }
   
-  /*fprintf(stderr, "%s: Sending  %p\n", __func__, s);*/
-
-  /*s = proto_client_rpc_session(C->ph);*/
-
-  /*fprintf(stderr, "%s: do something %p\n", __func__, s);*/
-
   return 1;
 }
 
