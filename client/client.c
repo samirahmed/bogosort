@@ -34,8 +34,8 @@ struct Globals {
   PortType port;
 } globals;
 
-
 static int playerid;
+static char MenuString[] = "\n?> ";
 
 typedef struct ClientState  {
   int data;
@@ -207,18 +207,19 @@ startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
   return 0;
 }
 
-
 int
-prompt(int menu) 
+prompt(int menu,char* input) 
 {
-  static char MenuString[] = "\nclient> ";
-  int ret;
-  int c=0;
-
   if (menu) printf("%s", MenuString);
   fflush(stdout);
-  c = getchar();
-  return c;
+  
+  // Pull in input from stdin
+  int bytes_read;
+  int nbytes = 0;
+  char *my_string;
+  bytes_read = getline (&input, &nbytes, stdin);
+
+  return (bytes_read>0);
 }
 
 int 
@@ -311,11 +312,11 @@ doRPC(Client *C)
 
 
 int 
-docmd(Client *C, char cmd)
+docmd(Client *C, char* cmd)
 {
   int rc = 1;
 
-  switch (cmd) {
+  switch (*cmd) {
   case 'd':
     proto_debug_on();
     break;
@@ -341,12 +342,12 @@ void *
 shell(void *arg)
 {
   Client *C = arg;
-  char c;
+  char *c;
   int rc;
   int menu=1;
 
   while (1) {
-    if ((c=prompt(menu))!=0) rc=docmd(C, c);
+    if ((prompt(menu,c))!=0) rc=docmd(C, c);
     if (rc == -2) break; //only terminate when client issues 'q'
     //if (rc<0) break;
     //if (rc==1) menu=1; else menu=0;
