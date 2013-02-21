@@ -100,14 +100,14 @@ void board_init(Board *b, Proto_Msg_Hdr *h)
 	
 	for( ii =0 ; ii < 9; ii++ )
 	{
-		if ( (player & mask)) b->pos[ii]='x';
+		if ( (player & mask)) b->pos[ii]='X';
 		player = player >> 1;
 	}
 
 	player = h->pstate.v1.raw;
 	for( ii =0 ; ii < 9; ii++ )
 	{
-		if ( (player & mask)) b->pos[ii]='o';
+		if ( (player & mask)) b->pos[ii]='O';
 		player = player >> 1;
 	}
 	
