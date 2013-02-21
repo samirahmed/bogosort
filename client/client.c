@@ -271,7 +271,8 @@ doRPCCmd(Client *C, char c)
       rc = proto_client_hello(C->ph);
       if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);
       /*if (rc == 0xdeadbeef) printf("Server Ignored Request \n");*/
-	  if (rc > 0) game_process_hello(C,rc);
+	  if (rc > 0 && playerid == 0)game_process_hello(C,rc); //only process the hello if playerid has not been set
+	  else fprintf(stderr, "Your playerid has already been set. Your playerid is: %d\n", playerid);
     }
     break;
   case 'm':
@@ -325,7 +326,7 @@ docmd(Client *C, char cmd)
     rc = doRPC(C);
     break;
   case 'q':
-    rc=-1;
+    rc=-2; 
     break;
   case '\n':
     rc=1;
@@ -346,8 +347,9 @@ shell(void *arg)
 
   while (1) {
     if ((c=prompt(menu))!=0) rc=docmd(C, c);
-    if (rc<0) break;
-    if (rc==1) menu=1; else menu=0;
+    if (rc == -2) break; //only terminate when client issues 'q'
+    //if (rc<0) break;
+    //if (rc==1) menu=1; else menu=0;
   }
 
   fprintf(stderr, "terminating\n");
