@@ -240,20 +240,19 @@ game_process_hello(Client *C, int rc)
 {
   Proto_Session *s;
   printf("Assigning Player ID %d\n", rc );
-  
   switch ( rc )
   {
-  	case 1:
-		playerid = 1;
+	  case 1:
+		  playerid = 1;
+		  break;
+	  case 2:
+		  playerid = 2;	
 		break;
-	case 2:
-		playerid = 2;	
-		break;
-	default:
+	  default:
 		playerid = 0;
 		break;
   }
-  
+   
   /*fprintf(stderr, "%s: Sending  %p\n", __func__, s);*/
 
   /*s = proto_client_rpc_session(C->ph);*/
@@ -275,7 +274,8 @@ doRPCCmd(Client *C, char c)
       rc = proto_client_hello(C->ph);
       if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);
       /*if (rc == 0xdeadbeef) printf("Server Ignored Request \n");*/
-	  if (rc > 0) game_process_hello(C,rc);
+	  if (rc > 0 && playerid == 0)game_process_hello(C,rc); //only process the hello if playerid has not been set
+	  else fprintf(stderr, "Your playerid has already been set. Your playerid is: %d\n", playerid);
     }
     break;
   case 'm':
