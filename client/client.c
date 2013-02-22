@@ -80,11 +80,13 @@ void board_print(Board *b)
 	{
 	 	printf("\n Game Over - ");
 
-		if ( b->iwin ) printf(" You Win ");
-		else if (b->tie )printf( "Tie Game");
+		if ( b->iwin ) printf(" You Win\n");
+		else if (b->tie )printf( "Tie Game\n");
 		else if (b->error)
 		connected ? printf( "Opponent Quit - Restart Game") : printf( "Lost Connection\n");
-		else printf(" You Lost Sorry ");
+		else printf(" You Lost -");
+
+		printf (" - Disconnect and reconnect to play again ");
 	}
 	else
 	{
@@ -242,11 +244,11 @@ game_process_move(Client *C)
 	Proto_Session *s;
 	s = proto_client_rpc_session(C->ph);
 	proto_session_body_unmarshall_int(s,0,&data);
-	if (proto_debug()) fprintf(stderr,"Move response : %d",data);
-    if (data == 0xdeadbeef) printf("Server Ignored Request \n");
-	if (data == 0) printf("Not Your Move! Wait Your Turn \n");
-	if (data < 0) printf("Invalid Move! Try Again \n");
-	if (data > 0) printf("Move Accepted!\n");
+	if (proto_debug()) fprintf(stderr," Move response : %d",data);
+    if (data == 0xdeadbeef) printf(" Server Ignored Request \n");
+	if (data == 0) printf(" Not Your Move! Wait Your Turn \n");
+	if (data < 0) printf(" Invalid Move! Try Again \n");
+	if (data > 0) printf(" Move Accepted! \n");
 	return 1;
 }
 
@@ -287,7 +289,7 @@ game_process_hello(Client *C, int rc)
 		break;
 	default:
 		set_player(0);
-		printf("Unable to connect to game");
+		printf(" - Unable to connect to game ");
 		break;
   }
   return 1;
