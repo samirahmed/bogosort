@@ -38,6 +38,7 @@ struct Globals {
   PortType port;
 } globals;
 
+static int connected;
 static int playerid;
 static char MenuString[] = "\n?> ";
 
@@ -79,7 +80,8 @@ void board_print(Board *b)
 
 		if ( b->iwin ) printf(" You Win ");
 		else if (b->tie )printf( "Tie Game");
-		else if (b->error) printf( "Opponent Quit - Restart Game");
+		else if (b->error)
+		connected ? printf( "Opponent Quit - Restart Game") : printf( "Lost Connection");
 		else printf(" You Lost Sorry ");
 	}
 	else
@@ -175,7 +177,7 @@ clientInit(Client *C)
   }
   
   proto_client_set_event_handler(C->ph, PROTO_MT_EVENT_BASE_UPDATE, update_handler );
-
+  connected = 0;
   return 1;
 }
 
@@ -254,22 +256,18 @@ game_process_hello(Client *C, int rc)
   {
   	case 1:
 		playerid = 1;
-//  		printf("Assigning Player X\n");
 		MenuString[1]='X';
 		break;
 	case 2:
 		playerid = 2;	
-//		printf("Assigning Player O\n");
 		MenuString[1]='O';
 		break;
 	default:
 		playerid = 0;
 		break;
   }
-  
   return 1;
 }
-
 
 int 
 doRPCCmd(Client *C, char c,char move) 
@@ -331,8 +329,8 @@ docmd(Client *C, char* cmd)
   //I AM NOT CHECKING FOR INCORRCT INPUT - KATSU
   //SEGMENTATION FAULT CAN OCCUR 
   //Input must follow this format: connect 255.255.255.255:80000
-  if(strncmp(cmd,"connect",sizeof("connect")-1)==0){
-	
+  if(!connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
+  {
 	char address[2][STRLEN]; 
 	
 	char* token;
@@ -350,36 +348,18 @@ docmd(Client *C, char* cmd)
   	
 	rc=doRPCCmd(C,'h',0);
   }
-  else if(strcmp(cmd,"disconnect")==0)
-  	rc=doRPCCmd(C,'g',0);
+  else if(strncmp(cmd,"disconnect",10)==0)
+  {  
+  	connected = 0;
+	rc=doRPCCmd(C,'g',0);
+  }
+  else if(strncmp(cmd,"where",5)==0)
+  {
+  	if (connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
+	else printf("Not connected\n");
+  }
   else if(move>=0 && move<10) //I don't think this is really not a safe check....
   	rc=doRPCCmd(C,'m',*cmd);
-  
-
-
-/*
-
-  switch (*cmd) {
-  case 'd':
-    proto_debug_on();
-    break;
-  case 'D':
-    proto_debug_off();
-    break;
-  case 'r':
-    rc = doRPC(C);
-    break;
-  case 'q':
-    rc=-2; 
-    break;
-  case '\n':
-    rc=1;
-    break;
-  default:
-    printf("Unkown Command\n");
-  }
-  */
-
 
   return rc;
 }
@@ -395,8 +375,6 @@ shell(void *arg)
   while (1) {
     if ((c = prompt(menu))!=0) rc=docmd(C, c);
     if (rc == -2) break; //only terminate when client issues 'q'
-    //if (rc<0) break;
-    //if (rc==1) menu=1; else menu=0;
   }
 
  if(c!=0)//If this variable was allocated in prompt(menu) please free memory
@@ -442,7 +420,8 @@ initGlobals(int argc, char argv[][STRLEN])
     strncpy(globals.host, argv[1], STRLEN);
     globals.port = atoi(argv[2]);
   }
-
+	
+   connected = 1;
 }
 
 int 
@@ -456,8 +435,6 @@ main(int argc, char **argv)
     fprintf(stderr, "ERROR: clientInit failed\n");
     return -1;
   }    
-
-  
 
   shell(&c);
 
