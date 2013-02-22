@@ -59,8 +59,6 @@ static int playerid;
 static char MenuString[] = "\n?> ";
 static Board gameboard;
 
-
-
 void board_print(Board *b)
 {
 	if ( !b->started )
@@ -159,6 +157,8 @@ void board_init(Board *b, Proto_Msg_Hdr *h)
 
 int update_handler(Proto_Session *s )
 {
+	if (playerid != 1 && playerid != 2) return 1;
+	
 	bzero(&gameboard, sizeof(Board));
 	Proto_Msg_Hdr h;
 	proto_session_hdr_unmarshall(s,&h);
@@ -306,7 +306,7 @@ doRPCCmd(Client *C, char c,char move)
       rc = proto_client_hello(C->ph);
       if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);
 	  if (rc > 0 && playerid == 0)game_process_hello(C,rc); //only process the hello if playerid has not been set
-	  else fprintf(stderr, "Your playerid has already been set. Your playerid is: %d\n", playerid);
+	  else fprintf(stderr, "Unable to set playerid - A game is likely in progress");
     }
     break;
   case 'm':
