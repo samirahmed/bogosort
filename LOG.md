@@ -12,6 +12,7 @@ Katsutoshi K, Samir A, Will S.
 - Test game logic (Will)
 - Figure out client/server logic for starting and quitting (Katsu)
 - Write up document with game specs and encoding (Will).
+
 ### Comments/Notes:
 We're practically finished. We have both the event and RPC channel working we just have a few functionalities 
 left to implement for the client such as closing the session on a disconnect, etc. 
