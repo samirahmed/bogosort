@@ -30,7 +30,7 @@
 #define STRLEN 81
 
 //Function Headers
-void initGlobals(int argc, char **argv);
+void initGlobals(int argc, char argv[][STRLEN]);//Had to Change function header to make this work
 
 
 struct Globals {
@@ -324,8 +324,22 @@ docmd(Client *C, char* cmd)
 {
   int rc = 1;
 
+
+  //I AM NOT CHECKING FOR INCORRCT INPUT - KATSU
+  //SEGMENTATION FAULT CAN OCCUR 
+  //Input must follow this format: connect 255.255.255.255:80000
   if(strncmp(cmd,"connect",sizeof("connect")-1)==0){
-  	initGlobals(2,&cmd);
+	char address[2][STRLEN]; 
+	
+	char* token;
+	token = strtok(cmd+8,":i\n\0"); //Tokenize C-String for ip
+	strcpy(address[0],token); 	//Put ip address into address
+	
+	token = strtok(NULL,":i\n\0"); //Tokenize C-String for port
+	strcpy(address[1],token); 	//put port number into address
+	
+
+	initGlobals(2,address);
   	exit(0);
   	rc=doRPCCmd(C,'h');
   }
@@ -373,6 +387,10 @@ shell(void *arg)
     //if (rc==1) menu=1; else menu=0;
   }
 
+ if(c!=0)//If this variable was allocated in prompt(menu) please free memory
+	 free(c);
+	 
+
   fprintf(stderr, "terminating\n");
   fflush(stdout);
   return NULL;
@@ -394,7 +412,7 @@ usage(char *pgm)
 }
 
 void
-initGlobals(int argc, char **argv)
+initGlobals(int argc, char argv[][STRLEN])
 {
   bzero(&globals, sizeof(globals));
 
@@ -404,7 +422,7 @@ initGlobals(int argc, char **argv)
   }
 
   if (argc==2) {
-    strncpy(globals.host, "localhost", STRLEN);
+    strncpy(globals.host, argv[0], STRLEN);
     globals.port = atoi(argv[1]);
   }
 
