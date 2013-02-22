@@ -314,7 +314,6 @@ doRPCCmd(Client *C, char c,char move)
   case 'g':
     rc = proto_client_goodbye(C->ph);
     printf("Game Over - You Quit");
-	printf("RC = %d",rc);
 	break;
   default:
     printf("%s: unknown command %c\n", __func__, c);
