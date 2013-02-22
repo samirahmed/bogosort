@@ -342,6 +342,15 @@ doRPC(Client *C)
   return rc;
 }
 
+void disconnect (Client *C)
+{
+	connected = 0;
+	Proto_Session *event = proto_client_event_session(C->ph);
+	Proto_Session *rpc = proto_client_rpc_session(C->ph);
+	close(event->fd);
+	close(rpc->fd);
+}
+
 
 int 
 docmd(Client *C, char* cmd)
@@ -396,6 +405,7 @@ docmd(Client *C, char* cmd)
 		connected = 0;
 		set_player(0);	
 		rc=doRPCCmd(C,'g',0);
+		disconnect(C);
 	  }
 	  else if(strncmp(cmd,"\n",1)==0)
 	  {
