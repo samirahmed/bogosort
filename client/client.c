@@ -358,9 +358,19 @@ docmd(Client *C, char* cmd)
 	
 	char* token;
 	token = strtok(cmd+8,":i\n\0"); //Tokenize C-String for ip
+	if (token == NULL) 
+	{
+		fprintf(stderr, "Please specify as such >connect <host>:<port>"); 
+		return -1;
+	}
 	strcpy(address[0],token); 	//Put ip address into address
 	
 	token = strtok(NULL,":i\n\0"); //Tokenize C-String for port
+	if (token == NULL) 
+	{
+		fprintf(stderr,"Please specify as such >connect <host>:<port>"); 
+		return -1;
+	}
 	strcpy(address[1],token); 	//put port number into address
 	
 
