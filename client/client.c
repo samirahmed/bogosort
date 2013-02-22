@@ -81,7 +81,7 @@ void board_print(Board *b)
 		if ( b->iwin ) printf(" You Win ");
 		else if (b->tie )printf( "Tie Game");
 		else if (b->error)
-		connected ? printf( "Opponent Quit - Restart Game") : printf( "Lost Connection");
+		connected ? printf( "Opponent Quit - Restart Game") : printf( "Lost Connection\n");
 		else printf(" You Lost Sorry ");
 	}
 	else
@@ -89,8 +89,6 @@ void board_print(Board *b)
 		if ( b->move ) printf("\n Your Move");
 		else printf("\n Waiting for other player");
 	}
-	printf("\nclient> ");
-
 }
 
 void board_init(Board *b, Proto_Msg_Hdr *h)
@@ -257,10 +255,12 @@ game_process_hello(Client *C, int rc)
   	case 1:
 		playerid = 1;
 		MenuString[1]='X';
+		printf("Connected to %s:%d : You are X", globals.host , (int) globals.port);
 		break;
 	case 2:
 		playerid = 2;	
 		MenuString[1]='O';
+		printf("Connected to %s:%d : You are O", globals.host , (int) globals.port);
 		break;
 	default:
 		playerid = 0;
@@ -292,6 +292,7 @@ doRPCCmd(Client *C, char c,char move)
   case 'g':
     rc = proto_client_goodbye(C->ph);
     printf("Game Over - You Quit");
+	printf("RC = %d",rc);
 	break;
   default:
     printf("%s: unknown command %c\n", __func__, c);
@@ -344,11 +345,14 @@ docmd(Client *C, char* cmd)
 	initGlobals(2,address);
 	// ok startup our connection to the server
 	if (startConnection(C, globals.host, globals.port, update_event_handler)<0) 
-	   fprintf(stderr, "ERROR: startConnection failed\n");
+	{
+		fprintf(stderr, "ERROR: Not able to connect to %s:%d\n",globals.host,(int)globals.port);
+		rc = -2;
+ 	 }
   	
 	rc=doRPCCmd(C,'h',0);
   }
-  else if(strncmp(cmd,"disconnect",10)==0)
+  else if(connected && strncmp(cmd,"disconnect",10)==0)
   {  
   	connected = 0;
 	rc=doRPCCmd(C,'g',0);
