@@ -254,11 +254,13 @@ game_process_hello(Client *C, int rc)
   {
   	case 1:
 		playerid = 1;
-  		printf("Assigning Player X\n");
+//  		printf("Assigning Player X\n");
+		MenuString[1]='X';
 		break;
 	case 2:
 		playerid = 2;	
-  		printf("Assigning Player O\n");
+//		printf("Assigning Player O\n");
+		MenuString[1]='O';
 		break;
 	default:
 		playerid = 0;
@@ -329,6 +331,7 @@ docmd(Client *C, char* cmd)
   //SEGMENTATION FAULT CAN OCCUR 
   //Input must follow this format: connect 255.255.255.255:80000
   if(strncmp(cmd,"connect",sizeof("connect")-1)==0){
+	
 	char address[2][STRLEN]; 
 	
 	char* token;
@@ -340,8 +343,11 @@ docmd(Client *C, char* cmd)
 	
 
 	initGlobals(2,address);
-  	exit(0);
-  	rc=doRPCCmd(C,'h');
+	// ok startup our connection to the server
+	if (startConnection(C, globals.host, globals.port, update_event_handler)<0) 
+	   fprintf(stderr, "ERROR: startConnection failed\n");
+  	
+	rc=doRPCCmd(C,'h');
   }
 
 
@@ -445,11 +451,7 @@ main(int argc, char **argv)
     return -1;
   }    
 
-  // ok startup our connection to the server
-  if (startConnection(&c, globals.host, globals.port, update_event_handler)<0) {
-    fprintf(stderr, "ERROR: startConnection failed\n");
-    return -1;
-  }
+  
 
   shell(&c);
 
