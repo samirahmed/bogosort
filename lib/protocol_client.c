@@ -264,7 +264,20 @@ proto_client_move(Proto_Client_Handle ch, int id, char data)
 extern int 
 proto_client_goodbye(Proto_Client_Handle ch)
 {
-  return do_generic_dummy_rpc(ch,PROTO_MT_REQ_BASE_GOODBYE);  
+  int rc;
+  Proto_Session *s;
+  Proto_Client *c = ch;
+  
+  s = &(c->rpc_session);
+  marshall_mtonly(s, PROTO_MT_REQ_BASE_GOODBYE);
+  rc = proto_session_send_msg(s,1);
+
+  if (rc==1) {
+  } else {
+    rc = -1;
+  }
+  
+  return rc;
 }
 
 
