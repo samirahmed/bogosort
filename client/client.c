@@ -350,9 +350,8 @@ docmd(Client *C, char* cmd)
   int move;
   move=atoi(cmd);
 
-  //I AM NOT CHECKING FOR INCORRCT INPUT - KATSU
-  //SEGMENTATION FAULT CAN OCCUR 
-  //Input must follow this format: connect 255.255.255.255:80000
+  if(strncmp(cmd,"quit",sizeof("quit")-1)==0) return -2;
+
   if(!connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
   {
 	char address[2][STRLEN]; 
