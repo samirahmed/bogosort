@@ -1,3 +1,22 @@
+## 2-18-2013
+### Attendees:
+Katsutoshi K, Samir A, Will S.
+
+### Questions:
+- What's the best way to have the client timeout? Sigalarm? 
+- Should the client session end on a disconnect? 
+
+### Todo:
+- Redo the tic-tac-toe specs so that they conform to the specs given in the assignment doc. 
+- Implement locking (Samir)
+- Test game logic (Will)
+- Figure out client/server logic for starting and quitting (Katsu)
+- Write up document with game specs and encoding (Will)
+### Comments/Notes:
+We're practically finished. We have both the event and RPC channel working we just have a few functionalities 
+left to implement for the client such as closing the session on a disconnect, etc. 
+
+
 ## 2-16-2013
 ### Attendees:
 Katsutoshi K, Samir A, Will S.
@@ -15,7 +34,7 @@ We're understanding the architecture a bit better now that we understand that th
 calls.
 #### Game Encoding:
 Player 1 and Player 2 are each given an int (PV0 and PV1 respectively).
-We number the boxes 1-9 from left to right and have the ith bit in each int correspond to box i. 
+We number the boxes 1-9 from left to right and have the ith bit in each int correspond to box i being marked by that player. 
 
 
 ## 2-12-2013
