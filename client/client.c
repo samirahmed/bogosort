@@ -32,20 +32,10 @@
 //Function Headers
 void initGlobals(int argc, char argv[][STRLEN]);//Had to Change function header to make this work
 
-
 struct Globals {
   char host[STRLEN];
   PortType port;
 } globals;
-
-static int connected;
-static int playerid;
-static char MenuString[] = "\n?> ";
-
-typedef struct ClientState  {
-  int data;
-  Proto_Client_Handle ph;
-} Client;
 
 // An Easy Struct for Printing
 typedef struct {
@@ -58,6 +48,18 @@ typedef struct {
 	int error;
 	int timestamp;
 } Board; 
+
+typedef struct ClientState  {
+  int data;
+  Proto_Client_Handle ph;
+} Client;
+
+static int connected;
+static int playerid;
+static char MenuString[] = "\n?> ";
+static Board gameboard;
+
+
 
 void board_print(Board *b)
 {
@@ -94,6 +96,7 @@ void board_print(Board *b)
 void board_init(Board *b, Proto_Msg_Hdr *h)
 {
 	bzero(b, sizeof(Board));
+  	bzero(&gameboard, sizeof(Board));
 
 	int ii;
 	
@@ -154,20 +157,23 @@ void board_init(Board *b, Proto_Msg_Hdr *h)
 
 int update_handler(Proto_Session *s )
 {
-	Board b;
-	bzero(&b, sizeof(Board));
+	bzero(&gameboard, sizeof(Board));
 	Proto_Msg_Hdr h;
 	proto_session_hdr_unmarshall(s,&h);
-	board_init(&b,&h);
-	board_print(&b);
+	board_init(&gameboard,&h);
+	board_print(&gameboard);
 	return 1;
 }
 
 static int
 clientInit(Client *C)
 {
+  // Zero global scope
   bzero(C, sizeof(Client));
+  bzero(&gameboard, sizeof(Board));
   playerid = 0;
+  connected = 0;
+  
   // initialize the client protocol subsystem
   if (proto_client_init(&(C->ph))<0) {
     fprintf(stderr, "client: main: ERROR initializing proto system\n");
@@ -175,7 +181,6 @@ clientInit(Client *C)
   }
   
   proto_client_set_event_handler(C->ph, PROTO_MT_EVENT_BASE_UPDATE, update_handler );
-  connected = 0;
   return 1;
 }
 
@@ -245,6 +250,26 @@ game_process_move(Client *C)
 	return 1;
 }
 
+void 
+set_player(int ii)
+{
+	switch (ii)
+	{
+		case 1:
+			playerid = 1;
+			MenuString[1] = 'X';
+			break;
+		case 2:
+			playerid = 2;	
+			MenuString[1]='O';
+			break;
+		default:
+			playerid = 0;	
+			MenuString[1]='?';
+			break;
+	}
+}
+
 int
 game_process_hello(Client *C, int rc)
 {
@@ -253,17 +278,16 @@ game_process_hello(Client *C, int rc)
   switch ( rc )
   {
   	case 1:
-		playerid = 1;
-		MenuString[1]='X';
+		set_player(1);
 		printf("Connected to %s:%d : You are X", globals.host , (int) globals.port);
 		break;
 	case 2:
-		playerid = 2;	
-		MenuString[1]='O';
+		set_player(2);
 		printf("Connected to %s:%d : You are O", globals.host , (int) globals.port);
 		break;
 	default:
-		playerid = 0;
+		set_player(0);
+		printf("Unable to connect to game");
 		break;
   }
   return 1;
@@ -279,13 +303,11 @@ doRPCCmd(Client *C, char c,char move)
     {
       rc = proto_client_hello(C->ph);
       if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);
-      /*if (rc == 0xdeadbeef) printf("Server Ignored Request \n");*/
 	  if (rc > 0 && playerid == 0)game_process_hello(C,rc); //only process the hello if playerid has not been set
 	  else fprintf(stderr, "Your playerid has already been set. Your playerid is: %d\n", playerid);
     }
     break;
   case 'm':
-    // scanf("%c", &c); //Position where player wants to be marked will be passed into doRPCCmd
     rc = proto_client_move(C->ph, playerid, move);
 	if (rc > 0) game_process_move(C);
     break;
@@ -352,18 +374,32 @@ docmd(Client *C, char* cmd)
   	
 	rc=doRPCCmd(C,'h',0);
   }
-  else if(connected && strncmp(cmd,"disconnect",10)==0)
-  {  
-  	connected = 0;
-	rc=doRPCCmd(C,'g',0);
-  }
   else if(strncmp(cmd,"where",5)==0)
   {
   	if (connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
 	else printf("Not connected\n");
   }
-  else if(move>=0 && move<10) //I don't think this is really not a safe check....
-  	rc=doRPCCmd(C,'m',*cmd);
+  else if( connected )
+  {
+	  if( strncmp(cmd,"disconnect",10)==0)
+	  {  
+		connected = 0;
+		set_player(0);	
+		rc=doRPCCmd(C,'g',0);
+	  }
+	  else if(strncmp(cmd,"\n",1)==0)
+	  {
+		board_print(&gameboard);
+	  }
+	  else if(move>=0 && move<9) //I don't think this is really not a safe check....
+	  { 
+	  	rc=doRPCCmd(C,'m',*cmd);
+	  }
+  }
+  else
+  {
+  	printf("Please Connect First\n");
+  }
 
   return rc;
 }
