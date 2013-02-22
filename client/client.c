@@ -326,9 +326,6 @@ docmd(Client *C, char* cmd)
 {
   int rc = 1;
   int move;
-  char moveChar[STRLEN];
-  strncpy(moveChar,cmd,1);
-  *(moveChar+1) = '\0';
   move=atoi(cmd);
 
   //I AM NOT CHECKING FOR INCORRCT INPUT - KATSU
@@ -356,7 +353,7 @@ docmd(Client *C, char* cmd)
   else if(strcmp(cmd,"disconnect")==0)
   	rc=doRPCCmd(C,'g',0);
   else if(move>=0 && move<10) //I don't think this is really not a safe check....
-  	rc=doRPCCmd(C,'m',*moveChar);
+  	rc=doRPCCmd(C,'m',*cmd);
   
 
 
