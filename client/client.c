@@ -272,7 +272,7 @@ game_process_hello(Client *C, int rc)
 
 
 int 
-doRPCCmd(Client *C, char c) 
+doRPCCmd(Client *C, char c,char move) 
 {
   int rc=-1;
 
@@ -287,8 +287,8 @@ doRPCCmd(Client *C, char c)
     }
     break;
   case 'm':
-    scanf("%c", &c);
-    rc = proto_client_move(C->ph, playerid, c);
+    // scanf("%c", &c); //Position where player wants to be marked will be passed into doRPCCmd
+    rc = proto_client_move(C->ph, playerid, move);
 	if (rc > 0) game_process_move(C);
     break;
   case 'g':
@@ -313,7 +313,7 @@ doRPC(Client *C)
   printf("enter (h|m<c>|g): ");
   /*getchar();*/
   scanf("%c", &c);
-  rc=doRPCCmd(C,c);
+  rc=doRPCCmd(C,c,0);
 
   if(proto_debug())fprintf(stderr,"doRPC: rc=0x%x\n", rc);
 
@@ -325,7 +325,8 @@ int
 docmd(Client *C, char* cmd)
 {
   int rc = 1;
-
+  int move;
+  move=atoi(cmd);
 
   //I AM NOT CHECKING FOR INCORRCT INPUT - KATSU
   //SEGMENTATION FAULT CAN OCCUR 
@@ -347,10 +348,13 @@ docmd(Client *C, char* cmd)
 	if (startConnection(C, globals.host, globals.port, update_event_handler)<0) 
 	   fprintf(stderr, "ERROR: startConnection failed\n");
   	
-	rc=doRPCCmd(C,'h');
+	rc=doRPCCmd(C,'h',0);
   }
-
-
+  else if(strcmp(cmd,"disconnect")==0)
+  	rc=doRPCCmd(C,'g',0);
+  else if(move>=0 && move<10) //I don't think this is really not a safe check....
+  	rc=doRPCCmd(C,'m',1);
+  
 
 
 /*
@@ -375,6 +379,8 @@ docmd(Client *C, char* cmd)
     printf("Unkown Command\n");
   }
   */
+
+
   return rc;
 }
 
