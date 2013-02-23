@@ -67,16 +67,9 @@ typedef union {
 
 typedef struct {
   //player 1 (X) marking states
-  Proto_PV0    v0;
-  // 1st byte: row 1
-  // never mark the most significant bit in the byte
-  // so 0 1 1 1: all of row 1 marked
-  // 0 0 1 1: two right-hand boxes marked
-  // 0 1 0 1: first and 3rd box marked etc. 
-  // 2nd byte: row 2
-  // 3rd byte: row 3
-  
-  
+  //the player has marked square i if the ith bit 
+  // in the integer has been set, else the player has not marked that square
+  Proto_PV0    v0;  
   //player 2 (O) marking states
   //same encoding as above
   Proto_PV1    v1;
