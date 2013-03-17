@@ -1,3 +1,19 @@
+## 3-16-2013
+### Attendees:
+Samir A, Will S.
+
+### Questions:
+- Where should we store the player's location for each client? 
+
+### Todo:
+- Work on the server to implement the load functionality from HW 3 section 1.2.1 (Will)
+- Work on the client to implement the functionality from HW3 section 1.2.2 (Samir)
+
+### Comments/Notes:
+We finished all of the architecture documentation. See the docs subdirectory.
+
+
+
 ## 2-18-2013
 ### Attendees:
 Katsutoshi K, Samir A, Will S.
