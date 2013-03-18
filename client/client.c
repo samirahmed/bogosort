@@ -37,134 +37,23 @@ struct Globals {
   PortType port;
 } globals;
 
-// An Easy Struct for Printing
-typedef struct {
-	char pos[9];
-	int move;
-	int tie;
-	int over;
-	int started;
-	int iwin;
-	int error;
-	int timestamp;
-} Board; 
-
 typedef struct ClientState  {
   int data;
   Proto_Client_Handle ph;
 } Client;
 
+struct Request{
+  char cmd;
+  int team;
+  int x;
+  int y;
+} request;
+
 static int connected;
-static int playerid;
 static char MenuString[] = "\n?> ";
-static Board gameboard;
-
-void board_print(Board *b)
-{
-	if ( !b->started )
-	{
-		printf( "\nGame not started\n");
-		return;
-	}
-
-	printf("\n");
-	printf(" %c | %c | %c \n", b->pos[0] , b->pos[1] , b->pos[2] );
-	printf("---|---|--- \n");
-	printf(" %c | %c | %c \n", b->pos[3] , b->pos[4] , b->pos[5] );
-	printf("---|---|--- \n");
-	printf(" %c | %c | %c \n", b->pos[6] , b->pos[7] , b->pos[8] );
-
-	if ( b->over )
-	{
-	 	printf("\n Game Over - ");
-
-		if ( b->iwin ) printf(" You Win\n");
-		else if (b->tie )printf( "Tie Game\n");
-		else if (b->error)
-		connected ? printf( "Opponent Quit - Restart Game") : printf( "Lost Connection\n");
-		else printf(" You Lost -");
-
-		printf (" - Disconnect and reconnect to play again ");
-	}
-	else
-	{
-		if ( b->move ) printf("\n Your Move");
-		else printf("\n Waiting for other player");
-	}
-}
-
-void board_init(Board *b, Proto_Msg_Hdr *h)
-{
-	bzero(b, sizeof(Board));
-  	bzero(&gameboard, sizeof(Board));
-
-	int ii;
-	
-	for( ii =0 ; ii < 9; ii++ ) b->pos[ii] = (char)( ii + 48); 
-
-	int player = h->pstate.v0.raw;
-	int mask = 1;
-	
-	for( ii =0 ; ii < 9; ii++ )
-	{
-		if ( (player & mask)) b->pos[ii]='X';
-		player = player >> 1;
-	}
-
-	player = h->pstate.v1.raw;
-	for( ii =0 ; ii < 9; ii++ )
-	{
-		if ( (player & mask)) b->pos[ii]='O';
-		player = player >> 1;
-	}
-	
-	b->move = 0;
-	b->started = 1;
-	b->over = 0;
-	b->iwin = 0;
-	b->tie = 0;
-	b->error =0;
-	switch ( h->gstate.v0.raw )
-	{
-		case 0:
-			b->started = 0;
-			break;
-		case 1: 
-			b->move = (1 == playerid );
-			break;
-		case 2: 
-			b->move = (2 == playerid );
-			break;
-		case 3:
-			b->iwin = (1 ==playerid);
-			b->over = 1;
-			break;
-		case 4:
-			b->iwin = (2 ==playerid);
-			b->over = 1;
-			break;
-		case 5:
-			b->over = 1;
-			b->tie = 1;
-			break;
-		case 6:
-			b->over = 1;
-			b->error = 1;
-		default:
-			break;
-	}
-}
 
 int update_handler(Proto_Session *s )
 {
-	if (playerid != 1 && playerid != 2) return 1;
-	
-	bzero(&gameboard, sizeof(Board));
-	Proto_Msg_Hdr h;
-	proto_session_hdr_unmarshall(s,&h);
-	board_init(&gameboard,&h);
-	board_print(&gameboard);
-	return 1;
 }
 
 static int
@@ -172,8 +61,8 @@ clientInit(Client *C)
 {
   // Zero global scope
   bzero(C, sizeof(Client));
-  bzero(&gameboard, sizeof(Board));
-  playerid = 0;
+
+  // Set connected state to zero
   connected = 0;
   
   // initialize the client protocol subsystem
@@ -181,7 +70,8 @@ clientInit(Client *C)
     fprintf(stderr, "client: main: ERROR initializing proto system\n");
     return -1;
   }
-  
+ 
+  // Specify the event channel handlers
   proto_client_set_event_handler(C->ph, PROTO_MT_EVENT_BASE_UPDATE, update_handler );
   return 1;
 }
@@ -202,7 +92,7 @@ startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
 {
   if (globals.host[0]!=0 && globals.port!=0) {
     int res;
-	if (( res = proto_client_connect(C->ph, host, port))!=0) {
+  if (( res = proto_client_connect(C->ph, host, port))!=0) {
       fprintf(stderr, "failed to connect\n : Error code %d",res);
       return -1;
     }
@@ -210,7 +100,7 @@ startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
 #if 0
     if (h != NULL) {
       proto_client_set_event_handler(C->ph, PROTO_MT_EVENT_BASE_UPDATE, 
-				     h);
+             h);
     }
 #endif
     return 1;
@@ -228,48 +118,33 @@ prompt(int menu)
   int bytes_read;
   int nbytes = 0;
   char *my_string;
-  bytes_read = getline (&my_string, &nbytes, stdin);
+  bytes_read = getline(&my_string, &nbytes, stdin);
 
   if(bytes_read>0)
-	  return my_string;
+    return my_string;
   else
-	  return 0;
+    return 0;
 
 }
 
 int 
 game_process_move(Client *C)
 {
-	int data;
-	Proto_Session *s;
-	s = proto_client_rpc_session(C->ph);
-	proto_session_body_unmarshall_int(s,0,&data);
-	if (proto_debug()) fprintf(stderr," Move response : %d",data);
-    if (data == 0xdeadbeef) printf(" Server Ignored Request \n");
-	if (data == 0) printf(" Not Your Move! Wait Your Turn \n");
-	if (data < 0) printf(" Invalid Move! Try Again \n");
-	if (data > 0) printf(" Move Accepted! \n");
-	return 1;
+  int data;
+  Proto_Session *s;
+  s = proto_client_rpc_session(C->ph);
+  proto_session_body_unmarshall_int(s,0,&data);
+  if (proto_debug()) fprintf(stderr," Move response : %d",data);
+    /*if (data == 0xdeadbeef) printf(" Server Ignored Request \n");*/
+  /*if (data == 0) printf(" Not Your Move! Wait Your Turn \n");*/
+  /*if (data < 0) printf(" Invalid Move! Try Again \n");*/
+  /*if (data > 0) printf(" Move Accepted! \n");*/
+  return 1;
 }
 
 void 
 set_player(int ii)
 {
-	switch (ii)
-	{
-		case 1:
-			playerid = 1;
-			MenuString[1] = 'X';
-			break;
-		case 2:
-			playerid = 2;	
-			MenuString[1]='O';
-			break;
-		default:
-			playerid = 0;	
-			MenuString[1]='?';
-			break;
-	}
 }
 
 int
@@ -279,18 +154,18 @@ game_process_hello(Client *C, int rc)
   
   switch ( rc )
   {
-  	case 1:
-		set_player(1);
-		printf("Connected to %s:%d : You are X", globals.host , (int) globals.port);
-		break;
-	case 2:
-		set_player(2);
-		printf("Connected to %s:%d : You are O", globals.host , (int) globals.port);
-		break;
-	default:
-		set_player(0);
-		printf(" - Unable to connect to game ");
-		break;
+    case 1:
+    set_player(1);
+    printf("Connected to %s:%d : You are X", globals.host , (int) globals.port);
+    break;
+  case 2:
+    set_player(2);
+    printf("Connected to %s:%d : You are O", globals.host , (int) globals.port);
+    break;
+  default:
+    set_player(0);
+    printf(" - Unable to connect to game ");
+    break;
   }
   return 1;
 }
@@ -305,18 +180,18 @@ doRPCCmd(Client *C, char c,char move)
     {
       rc = proto_client_hello(C->ph);
       if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);
-	  if (rc > 0 && playerid == 0)game_process_hello(C,rc); //only process the hello if playerid has not been set
-	  else fprintf(stderr, "Unable to set playerid - A game is likely in progress");
+    if (rc > 0)game_process_hello(C,rc);
+    else fprintf(stderr, "Unable to connect");
     }
     break;
   case 'm':
-    rc = proto_client_move(C->ph, playerid, move);
-	if (rc > 0) game_process_move(C);
+    rc = proto_client_move(C->ph, 0, move);
+  if (rc > 0) game_process_move(C);
     break;
   case 'g':
     rc = proto_client_goodbye(C->ph);
     printf("Game Over - You Quit");
-	break;
+  break;
   default:
     printf("%s: unknown command %c\n", __func__, c);
   }
@@ -344,81 +219,108 @@ doRPC(Client *C)
 
 void disconnect (Client *C)
 {
-	connected = 0;
-	Proto_Session *event = proto_client_event_session(C->ph);
-	Proto_Session *rpc = proto_client_rpc_session(C->ph);
-	close(event->fd);
-	close(rpc->fd);
+  connected = 0;
+  Proto_Session *event = proto_client_event_session(C->ph);
+  Proto_Session *rpc = proto_client_rpc_session(C->ph);
+  close(event->fd);
+  close(rpc->fd);
 }
 
-
-int 
-docmd(Client *C, char* cmd)
+int doConnect(Client *C, char* cmd)
 {
-  int rc = 1;
-  int move;
-  move=atoi(cmd);
+  int rc;
+
+  char address[2][STRLEN]; 
+
+  char* token;
+  token = strtok(cmd+8,":i\n\0"); //Tokenize C-String for ip
+  if (token == NULL) 
+  {
+    fprintf(stderr, "Please specify as such >connect <host>:<port>"); 
+    return -1;
+  }
+  strcpy(address[0],token);   //Put ip address into address
+
+  token = strtok(NULL,":i\n\0"); //Tokenize C-String for port
+  if (token == NULL) 
+  {
+    fprintf(stderr,"Please specify as such >connect <host>:<port>"); 
+    return -1;
+  }
+  strcpy(address[1],token);   //put port number into address
+
+  initGlobals(2,address);
+
+  // ok startup our connection to the server
+  connected = 1;      //Change connected state to true
+  if (startConnection(C, globals.host, globals.port, update_event_handler)<0) 
+  {
+    fprintf(stderr, "ERROR: Not able to connect to %s:%d\n",globals.host,(int)globals.port);
+    connected =0;
+	return -2;
+  }
+  rc=doRPCCmd(C,'h',0);
+
+  return rc;
+}
+
+int docmd(Client *C, char* cmd)
+{
+  int rc = 1;            // Set up return code var
+  bzero(&request,sizeof(request)); // Set up request
 
   if(strncmp(cmd,"quit",sizeof("quit")-1)==0) return -2;
 
   if(!connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
   {
-	char address[2][STRLEN]; 
-	
-	char* token;
-	token = strtok(cmd+8,":i\n\0"); //Tokenize C-String for ip
-	if (token == NULL) 
-	{
-		fprintf(stderr, "Please specify as such >connect <host>:<port>"); 
-		return -1;
-	}
-	strcpy(address[0],token); 	//Put ip address into address
-	
-	token = strtok(NULL,":i\n\0"); //Tokenize C-String for port
-	if (token == NULL) 
-	{
-		fprintf(stderr,"Please specify as such >connect <host>:<port>"); 
-		return -1;
-	}
-	strcpy(address[1],token); 	//put port number into address
-	
-
-	initGlobals(2,address);
-	// ok startup our connection to the server
-	if (startConnection(C, globals.host, globals.port, update_event_handler)<0) 
-	{
-		fprintf(stderr, "ERROR: Not able to connect to %s:%d\n",globals.host,(int)globals.port);
-		rc = -2;
- 	 }
-  	
-	rc=doRPCCmd(C,'h',0);
+   	rc = doConnect(C, cmd);
   }
-  else if(strncmp(cmd,"where",5)==0)
+  else if(strncmp(cmd,"where",sizeof("where")-1)==0)
   {
-  	if (connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
-	else printf("Not connected\n");
+    if (connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
+  else printf("Not connected\n");
   }
   else if( connected )
   {
-	  if( strncmp(cmd,"disconnect",10)==0)
-	  {  
-		connected = 0;
-		set_player(0);	
-		rc=doRPCCmd(C,'g',0);
-		disconnect(C);
-	  }
-	  else if(strncmp(cmd,"\n",1)==0)
-	  {
-		board_print(&gameboard);
-	  }
-	  else if(move>=0 && move<9) //I don't think this is really not a safe check....
-	  { 
-	  	rc=doRPCCmd(C,'m',*cmd);
-	  }
+    if( strncmp(cmd,"disconnect",sizeof("disconnect")-1)==0)
+    {  
+    connected = 0;
+    set_player(0);  
+    rc=doRPCCmd(C,'g',0);
+    disconnect(C);
+    }
+    else if( strncmp(cmd,"numhome",sizeof("numhome")-1)==0)
+    {
+      rc=doRPCCmd(C,'H',0);
+    }
+    else if( strncmp(cmd,"numjail",sizeof("numjail")-1)==0)
+    {
+      rc=doRPCCmd(C,'J',0); 
+    }
+    else if( strncmp(cmd,"numwall",sizeof("numwall")-1)==0)
+    {
+      rc=doRPCCmd(C,'W',0); 
+    }
+    else if( strncmp(cmd,"numfloor",sizeof("numfloor")-1)==0)
+    {
+      rc=doRPCCmd(C,'F',0);  
+    }
+    else if( strncmp(cmd,"dim",sizeof("dim")-1)==0)
+    {
+      rc=doRPCCmd(C,'D',0); 
+    }
+    else if( strncmp(cmd,"cinfo",sizeof("cinfo")-1)==0)
+    {
+      rc=doRPCCmd(C,'C',0);
+    }
+    else if( strncmp(cmd,"dump",sizeof("dump")-1)==0)
+    {
+      rc=doRPCCmd(C,'d',0);
+    }
   }
   else
   {
-  	printf("Please Connect First\n");
+    printf("Please connect first i.e 'connect <host>:<port>'\n");
   }
 
   return rc;
@@ -435,12 +337,11 @@ shell(void *arg)
   while (1) {
     if ((c = prompt(menu))!=0) rc=docmd(C, c);
     if (rc == -2) break; //only terminate when client issues 'q'
+  
+  //If this variable was allocated in prompt(menu) please free memory
+  if(c!=0) free(c);
   }
-
- if(c!=0)//If this variable was allocated in prompt(menu) please free memory
-	 free(c);
-	 
-
+  
   fprintf(stderr, "terminating\n");
   fflush(stdout);
   return NULL;
@@ -452,12 +353,12 @@ usage(char *pgm)
   fprintf(stderr, "USAGE: %s <port|<<host port> [shell] [gui]>>\n"
            "  port     : rpc port of a game server if this is only argument\n"
            "             specified then host will default to localhost and\n"
-	   "             only the graphical user interface will be started\n"
+         "             only the graphical user interface will be started\n"
            "  host port: if both host and port are specifed then the game\n"
-	   "examples:\n" 
+         "examples:\n" 
            " %s 12345 : starts client connecting to localhost:12345\n"
-	  " %s localhost 12345 : starts client connecting to locaalhost:12345\n",
-	   pgm, pgm, pgm);
+         " %s localhost 12345 : starts client connecting to locaalhost:12345\n",
+     pgm, pgm, pgm);
  
 }
 
@@ -480,17 +381,14 @@ initGlobals(int argc, char argv[][STRLEN])
     strncpy(globals.host, argv[1], STRLEN);
     globals.port = atoi(argv[2]);
   }
-	
-   connected = 1;
+  
 }
 
 int 
 main(int argc, char **argv)
 {
   Client c;
-	
- // initGlobals(argc, argv); //NOT NEEDED - Katsu
-
+  
   if (clientInit(&c) < 0) {
     fprintf(stderr, "ERROR: clientInit failed\n");
     return -1;
