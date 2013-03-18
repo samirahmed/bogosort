@@ -65,7 +65,7 @@ clientInit(Client *C)
   bzero(C, sizeof(Client));
 
   // Set connected state to zero
-  connected = 0;
+  connected = 1; // CHANGE THIS TO ZERO (ONLY 1 FOR DEBUGGING)
   
   // initialize the client protocol subsystem
   if (proto_client_init(&(C->ph))<0) {
@@ -130,49 +130,6 @@ prompt(int menu)
 }
 
 int 
-game_process_move(Client *C)
-{
-  int data;
-  Proto_Session *s;
-  s = proto_client_rpc_session(C->ph);
-  proto_session_body_unmarshall_int(s,0,&data);
-  if (proto_debug()) fprintf(stderr," Move response : %d",data);
-    /*if (data == 0xdeadbeef) printf(" Server Ignored Request \n");*/
-  /*if (data == 0) printf(" Not Your Move! Wait Your Turn \n");*/
-  /*if (data < 0) printf(" Invalid Move! Try Again \n");*/
-  /*if (data > 0) printf(" Move Accepted! \n");*/
-  return 1;
-}
-
-void 
-set_player(int ii)
-{
-}
-
-int
-game_process_hello(Client *C, int rc)
-{
-  Proto_Session *s;
-  
-  switch ( rc )
-  {
-    case 1:
-    set_player(1);
-    printf("Connected to %s:%d : You are X", globals.host , (int) globals.port);
-    break;
-  case 2:
-    set_player(2);
-    printf("Connected to %s:%d : You are O", globals.host , (int) globals.port);
-    break;
-  default:
-    set_player(0);
-    printf(" - Unable to connect to game ");
-    break;
-  }
-  return 1;
-}
-
-int 
 doRPCCmd() 
 {
   int rc=-1;
@@ -193,16 +150,46 @@ doRPCCmd()
   switch (c) {
   case 'h':  
     {
-     rc = proto_client_hello(C->ph);
-     if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);
-     if (rc < 0) fprintf(stderr, "Unable to connect");
+     fprintf(stderr,"HELLO COMMAND ISSUED");
+     rc = 1;
+     /*rc = proto_client_hello(C->ph);*/
+     /*if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);*/
+     /*if (rc < 0) fprintf(stderr, "Unable to connect");*/
     }
     break;
-  case 'm':
+  case 'C':
+      fprintf(stderr,"Cinfo command issued x = %d, y= %d",x,y);
+      rc = 1;
+    break;
+  case 'D':
+     fprintf(stderr,"Dimension COMMAND ISSUED");
+     rc = 1;
+    break;
+  case 'J':
+     fprintf(stderr,"numjail %d Command Issued",team);
+     rc =1;
+    break;
+  case 'H':
+     fprintf(stderr,"numhome %d Command Issued",team);
+     rc =1;
+    break;
+  case 'd':
+     fprintf(stderr,"Dump server map issued");
+     rc =1;
+    break;
+  case 'F':
+     fprintf(stderr,"num floors command issued");
+     rc =1;
+    break;
+  case 'W':
+     fprintf(stderr,"num walls command issued");
+     rc =1;
     break;
   case 'g':
-    rc = proto_client_goodbye(C->ph);
-    printf("Game Over - You Quit");
+     fprintf(stderr,"Goodbye COMMAND ISSUED");
+     rc = 1;
+    /*rc = proto_client_goodbye(C->ph);*/
+    /*printf("Game Over - You Quit");*/
     break;
   default:
     printf("%s: unknown command %c\n", __func__, c);
@@ -294,14 +281,14 @@ int docmd(Client *C, char* cmd)
     {
       int team;
       char* token;
+      
+      token = strtok(cmd+(sizeof("numhome")-1),":i \n\0");
       if (token == NULL )
       {
         fprintf(stderr,"Please specify team number 1 or 2 e.g '>numhome 2'"); 
         return rc=-1;
       }
-
-      token = strtok(cmd+(sizeof("numhome")-1),":i \n\0");
-
+      
       team = atoi(token);
       if ( team!=1 && team!=2 )
       {
@@ -317,14 +304,14 @@ int docmd(Client *C, char* cmd)
     {
       int team;
       char* token;
+      
+      token = strtok(cmd+(sizeof("numjail")-1),":i \n\0");
       if (token == NULL )
       {
         fprintf(stderr,"Please specify team number 1 or 2 e.g '>numhome 2'"); 
         return rc=-1;
       }
-
-      token = strtok(cmd+(sizeof("numjail")-1),":i \n\0");
-
+      
       team = atoi(token);
       if ( team!=1 && team!=2 )
       {
