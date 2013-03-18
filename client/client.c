@@ -43,6 +43,7 @@ typedef struct ClientState  {
 } Client;
 
 struct Request{
+  Client * client;
   char cmd;
   int team;
   int x;
@@ -52,8 +53,9 @@ struct Request{
 static int connected;
 static char MenuString[] = "\n?> ";
 
-int update_handler(Proto_Session *s )
+static int update_handler(Proto_Session *s )
 {
+    return 0;
 }
 
 static int
@@ -171,49 +173,43 @@ game_process_hello(Client *C, int rc)
 }
 
 int 
-doRPCCmd(Client *C, char c,char move) 
+doRPCCmd() 
 {
   int rc=-1;
+ 
+  // Unpack the request
+  Client *C;
+  int team;
+  int x;
+  int y;
+  char c;
+
+  C = request.client;
+  c = request.cmd;
+  x = request.x;
+  y = request.y;
+  team = request.team;
 
   switch (c) {
   case 'h':  
     {
-      rc = proto_client_hello(C->ph);
-      if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);
-    if (rc > 0)game_process_hello(C,rc);
-    else fprintf(stderr, "Unable to connect");
+     rc = proto_client_hello(C->ph);
+     if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);
+     if (rc < 0) fprintf(stderr, "Unable to connect");
     }
     break;
   case 'm':
-    rc = proto_client_move(C->ph, 0, move);
-  if (rc > 0) game_process_move(C);
     break;
   case 'g':
     rc = proto_client_goodbye(C->ph);
     printf("Game Over - You Quit");
-  break;
+    break;
   default:
     printf("%s: unknown command %c\n", __func__, c);
   }
   // NULL MT OVERRIDE ;-)
   if(proto_debug()) fprintf(stderr,"%s: rc=0x%x\n", __func__, rc);
   if (rc == 0xdeadbeef) rc=1;
-  return rc;
-}
-
-int
-doRPC(Client *C)
-{
-  int rc;
-  char c;
-
-  printf("enter (h|m<c>|g): ");
-  /*getchar();*/
-  scanf("%c", &c);
-  rc=doRPCCmd(C,c,0);
-
-  if(proto_debug())fprintf(stderr,"doRPC: rc=0x%x\n", rc);
-
   return rc;
 }
 
@@ -257,9 +253,12 @@ int doConnect(Client *C, char* cmd)
   {
     fprintf(stderr, "ERROR: Not able to connect to %s:%d\n",globals.host,(int)globals.port);
     connected =0;
-	return -2;
+    return -2;
   }
-  rc=doRPCCmd(C,'h',0);
+
+  // configure request parameters
+  request.cmd = 'h';
+  rc = doRPCCmd();
 
   return rc;
 }
@@ -268,12 +267,13 @@ int docmd(Client *C, char* cmd)
 {
   int rc = 1;            // Set up return code var
   bzero(&request,sizeof(request)); // Set up request
+  request.client = C;
 
   if(strncmp(cmd,"quit",sizeof("quit")-1)==0) return -2;
 
   if(!connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
   {
-   	rc = doConnect(C, cmd);
+    rc = doConnect(C, cmd);
   }
   else if(strncmp(cmd,"where",sizeof("where")-1)==0)
   {
@@ -284,38 +284,104 @@ int docmd(Client *C, char* cmd)
   {
     if( strncmp(cmd,"disconnect",sizeof("disconnect")-1)==0)
     {  
-    connected = 0;
-    set_player(0);  
-    rc=doRPCCmd(C,'g',0);
+    
+    request.cmd = 'g';
+    rc=doRPCCmd();
+    
     disconnect(C);
     }
     else if( strncmp(cmd,"numhome",sizeof("numhome")-1)==0)
     {
-      rc=doRPCCmd(C,'H',0);
+      int team;
+      char* token;
+      if (token == NULL )
+      {
+        fprintf(stderr,"Please specify team number 1 or 2 e.g '>numhome 2'"); 
+        return rc=-1;
+      }
+
+      token = strtok(cmd+(sizeof("numhome")-1),":i \n\0");
+
+      team = atoi(token);
+      if ( team!=1 && team!=2 )
+      {
+        fprintf(stderr, "Please specify team number 1 or 2 e.g '>numhome 2'");
+        return -1;
+      }
+
+      request.cmd = 'H';
+      request.team = team;;
+      rc=doRPCCmd();
     }
     else if( strncmp(cmd,"numjail",sizeof("numjail")-1)==0)
     {
-      rc=doRPCCmd(C,'J',0); 
+      int team;
+      char* token;
+      if (token == NULL )
+      {
+        fprintf(stderr,"Please specify team number 1 or 2 e.g '>numhome 2'"); 
+        return rc=-1;
+      }
+
+      token = strtok(cmd+(sizeof("numjail")-1),":i \n\0");
+
+      team = atoi(token);
+      if ( team!=1 && team!=2 )
+      {
+        fprintf(stderr, "Please specify team number 1 or 2 e.g '>numhome 2'");
+        return -1;
+      }
+
+      request.cmd = 'J';
+      request.team = team;
+      rc=doRPCCmd(); 
     }
     else if( strncmp(cmd,"numwall",sizeof("numwall")-1)==0)
     {
-      rc=doRPCCmd(C,'W',0); 
+      request.cmd = 'W';
+      rc=doRPCCmd(); 
     }
     else if( strncmp(cmd,"numfloor",sizeof("numfloor")-1)==0)
     {
-      rc=doRPCCmd(C,'F',0);  
+      request.cmd = 'F';
+      rc=doRPCCmd();  
     }
     else if( strncmp(cmd,"dim",sizeof("dim")-1)==0)
     {
-      rc=doRPCCmd(C,'D',0); 
+      request.cmd = 'D';
+      rc=doRPCCmd(); 
     }
     else if( strncmp(cmd,"cinfo",sizeof("cinfo")-1)==0)
     {
-      rc=doRPCCmd(C,'C',0);
+      int x;
+      int y;
+      char * token;
+      
+      token = strtok(cmd+(sizeof("cinfo")-1), ":i, \n\0");
+      if (token == NULL )
+      {
+        fprintf(stderr, "Please specify cell x and y e.g '>cinfo 25,125'");
+        return -1;
+      }
+     
+      x = atoi(token);
+      token = strtok(NULL, ":i, \n\0");
+      if (token == NULL)
+      {
+        fprintf(stderr, "Please specify cell x and y e.g '>cinfo 25,125'");
+        return -1;
+      }
+      y = atoi(token);
+
+      request.cmd = 'C';
+      request.x = x;
+      request.y = y;
+      rc=doRPCCmd();
     }
     else if( strncmp(cmd,"dump",sizeof("dump")-1)==0)
     {
-      rc=doRPCCmd(C,'d',0);
+      request.cmd = 'd';
+      rc=doRPCCmd();
     }
   }
   else
