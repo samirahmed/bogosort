@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../lib/types.h"
+#include "../lib/protocol.h"
 #include "../lib/protocol_client.h"
 #include "../lib/protocol_utils.h"
 
@@ -44,7 +45,7 @@ typedef struct ClientState  {
 
 struct Request{
   Client * client;
-  char cmd;
+  Proto_Msg_Types cmd;
   int team;
   int x;
   int y;
@@ -139,16 +140,16 @@ doRPCCmd()
   int team;
   int x;
   int y;
-  char c;
+  Proto_Msg_Types type;
 
   C = request.client;
-  c = request.cmd;
+  type = request.cmd;
   x = request.x;
   y = request.y;
   team = request.team;
 
-  switch (c) {
-  case 'h':  
+  switch (type) {
+  case PROTO_MT_REQ_BASE_HELLO:  
     {
      fprintf(stderr,"HELLO COMMAND ISSUED");
      rc = 1;
@@ -157,42 +158,42 @@ doRPCCmd()
      /*if (rc < 0) fprintf(stderr, "Unable to connect");*/
     }
     break;
-  case 'C':
+  case PROTO_MT_REQ_BASE_CINFO:
       fprintf(stderr,"Cinfo command issued x = %d, y= %d",x,y);
       rc = 1;
     break;
-  case 'D':
+  case PROTO_MT_REQ_BASE_DIM:
      fprintf(stderr,"Dimension COMMAND ISSUED");
      rc = 1;
     break;
-  case 'J':
+  case PROTO_MT_REQ_BASE_NUMJAIL:
      fprintf(stderr,"numjail %d Command Issued",team);
      rc =1;
     break;
-  case 'H':
+  case PROTO_MT_REQ_BASE_NUMHOME:
      fprintf(stderr,"numhome %d Command Issued",team);
      rc =1;
     break;
-  case 'd':
+  case PROTO_MT_REQ_BASE_DUMP:
      fprintf(stderr,"Dump server map issued");
      rc =1;
     break;
-  case 'F':
+  case PROTO_MT_REQ_BASE_NUMFLOOR:
      fprintf(stderr,"num floors command issued");
      rc =1;
     break;
-  case 'W':
+  case PROTO_MT_REQ_BASE_NUMWALL:
      fprintf(stderr,"num walls command issued");
      rc =1;
     break;
-  case 'g':
+  case PROTO_MT_REQ_BASE_GOODBYE:
      fprintf(stderr,"Goodbye COMMAND ISSUED");
      rc = 1;
     /*rc = proto_client_goodbye(C->ph);*/
     /*printf("Game Over - You Quit");*/
     break;
   default:
-    printf("%s: unknown command %c\n", __func__, c);
+    printf("%s: unknown command %d\n", __func__, type);
   }
   // NULL MT OVERRIDE ;-)
   if(proto_debug()) fprintf(stderr,"%s: rc=0x%x\n", __func__, rc);
@@ -244,7 +245,7 @@ int doConnect(Client *C, char* cmd)
   }
 
   // configure request parameters
-  request.cmd = 'h';
+  request.cmd = PROTO_MT_REQ_BASE_HELLO;
   rc = doRPCCmd();
 
   return rc;
@@ -252,7 +253,7 @@ int doConnect(Client *C, char* cmd)
 
 int docmd(Client *C, char* cmd)
 {
-  int rc = 1;            // Set up return code var
+  int rc = 1;                      // Set up return code var
   bzero(&request,sizeof(request)); // Set up request
   request.client = C;
 
@@ -272,7 +273,7 @@ int docmd(Client *C, char* cmd)
     if( strncmp(cmd,"disconnect",sizeof("disconnect")-1)==0)
     {  
     
-    request.cmd = 'g';
+    request.cmd = PROTO_MT_REQ_BASE_GOODBYE;
     rc=doRPCCmd();
     
     disconnect(C);
@@ -296,7 +297,7 @@ int docmd(Client *C, char* cmd)
         return -1;
       }
 
-      request.cmd = 'H';
+      request.cmd = PROTO_MT_REQ_BASE_NUMHOME;
       request.team = team;;
       rc=doRPCCmd();
     }
@@ -319,23 +320,23 @@ int docmd(Client *C, char* cmd)
         return -1;
       }
 
-      request.cmd = 'J';
+      request.cmd = PROTO_MT_REQ_BASE_NUMJAIL;
       request.team = team;
       rc=doRPCCmd(); 
     }
     else if( strncmp(cmd,"numwall",sizeof("numwall")-1)==0)
     {
-      request.cmd = 'W';
+      request.cmd = PROTO_MT_REQ_BASE_NUMWALL;
       rc=doRPCCmd(); 
     }
     else if( strncmp(cmd,"numfloor",sizeof("numfloor")-1)==0)
     {
-      request.cmd = 'F';
+      request.cmd = PROTO_MT_REQ_BASE_NUMFLOOR;
       rc=doRPCCmd();  
     }
     else if( strncmp(cmd,"dim",sizeof("dim")-1)==0)
     {
-      request.cmd = 'D';
+      request.cmd = PROTO_MT_REQ_BASE_DIM;
       rc=doRPCCmd(); 
     }
     else if( strncmp(cmd,"cinfo",sizeof("cinfo")-1)==0)
@@ -360,14 +361,14 @@ int docmd(Client *C, char* cmd)
       }
       y = atoi(token);
 
-      request.cmd = 'C';
+      request.cmd = PROTO_MT_REQ_BASE_CINFO;
       request.x = x;
       request.y = y;
       rc=doRPCCmd();
     }
     else if( strncmp(cmd,"dump",sizeof("dump")-1)==0)
     {
-      request.cmd = 'd';
+      request.cmd = PROTO_MT_REQ_BASE_DUMP;
       rc=doRPCCmd();
     }
   }

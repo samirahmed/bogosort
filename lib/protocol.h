@@ -25,6 +25,13 @@ typedef enum  {
   PROTO_MT_REQ_BASE_HELLO, // establish connection to server and add player to game
   PROTO_MT_REQ_BASE_MOVE, // attempt to mark square as client who submitted request
   PROTO_MT_REQ_BASE_GOODBYE, //disconnect client from server
+  PROTO_MT_REQ_BASE_NUMHOME, // ask for number of home cells
+  PROTO_MT_REQ_BASE_NUMJAIL, // ask for number of jail cells
+  PROTO_MT_REQ_BASE_NUMWALL, // ask for number of wall cells
+  PROTO_MT_REQ_BASE_NUMFLOOR, // ask for number of floor cells
+  PROTO_MT_REQ_BASE_DIM, // ask for dimension
+  PROTO_MT_REQ_BASE_CINFO, // ask for cell info
+  PROTO_MT_REQ_BASE_DUMP, // ask for server map dump
   // RESERVED LAST REQ MT PUT ALL NEW REQ MTS ABOVE
   PROTO_MT_REQ_BASE_RESERVED_LAST,
   
