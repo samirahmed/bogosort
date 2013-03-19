@@ -35,16 +35,61 @@
 static pthread_mutex_t maplock;
 
 int client_lost_handler(Proto_Session *);
-void clear_game_state(void);
 void init_game(void);
 int updateClients(void);
 
 int hello_handler( Proto_Session *s)
 {
+  printf(stderr,"hello received");
+  return reply(s,PROTO_MT_REP_BASE_HELLO,1);
 }
 
 int goodbye_handler( Proto_Session *s)
 {
+  printf(stderr, "hello received");
+  return reply(s,PROTO_MT_REP_BASE_GOODBYE,1);
+}
+
+int numwall_handler( Proto_Session *s)
+{
+  printf(stderr, "numwall received");
+  return reply(s,PROTO_MT_REP_BASE_NUMWALL,1);
+}
+
+int numfloor_handler( Proto_Session *s)
+{
+  printf(stderr, "numfloor received");
+  return reply(s,PROTO_MT_REP_BASE_NUMFLOOR,1);
+}
+
+int numjail_handler( Proto_Session *s)
+{
+  printf(stderr, "numjail received");
+  return reply(s,PROTO_MT_REP_BASE_NUMJAIL,1);
+}
+
+int numhome_handler( Proto_Session *s)
+{
+  printf(stderr, "numhome received");
+  return reply(s,PROTO_MT_REP_BASE_NUMHOME,1);
+}
+
+int dim_handler( Proto_Session *s)
+{
+  printf(stderr, "dim received");
+  return reply(s,PROTO_MT_REP_BASE_DIM,1);
+}
+
+int cinfo_handler( Proto_Session *s)
+{
+  printf(stderr, "cinfo received");
+  return reply(s,PROTO_MT_REP_BASE_CINFO,1);
+}
+
+int dump_handler( Proto_Session *s)
+{
+  printf(stderr, "dump received");
+  return reply(s,PROTO_MT_REP_BASE_DUMP,1);
 }
 
 extern int client_lost_handler( Proto_Session * s)
@@ -54,13 +99,19 @@ extern int client_lost_handler( Proto_Session * s)
 	return -1;
 }
 
-
 extern void init_game(void)
 {
-	clear_game_state();
-	// Setup handler for Hello event
+	
+  // Setup handler for Hello event
  	proto_server_set_req_handler( PROTO_MT_REQ_BASE_HELLO , &(hello_handler) );
  	proto_server_set_req_handler( PROTO_MT_REQ_BASE_GOODBYE , &(goodbye_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_DUMP, &(hello_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_DIM, &(dump_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_NUMHOME, &(numhome_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_NUMJAIL, &(numjail_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_NUMFLOOR, &(numfloor_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_NUMWALL, &(numwall_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_CINFO, &(hello_handler) );
 
 	// Should set a session lost handler here
   proto_server_set_session_lost_handler( &(client_lost_handler) );	
