@@ -40,61 +40,61 @@ int updateClients(void);
 
 int hello_handler( Proto_Session *s)
 {
-  printf(stderr,"hello received");
-  return reply(s,PROTO_MT_REP_BASE_HELLO,1);
+  fprintf(stderr,"hello received");
+  return reply(s,PROTO_MT_REP_BASE_HELLO,5);
 }
 
 int goodbye_handler( Proto_Session *s)
 {
-  printf(stderr, "hello received");
-  return reply(s,PROTO_MT_REP_BASE_GOODBYE,1);
+  fprintf(stderr, "hello received");
+  return reply(s,PROTO_MT_REP_BASE_GOODBYE,5);
 }
 
 int numwall_handler( Proto_Session *s)
 {
-  printf(stderr, "numwall received");
-  return reply(s,PROTO_MT_REP_BASE_NUMWALL,1);
+  fprintf(stderr, "numwall received");
+  return reply(s,PROTO_MT_REP_BASE_NUMWALL,5);
 }
 
 int numfloor_handler( Proto_Session *s)
 {
-  printf(stderr, "numfloor received");
-  return reply(s,PROTO_MT_REP_BASE_NUMFLOOR,1);
+  fprintf(stderr, "numfloor received");
+  return reply(s,PROTO_MT_REP_BASE_NUMFLOOR,5);
 }
 
 int numjail_handler( Proto_Session *s)
 {
-  printf(stderr, "numjail received");
-  return reply(s,PROTO_MT_REP_BASE_NUMJAIL,1);
+  fprintf(stderr, "numjail received");
+  return reply(s,PROTO_MT_REP_BASE_NUMJAIL,5);
 }
 
 int numhome_handler( Proto_Session *s)
 {
-  printf(stderr, "numhome received");
-  return reply(s,PROTO_MT_REP_BASE_NUMHOME,1);
+  fprintf(stderr, "numhome received");
+  return reply(s,PROTO_MT_REP_BASE_NUMHOME,5);
 }
 
 int dim_handler( Proto_Session *s)
 {
-  printf(stderr, "dim received");
-  return reply(s,PROTO_MT_REP_BASE_DIM,1);
+  fprintf(stderr, "dim received");
+  return reply(s,PROTO_MT_REP_BASE_DIM,5);
 }
 
 int cinfo_handler( Proto_Session *s)
 {
-  printf(stderr, "cinfo received");
-  return reply(s,PROTO_MT_REP_BASE_CINFO,1);
+  fprintf(stderr, "cinfo received");
+  return reply(s,PROTO_MT_REP_BASE_CINFO,5);
 }
 
 int dump_handler( Proto_Session *s)
 {
-  printf(stderr, "dump received");
-  return reply(s,PROTO_MT_REP_BASE_DUMP,1);
+  fprintf(stderr, "dump received");
+  return reply(s,PROTO_MT_REP_BASE_DUMP,5);
 }
 
 extern int client_lost_handler( Proto_Session * s)
 {
-	fprintf(stderr, "Session lost - Dropping Client ...:\n");
+	fprintf(stdout, "Session lost - Dropping Client ...:\n");
   if (proto_debug()) proto_session_dump(s);
 	return -1;
 }
@@ -111,7 +111,7 @@ extern void init_game(void)
  	proto_server_set_req_handler( PROTO_MT_REQ_BASE_NUMJAIL, &(numjail_handler) );
  	proto_server_set_req_handler( PROTO_MT_REQ_BASE_NUMFLOOR, &(numfloor_handler) );
  	proto_server_set_req_handler( PROTO_MT_REQ_BASE_NUMWALL, &(numwall_handler) );
- 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_CINFO, &(hello_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_CINFO, &(cinfo_handler) );
 
 	// Should set a session lost handler here
   proto_server_set_session_lost_handler( &(client_lost_handler) );	

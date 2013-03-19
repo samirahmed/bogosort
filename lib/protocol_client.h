@@ -42,7 +42,7 @@ extern int proto_client_set_event_handler(Proto_Client_Handle ch,
 					  Proto_MT_Handler h);
 
 // client side protocol rpc's
+extern int do_generic_dummy_rpc(Proto_Client_Handle ch, Proto_Msg_Types mt);
 extern int proto_client_hello(Proto_Client_Handle ch);
-extern int proto_client_move(Proto_Client_Handle ch, int id ,char d);
 extern int proto_client_goodbye(Proto_Client_Handle ch);
 #endif

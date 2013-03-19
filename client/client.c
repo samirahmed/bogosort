@@ -66,7 +66,7 @@ clientInit(Client *C)
   bzero(C, sizeof(Client));
 
   // Set connected state to zero
-  connected = 1; // CHANGE THIS TO ZERO (ONLY 1 FOR DEBUGGING)
+  connected = 0; 
   
   // initialize the client protocol subsystem
   if (proto_client_init(&(C->ph))<0) {
@@ -152,7 +152,7 @@ doRPCCmd()
   case PROTO_MT_REQ_BASE_HELLO:  
     {
      fprintf(stderr,"HELLO COMMAND ISSUED");
-     rc = 1;
+     rc = do_generic_dummy_rpc(C->ph,type);
      /*rc = proto_client_hello(C->ph);*/
      /*if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);*/
      /*if (rc < 0) fprintf(stderr, "Unable to connect");*/
@@ -160,35 +160,35 @@ doRPCCmd()
     break;
   case PROTO_MT_REQ_BASE_CINFO:
       fprintf(stderr,"Cinfo command issued x = %d, y= %d",x,y);
-      rc = 1;
+      rc = do_generic_dummy_rpc(C->ph,type);
     break;
   case PROTO_MT_REQ_BASE_DIM:
      fprintf(stderr,"Dimension COMMAND ISSUED");
-     rc = 1;
+     rc = do_generic_dummy_rpc(C->ph,type);
     break;
   case PROTO_MT_REQ_BASE_NUMJAIL:
      fprintf(stderr,"numjail %d Command Issued",team);
-     rc =1;
+     rc = do_generic_dummy_rpc(C->ph,type);
     break;
   case PROTO_MT_REQ_BASE_NUMHOME:
      fprintf(stderr,"numhome %d Command Issued",team);
-     rc =1;
+     rc = do_generic_dummy_rpc(C->ph,type);
     break;
   case PROTO_MT_REQ_BASE_DUMP:
      fprintf(stderr,"Dump server map issued");
-     rc =1;
+     rc = do_generic_dummy_rpc(C->ph,type);
     break;
   case PROTO_MT_REQ_BASE_NUMFLOOR:
      fprintf(stderr,"num floors command issued");
-     rc =1;
+     rc = do_generic_dummy_rpc(C->ph,type);
     break;
   case PROTO_MT_REQ_BASE_NUMWALL:
      fprintf(stderr,"num walls command issued");
-     rc =1;
+     rc = do_generic_dummy_rpc(C->ph,type);
     break;
   case PROTO_MT_REQ_BASE_GOODBYE:
      fprintf(stderr,"Goodbye COMMAND ISSUED");
-     rc = 1;
+     rc = do_generic_dummy_rpc(C->ph,type);
     /*rc = proto_client_goodbye(C->ph);*/
     /*printf("Game Over - You Quit");*/
     break;
@@ -198,6 +198,7 @@ doRPCCmd()
   // NULL MT OVERRIDE ;-)
   if(proto_debug()) fprintf(stderr,"%s: rc=0x%x\n", __func__, rc);
   if (rc == 0xdeadbeef) rc=1;
+  printf("rc=1\n");
   return rc;
 }
 

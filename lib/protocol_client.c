@@ -195,7 +195,7 @@ marshall_mtonly(Proto_Session *s, Proto_Msg_Types mt) {
 
 // all rpc's are assume to only reply only with a return code in the body
 // eg.  like the null_mes
-static int 
+extern int 
 do_generic_dummy_rpc(Proto_Client_Handle ch, Proto_Msg_Types mt)
 {
   int rc;
@@ -225,40 +225,6 @@ extern int
 proto_client_hello(Proto_Client_Handle ch)
 {
   return do_generic_dummy_rpc(ch,PROTO_MT_REQ_BASE_HELLO);  
-}
-
-extern int 
-proto_client_move(Proto_Client_Handle ch, int id, char data)
-{
-  // Setup Hdr and Body 
-  int rc;
-  int position;
-  Proto_Msg_Hdr h;
-  rc = 1;
-  
-  // Get Session Handle
-  Proto_Session *s;
-  Proto_Client *c = ch;
-  s = &(c->rpc_session);
-  
-  // Setup Header and Marshall
-  bzero(&h, sizeof(h));
-  h.type = PROTO_MT_REQ_BASE_MOVE;
-  h.pstate.v2.raw = id;
-  proto_session_hdr_marshall(s, &h);
-
-  // Setup body and marshall
-  position = ((int)data - 48);
-  proto_session_body_marshall_int(s , position); 
-  
-  // Send Msg
-  rc = proto_session_send_msg( s, 1);
-  if (rc < 0) return rc;
-  
-  // Recv Response
-  rc = proto_session_rcv_msg(s);
-  return rc;
-
 }
 
 extern int 

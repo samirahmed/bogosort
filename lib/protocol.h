@@ -41,13 +41,13 @@ typedef enum  {
   PROTO_MT_REP_BASE_MOVE, // 1 if square is empty and was marked succesfully, 0 if square is already full and cannot be marked, -1 if fail
   PROTO_MT_REP_BASE_GOODBYE, // 1 if succesful, -1 if fails
   // RESERVED LAST REP MT PUT ALL NEW REP MTS ABOVE
-  PROTO_MT_REQ_BASE_NUMHOME, // reply with number of home cells
-  PROTO_MT_REQ_BASE_NUMJAIL, // reply with number of jail cells
-  PROTO_MT_REQ_BASE_NUMWALL, // reply with number of wall cells
-  PROTO_MT_REQ_BASE_NUMFLOOR, // reply with number of floor cells
-  PROTO_MT_REQ_BASE_DIM, // reply with dimension
-  PROTO_MT_REQ_BASE_CINFO, // reply with cell info
-  PROTO_MT_REQ_BASE_DUMP, // reply with server map dump
+  PROTO_MT_REP_BASE_NUMHOME, // reply with number of home cells
+  PROTO_MT_REP_BASE_NUMJAIL, // reply with number of jail cells
+  PROTO_MT_REP_BASE_NUMWALL, // reply with number of wall cells
+  PROTO_MT_REP_BASE_NUMFLOOR, // reply with number of floor cells
+  PROTO_MT_REP_BASE_DIM, // reply with dimension
+  PROTO_MT_REP_BASE_CINFO, // reply with cell info
+  PROTO_MT_REP_BASE_DUMP, // reply with server map dump
   PROTO_MT_REP_BASE_RESERVED_LAST,
 
   // Events  
