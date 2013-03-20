@@ -39,6 +39,16 @@ int client_lost_handler(Proto_Session *);
 void init_game(void);
 int updateClients(void);
 
+int loadMaze(char* filename){
+
+
+}
+
+int dumpMaze(){
+
+
+}
+
 int hello_handler( Proto_Session *s)
 {
   fprintf(stderr,"hello received");
