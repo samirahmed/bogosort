@@ -40,8 +40,19 @@ void init_game(void);
 int updateClients(void);
 
 int loadMaze(char* filename){
+	File* fp;
+	fp = fopen(filename,"r");
+	if(fp=NULL){
+		fprintf(stderr,"Error opening file %s for reading\n",filename);
+		return -1;
+	}
+	else{
 
 
+	}
+	if((fclose(fp))!=0)
+		fprintf(stderr,"Error closing file");
+	return 1;
 }
 
 int dumpMaze(){
