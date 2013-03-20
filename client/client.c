@@ -25,6 +25,7 @@
 #include <string.h>
 #include "../lib/types.h"
 #include "../lib/protocol.h"
+#include "../lib/maze.h"
 #include "../lib/protocol_client.h"
 #include "../lib/protocol_utils.h"
 
@@ -45,10 +46,11 @@ typedef struct ClientState  {
 
 struct Request{
   Client * client;
-  Proto_Msg_Types cmd;
-  int team;
+  Proto_Msg_Types type;
   int x;
   int y;
+  Team_Types turf;
+  Cell_Types cell_type;
 } request;
 
 static int connected;
@@ -137,63 +139,69 @@ doRPCCmd()
  
   // Unpack the request
   Client *C;
-  int team;
-  int x;
-  int y;
-  Proto_Msg_Types type;
+  Proto_Msg_Hdr hdr;
+  bzero(&hdr,sizeof(Proto_Msg_Hdr));
 
   C = request.client;
-  type = request.cmd;
-  x = request.x;
-  y = request.y;
-  team = request.team;
 
-  switch (type) {
+  switch (request.type) {
   case PROTO_MT_REQ_BASE_HELLO:  
     {
      fprintf(stderr,"HELLO COMMAND ISSUED");
-     rc = do_generic_dummy_rpc(C->ph,type);
+     hdr.type = request.type;
+     rc = do_void_rpc(C->ph,&hdr);
      /*rc = proto_client_hello(C->ph);*/
      /*if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);*/
      /*if (rc < 0) fprintf(stderr, "Unable to connect");*/
     }
     break;
   case PROTO_MT_REQ_BASE_CINFO:
-      fprintf(stderr,"Cinfo command issued x = %d, y= %d",x,y);
-      rc = do_generic_dummy_rpc(C->ph,type);
+      fprintf(stderr,"CINFO command issued x = %d, y= %d",request.x,request.y);
+      hdr.type= request.type;
+      hdr.gstate.v0.raw = request.x;
+      hdr.gstate.v1.raw = request.y;
+      rc = do_void_rpc(C->ph,&hdr);
     break;
   case PROTO_MT_REQ_BASE_DIM:
      fprintf(stderr,"Dimension COMMAND ISSUED");
-     rc = do_generic_dummy_rpc(C->ph,type);
+     hdr.type= request.type;
+     rc = do_void_rpc(C->ph,&hdr);
+     if (rc > 0)
+     {
+        int col,row;
+        get_int(C->ph,0,&col);
+        get_int(C->ph,sizeof(int),&row);
+        fprintf(stderr,"%d columns(x) by %d rows(y)",col,row);
+     }
     break;
-  case PROTO_MT_REQ_BASE_NUMJAIL:
-     fprintf(stderr,"numjail %d Command Issued",team);
-     rc = do_generic_dummy_rpc(C->ph,type);
-    break;
-  case PROTO_MT_REQ_BASE_NUMHOME:
-     fprintf(stderr,"numhome %d Command Issued",team);
-     rc = do_generic_dummy_rpc(C->ph,type);
+  case PROTO_MT_REQ_BASE_NUM:
+     fprintf(stderr,"Number request for cell_type %d",request.turf);
+     Cell cell;
+     cell_init(&cell,0,0,request.turf,request.cell_type,0);
+     cell_marshall_into_header(&cell,&hdr);
+     hdr.type=request.type;
+     rc = do_void_rpc(C->ph,&hdr);
+     if (rc > 0)
+     {
+        int num;
+        get_int(C->ph,0,&num);
+        fprintf(stderr,"%d total\n",num);
+     }
     break;
   case PROTO_MT_REQ_BASE_DUMP:
      fprintf(stderr,"Dump server map issued");
-     rc = do_generic_dummy_rpc(C->ph,type);
-    break;
-  case PROTO_MT_REQ_BASE_NUMFLOOR:
-     fprintf(stderr,"num floors command issued");
-     rc = do_generic_dummy_rpc(C->ph,type);
-    break;
-  case PROTO_MT_REQ_BASE_NUMWALL:
-     fprintf(stderr,"num walls command issued");
-     rc = do_generic_dummy_rpc(C->ph,type);
+     hdr.type = request.type;
+     rc = do_void_rpc(C->ph,&hdr);
     break;
   case PROTO_MT_REQ_BASE_GOODBYE:
      fprintf(stderr,"Goodbye COMMAND ISSUED");
-     rc = do_generic_dummy_rpc(C->ph,type);
+     hdr.type = request.type;
+     rc = do_void_rpc(C->ph,&hdr);
     /*rc = proto_client_goodbye(C->ph);*/
     /*printf("Game Over - You Quit");*/
     break;
   default:
-    printf("%s: unknown command %d\n", __func__, type);
+    printf("%s: unknown command %d\n", __func__, request.type);
   }
   // NULL MT OVERRIDE ;-)
   if(proto_debug()) fprintf(stderr,"%s: rc=0x%x\n", __func__, rc);
@@ -246,7 +254,7 @@ int doConnect(Client *C, char* cmd)
   }
 
   // configure request parameters
-  request.cmd = PROTO_MT_REQ_BASE_HELLO;
+  request.type = PROTO_MT_REQ_BASE_HELLO;
   rc = doRPCCmd();
 
   return rc;
@@ -274,7 +282,7 @@ int docmd(Client *C, char* cmd)
     if( strncmp(cmd,"disconnect",sizeof("disconnect")-1)==0)
     {  
     
-    request.cmd = PROTO_MT_REQ_BASE_GOODBYE;
+    request.type = PROTO_MT_REQ_BASE_GOODBYE;
     rc=doRPCCmd();
     
     disconnect(C);
@@ -298,8 +306,9 @@ int docmd(Client *C, char* cmd)
         return -1;
       }
 
-      request.cmd = PROTO_MT_REQ_BASE_NUMHOME;
-      request.team = team;;
+      request.type = PROTO_MT_REQ_BASE_NUM;
+      request.cell_type = CELL_HOME;
+      request.turf = (Team_Types)(team-1);
       rc=doRPCCmd();
     }
     else if( strncmp(cmd,"numjail",sizeof("numjail")-1)==0)
@@ -321,23 +330,26 @@ int docmd(Client *C, char* cmd)
         return -1;
       }
 
-      request.cmd = PROTO_MT_REQ_BASE_NUMJAIL;
-      request.team = team;
+      request.type = PROTO_MT_REQ_BASE_NUM;
+      request.cell_type = CELL_JAIL;
+      request.turf = (Team_Types)(team-1);
       rc=doRPCCmd(); 
     }
     else if( strncmp(cmd,"numwall",sizeof("numwall")-1)==0)
     {
-      request.cmd = PROTO_MT_REQ_BASE_NUMWALL;
+      request.type = PROTO_MT_REQ_BASE_NUM;
+      request.cell_type = CELL_WALL;
       rc=doRPCCmd(); 
     }
     else if( strncmp(cmd,"numfloor",sizeof("numfloor")-1)==0)
     {
-      request.cmd = PROTO_MT_REQ_BASE_NUMFLOOR;
+      request.type = PROTO_MT_REQ_BASE_NUM;
+      request.cell_type = CELL_WALL;
       rc=doRPCCmd();  
     }
     else if( strncmp(cmd,"dim",sizeof("dim")-1)==0)
     {
-      request.cmd = PROTO_MT_REQ_BASE_DIM;
+      request.type = PROTO_MT_REQ_BASE_DIM;
       rc=doRPCCmd(); 
     }
     else if( strncmp(cmd,"cinfo",sizeof("cinfo")-1)==0)
@@ -362,14 +374,14 @@ int docmd(Client *C, char* cmd)
       }
       y = atoi(token);
 
-      request.cmd = PROTO_MT_REQ_BASE_CINFO;
+      request.type = PROTO_MT_REQ_BASE_CINFO;
       request.x = x;
       request.y = y;
       rc=doRPCCmd();
     }
     else if( strncmp(cmd,"dump",sizeof("dump")-1)==0)
     {
-      request.cmd = PROTO_MT_REQ_BASE_DUMP;
+      request.type = PROTO_MT_REQ_BASE_DUMP;
       rc=doRPCCmd();
     }
   }

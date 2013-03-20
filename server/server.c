@@ -28,6 +28,7 @@
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/net.h"
+#include "../lib/maze.h"
 #include "../lib/protocol_session.h"
 #include "../lib/protocol_server.h"
 #include "../lib/protocol_utils.h"
@@ -50,34 +51,18 @@ int goodbye_handler( Proto_Session *s)
   return reply(s,PROTO_MT_REP_BASE_GOODBYE,5);
 }
 
-int numwall_handler( Proto_Session *s)
+int num_handler( Proto_Session *s)
 {
-  fprintf(stderr, "numwall received");
-  return reply(s,PROTO_MT_REP_BASE_NUMWALL,5);
-}
-
-int numfloor_handler( Proto_Session *s)
-{
-  fprintf(stderr, "numfloor received");
-  return reply(s,PROTO_MT_REP_BASE_NUMFLOOR,5);
-}
-
-int numjail_handler( Proto_Session *s)
-{
-  fprintf(stderr, "numjail received");
-  return reply(s,PROTO_MT_REP_BASE_NUMJAIL,5);
-}
-
-int numhome_handler( Proto_Session *s)
-{
-  fprintf(stderr, "numhome received");
-  return reply(s,PROTO_MT_REP_BASE_NUMHOME,5);
+  return reply(s,PROTO_MT_REP_BASE_NUM,5);
 }
 
 int dim_handler( Proto_Session *s)
 {
   fprintf(stderr, "dim received");
-  return reply(s,PROTO_MT_REP_BASE_DIM,5);
+  
+  put_int(s,127);
+  put_int(s,182);
+  reply(s,PROTO_MT_REP_BASE_DIM,NULL);
 }
 
 int cinfo_handler( Proto_Session *s)
@@ -105,12 +90,9 @@ extern void init_game(void)
   // Setup handler for Hello event
  	proto_server_set_req_handler( PROTO_MT_REQ_BASE_HELLO , &(hello_handler) );
  	proto_server_set_req_handler( PROTO_MT_REQ_BASE_GOODBYE , &(goodbye_handler) );
- 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_DUMP, &(hello_handler) );
- 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_DIM, &(dump_handler) );
- 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_NUMHOME, &(numhome_handler) );
- 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_NUMJAIL, &(numjail_handler) );
- 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_NUMFLOOR, &(numfloor_handler) );
- 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_NUMWALL, &(numwall_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_DUMP, &(dump_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_DIM, &(dim_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_NUM, &(num_handler) );
  	proto_server_set_req_handler( PROTO_MT_REQ_BASE_CINFO, &(cinfo_handler) );
 
 	// Should set a session lost handler here

@@ -366,6 +366,12 @@ proto_server_init(void)
   return 0;
 }
 
+extern void
+put_int(Proto_Session* s, int value)
+{
+  if (value!=NULL) proto_session_body_marshall_int(s, value);
+}
+
 extern int
 reply( Proto_Session * s, Proto_Msg_Types mt , int response)
 {
@@ -380,7 +386,7 @@ reply( Proto_Session * s, Proto_Msg_Types mt , int response)
   proto_session_hdr_marshall(s, &h);
 
   // setup a dummy body that just has a return code 
-  proto_session_body_marshall_int(s, response);
+  if (response!=NULL) proto_session_body_marshall_int(s, response);
   rc=proto_session_send_msg(s,1);
   return rc;
 }

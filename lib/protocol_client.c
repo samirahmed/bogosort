@@ -193,57 +193,47 @@ marshall_mtonly(Proto_Session *s, Proto_Msg_Types mt) {
   proto_session_hdr_marshall(s, &h);
 };
 
-// all rpc's are assume to only reply only with a return code in the body
-// eg.  like the null_mes
-extern int 
-do_generic_dummy_rpc(Proto_Client_Handle ch, Proto_Msg_Types mt)
+extern int get_int(Proto_Client_Handle ch, int offset, int* result)
 {
   int rc;
   Proto_Session *s;
   Proto_Client *c = ch;
+  s = &(c->rpc_session);
   
-  /*NOT_IMPL; //ADD CODE*/
-  s = &(c->rpc_session);//s = ADD CODE
-  // marshall
-
-  marshall_mtonly(s, mt);
-  /*NOT_IMPL;//ADD CODE*/
-  rc = proto_session_send_msg(s,1);
-  rc = proto_session_rcv_msg(s);
-  //rc = proto_session_ADD CODE
-
-  if (rc==1) {
-    proto_session_body_unmarshall_int(s, 0, &rc);
-  } else {
-    rc = -1;
-	/*NOT_IMPL;//ADD CODE*/
-  }
-  
+  rc = proto_session_body_unmarshall_int(s, offset, result);
   return rc;
 }
-extern int 
-proto_client_hello(Proto_Client_Handle ch)
-{
-  return do_generic_dummy_rpc(ch,PROTO_MT_REQ_BASE_HELLO);  
-}
 
+// all rpc's are assume to only reply only with a return code in the body
+// eg.  like the null_mes
 extern int 
-proto_client_goodbye(Proto_Client_Handle ch)
+do_void_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
 {
   int rc;
   Proto_Session *s;
   Proto_Client *c = ch;
   
   s = &(c->rpc_session);
-  marshall_mtonly(s, PROTO_MT_REQ_BASE_GOODBYE);
-  rc = proto_session_send_msg(s,1);
-
-  if (rc==1) {
-  } else {
-    rc = -1;
-  }
+  proto_session_hdr_marshall(s,h);
   
+  rc = proto_session_send_msg(s,1);
+  rc = proto_session_rcv_msg(s);
+  
+  if(rc<=0) rc =-1;
+
   return rc;
+}
+
+extern int 
+proto_client_hello(Proto_Client_Handle ch)
+{
+  return -1;
+}
+
+extern int 
+proto_client_goodbye(Proto_Client_Handle ch)
+{
+  return -1;
 }
 
 

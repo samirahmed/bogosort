@@ -1,7 +1,13 @@
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+#include <pthread.h>
+#include "net.h"
+#include "protocol.h"
+#include "protocol_session.h"
 #include "maze.h"
 
-extern cell_init(Cell* cell, int x, int y, Team turf, Cell_Types type, Mutable_Types is_mutable)
+extern void cell_init(Cell* cell, int x, int y,Team_Types turf, Cell_Types type, Mutable_Types is_mutable)
 {
     Mutable_Types is_really_mutable;
     is_really_mutable = CELLTYPE_IMMUTABLE;
@@ -13,7 +19,7 @@ extern cell_init(Cell* cell, int x, int y, Team turf, Cell_Types type, Mutable_T
     cell->turf = turf;
     cell->type = type;
     cell->is_mutable = is_really_mutable;
-    return cell;
+
 }
 
 extern int cell_is_unoccupied(Cell* cell)
@@ -67,9 +73,9 @@ extern void maze_init(Maze * m, int max_x, int max_y)
      if(m->pos == NULL ) fprintf(stderr,"Unable to Initiale %d columns",m->max_x);
 
      unsigned short int col;
-     for( col = 0; i < m->max_x ; col++ )
+     for( col = 0; col < m->max_x ; col++ )
      {
-        if( ( pos[col]=(Cell*)malloc(m->max_y*sizeof(Cell)) == NULL ) 
+        if( ( m->pos[col]=(Cell*)malloc(m->max_y*sizeof(Cell))) == NULL ) 
         fprintf(stderr,"Unable to Initialize %d rows for %d column",m->max_y,col);
      }
      fprintf(stderr,"Successful Initialize %d col(x) by %d row(y) maze",m->max_x,m->max_y);

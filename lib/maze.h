@@ -23,13 +23,6 @@
 * THE SOFTWARE.
 *****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <strings.h>
-#include <pthread.h>
-#include "protocol.h"
-#include "protocol_session.h"
-
 
 typedef enum{
     CELLTYPE_IMMUTABLE,
@@ -72,8 +65,8 @@ typedef struct{
     short int        y;
     Cell_Types       type;
     Cell_State_Types cell_state;
-    Team             turf;
-    Team             player_type;
+    Team_Types       turf;
+    Team_Types       player_type;
     Mutable_Types    is_mutable;
     Object_Types     object_type;
     //Player*       player;
@@ -82,17 +75,17 @@ typedef struct{
 } Cell;
 
 typedef struct{
-    Cell[][] pos;
+    Cell** pos;
     unsigned short int max_x;
     unsigned short int max_y;
 } Maze;
 
-extern void cell_init(Cell* cell,int x, int y, Team turf, Cell_Types type, Mutable_Types is_mutable);
+extern void cell_init(Cell* cell,int x, int y, Team_Types turf, Cell_Types type, Mutable_Types is_mutable);
 extern int cell_is_unoccupied(Cell* cell);
 extern int cell_is_walkable_type(Cell * cell);
 extern void cell_unmarshall_from_header(Cell * cell, Proto_Msg_Hdr *hdr);
 extern void cell_marshall_into_header(Cell * cell, Proto_Msg_Hdr * hdr);
 
-extern void maze_init(int max_x, int max_y);
+extern void maze_init(Maze * m,int max_x, int max_y);
 
 #endif
