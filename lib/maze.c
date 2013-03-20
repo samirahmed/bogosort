@@ -21,7 +21,7 @@ extern Cell_Types getCellType(char cell)
 }
 extern Team_Types getTurfType(int col){
 	if(col<100) 	//This will not work is the maze is larger FIXME
-		return TEAM_RED
+		return TEAM_RED;
 	else
 		return TEAM_BLUE;
 	return 0;
