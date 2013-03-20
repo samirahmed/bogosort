@@ -41,22 +41,17 @@ int client_lost_handler(Proto_Session *);
 void init_game(void);
 int updateClients(void);
 
-int fillMaze(char** buffer,int max_x, int max_y){
+void fillMaze(char** buffer,int max_x, int max_y){
 	int ii,jj;	
-	Cell_Types       type;
-	Cell_State_Types cell_state;
-	Team_Types       turf;
-	Team_Types       player_type;
-	Mutable_Types    is_mutable;
-	Object_Types     object_type;
-	
 	for(ii=0;ii<max_x;ii++)
 		for(jj=0;jj<max_y,jj++){
-
-
+			cell_init(&map[ii][jj],
+				  ii,
+				  jj,
+				  getTurfType(jj),
+				  getCellType(buffer[ii][jj]),
+				  getMutableType(buffer[ii][jj],ii,jj));
 		}
-			
-	
 }
 
 
