@@ -7,6 +7,42 @@
 #include "protocol_session.h"
 #include "maze.h"
 
+extern Cell_Types getCellType(char cell)
+{
+	switch(cell){
+		case ' ':return CELL_FLOOR;
+		case '#':return CELL_WALL;
+		case 'h':return CELL_HOME;
+		case 'H':return CELL_HOME;
+		case 'j':return CELL_JAIL;
+		case 'J':return CELL_JAIL;
+	}
+	return 0;
+}
+extern Team_Types getTurfType(int col){
+	if(col<100) 	//This will not work is the maze is larger FIXME
+		return TEAM_RED
+	else
+		return TEAM_BLUE;
+	return 0;
+}
+extern Mutable_Types getMutableType(char cell,int row,int col)
+{
+	if(cell=='#'){
+		if(row==0)
+			return CELLTYPE_IMMUTABLE;
+		else if(row==199)
+			return CELLTYPE_IMMUTABLE;
+		else if(col==0)
+			return CELLTYPE_IMMUTABLE;
+		else if(col==199)
+			return CELLTYPE_IMMUTABLE;
+		else
+			return CELLTYPE_MUTABLE;
+	}
+	return CELLTYPE_IMMUTABLE;
+}
+
 extern void cell_init(Cell* cell, int x, int y,Team_Types turf, Cell_Types type, Mutable_Types is_mutable)
 {
     Mutable_Types is_really_mutable;

@@ -85,7 +85,9 @@ extern int cell_is_unoccupied(Cell* cell);
 extern int cell_is_walkable_type(Cell * cell);
 extern void cell_unmarshall_from_header(Cell * cell, Proto_Msg_Hdr *hdr);
 extern void cell_marshall_into_header(Cell * cell, Proto_Msg_Hdr * hdr);
-
 extern void maze_init(Maze * m,int max_x, int max_y);
+extern Cell_Types       getCellType(char cell);
+extern Team_Types       getTurfType(char cell);
+extern Mutable_Types    is_mutable(char cell);
 
 #endif
