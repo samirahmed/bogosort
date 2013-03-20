@@ -44,8 +44,8 @@ int updateClients(void);
 void fillMaze(char** buffer,int max_x, int max_y){
 	int ii,jj;	
 	for(ii=0;ii<max_x;ii++)
-		for(jj=0;jj<max_y,jj++){
-			cell_init(&map[ii][jj],
+		for(jj=0;jj<max_y;jj++){
+			cell_init(&(map->pos[ii][jj]),
 				  ii,
 				  jj,
 				  getTurfType(jj),
@@ -56,7 +56,7 @@ void fillMaze(char** buffer,int max_x, int max_y){
 
 
 int loadMaze(char* filename){
-	File* fp;
+	FILE* fp;
 	char buffer[1000][1000];		//This size buffer is okay for now
 	int rowLen = 0; 			//Number of chars in one line of the file
 	int colLen = 0; 			//Index for row into the buffer
@@ -66,11 +66,11 @@ int loadMaze(char* filename){
 		return -1;
 	}
 	else{ 					//Read in the file
-		fgets(buffer[rowLen],1000,fp)
-		colLen = strlen*buffer[rowLen++];
+		fgets(buffer[rowLen],1000,fp);
+		colLen = strlen(buffer[rowLen++]);
 		while((fgets(buffer[rowLen++],1000,fp))!=NULL);
 		maze_init(map,rowLen,colLen);
-		fillmaze(buffer,rowLen,colLen);
+		fillMaze(buffer,rowLen,colLen);
 	}
 	if((fclose(fp))!=0) 			//Close the file and check for error
 		fprintf(stderr,"Error closing file");
@@ -167,6 +167,7 @@ docmd(char* cmd)
 
   if((strncmp(cmd,"load",4))==0)	//Lazily put this here
 	loadMaze(cmd+5);
+
   switch (*cmd) {
   case 'd':
     proto_debug_on();
@@ -184,8 +185,6 @@ docmd(char* cmd)
   case ' ':
     rc=1;
     break;
-  case 'l';
-    file
   default:
     printf("Unkown Command\n");
   }
