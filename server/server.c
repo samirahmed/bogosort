@@ -161,11 +161,13 @@ char MenuString[] =
   "d/D-debug on/off u-update clients q-quit";
 
 int 
-docmd(char cmd)
+docmd(char* cmd)
 {
   int rc = 1;
 
-  switch (cmd) {
+  if((strncmp(cmd,"load",4))==0)	//Lazily put this here
+	loadMaze(cmd+5);
+  switch (*cmd) {
   case 'd':
     proto_debug_on();
     break;
@@ -211,7 +213,7 @@ prompt(int menu)
 void *
 shell(void *arg)
 {
-  int c;
+  char* c;
   int rc=1;
   int menu=1;
 
@@ -220,6 +222,9 @@ shell(void *arg)
     if (rc<0) break;
     if (rc==1) menu=1; else menu=0;
   }
+  if(c!=0)//If this variable was allocated in prompt(menu) please free memory
+	free(c);
+
   fprintf(stderr, "terminating\n");
   fflush(stdout);
   return NULL;
