@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <poll.h>
 #include <pthread.h>
+#include <string.h>
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/net.h"
@@ -32,25 +33,31 @@
 #include "../lib/protocol_session.h"
 #include "../lib/protocol_server.h"
 #include "../lib/protocol_utils.h"
+#include "../lib/maze.h"
 
 static pthread_mutex_t maplock;
-
+static Maze* map; 		//Static Global variable for the map
 int client_lost_handler(Proto_Session *);
 void init_game(void);
 int updateClients(void);
 
 int loadMaze(char* filename){
 	File* fp;
-	fp = fopen(filename,"r");
-	if(fp=NULL){
+	char buffer[1000][1000];		//This size buffer is okay for now
+	int rowLen; 				//Number of chars in one line of the file
+	int ii = 0; 				//Index for row into the buffer
+	fp = fopen(filename,"r"); 		//Open File
+	if(fp=NULL){ 				//Check if file was correctly open
 		fprintf(stderr,"Error opening file %s for reading\n",filename);
 		return -1;
 	}
-	else{
-
-
+	else{ 					//Read in the file
+		fgets(buffer[ii],1000,fp)
+		rowLen = strlen*buffer[ii++];
+		while((fgets(buffer[ii],1000,fp))!=NULL){}
+		maze_init(map,rowLen,ii)
 	}
-	if((fclose(fp))!=0)
+	if((fclose(fp))!=0) 			//Close the file and check for error
 		fprintf(stderr,"Error closing file");
 	return 1;
 }
