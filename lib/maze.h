@@ -22,7 +22,8 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 *****************************************************************************/
-
+#define MAX_COL_MAZE 1000
+#define MAX_ROW_MAZE 1000
 
 typedef enum{
     CELLTYPE_IMMUTABLE,

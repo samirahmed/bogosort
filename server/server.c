@@ -41,7 +41,7 @@ int client_lost_handler(Proto_Session *);
 void init_game(void);
 int updateClients(void);
 
-void fillMaze(char** buffer,int max_x, int max_y){
+void fillMaze(char buffer[][MAX_COL_MAZE],int max_x, int max_y){
 	int ii,jj;	
 	for(ii=0;ii<max_x;ii++)
 		for(jj=0;jj<max_y;jj++){
@@ -57,7 +57,7 @@ void fillMaze(char** buffer,int max_x, int max_y){
 
 int loadMaze(char* filename){
 	FILE* fp;
-	char buffer[1000][1000];		//This size buffer is okay for now
+	char buffer[MAX_ROW_MAZE][MAX_COL_MAZE];		//This size buffer is okay for now
 	int rowLen = 0; 			//Number of chars in one line of the file
 	int colLen = 0; 			//Index for row into the buffer
 	fp = fopen(filename,"r"); 		//Open File
