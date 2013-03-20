@@ -182,22 +182,30 @@ docmd(char cmd)
   case ' ':
     rc=1;
     break;
+  case 'l';
+    file
   default:
     printf("Unkown Command\n");
   }
   return rc;
 }
 
-int
+char*
 prompt(int menu) 
 {
-  int ret;
-  int c=0;
-
-  if (menu) printf("%s:", MenuString);
+  if (menu) printf("%s", MenuString);
   fflush(stdout);
-  c=getchar();;
-  return c;
+  
+  // Pull in input from stdin
+  int bytes_read;
+  int nbytes = 0;
+  char *my_string;
+  bytes_read = getline (&my_string, &nbytes, stdin);
+
+  if(bytes_read>0)
+	return my_string;
+  else
+	return 0;
 }
 
 void *
