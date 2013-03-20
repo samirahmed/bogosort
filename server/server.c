@@ -41,21 +41,41 @@ int client_lost_handler(Proto_Session *);
 void init_game(void);
 int updateClients(void);
 
+int fillMaze(char** buffer,int max_x, int max_y){
+	int ii,jj;	
+	Cell_Types       type;
+	Cell_State_Types cell_state;
+	Team_Types       turf;
+	Team_Types       player_type;
+	Mutable_Types    is_mutable;
+	Object_Types     object_type;
+	
+	for(ii=0;ii<max_x;ii++)
+		for(jj=0;jj<max_y,jj++){
+
+
+		}
+			
+	
+}
+
+
 int loadMaze(char* filename){
 	File* fp;
 	char buffer[1000][1000];		//This size buffer is okay for now
-	int rowLen; 				//Number of chars in one line of the file
-	int ii = 0; 				//Index for row into the buffer
+	int rowLen = 0; 			//Number of chars in one line of the file
+	int colLen = 0; 			//Index for row into the buffer
 	fp = fopen(filename,"r"); 		//Open File
 	if(fp=NULL){ 				//Check if file was correctly open
 		fprintf(stderr,"Error opening file %s for reading\n",filename);
 		return -1;
 	}
 	else{ 					//Read in the file
-		fgets(buffer[ii],1000,fp)
-		rowLen = strlen*buffer[ii++];
-		while((fgets(buffer[ii],1000,fp))!=NULL){}
-		maze_init(map,rowLen,ii)
+		fgets(buffer[rowLen],1000,fp)
+		colLen = strlen*buffer[rowLen++];
+		while((fgets(buffer[rowLen++],1000,fp))!=NULL);
+		maze_init(map,rowLen,colLen);
+		fillmaze(buffer,rowLen,colLen);
 	}
 	if((fclose(fp))!=0) 			//Close the file and check for error
 		fprintf(stderr,"Error closing file");
