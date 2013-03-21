@@ -7,6 +7,42 @@
 #include "protocol_session.h"
 #include "maze.h"
 
+extern Cell_Types getCellType(char cell)
+{
+	switch(cell){
+		case ' ':return CELL_FLOOR;
+		case '#':return CELL_WALL;
+		case 'h':return CELL_HOME;
+		case 'H':return CELL_HOME;
+		case 'j':return CELL_JAIL;
+		case 'J':return CELL_JAIL;
+	}
+	return 0;
+}
+extern Team_Types getTurfType(int x){
+	if(x<100) 	//This will not work is the maze is larger FIXME
+		return TEAM_RED;
+	else
+		return TEAM_BLUE;
+	return 0;
+}
+extern Mutable_Types getMutableType(char cell,int x,int y)
+{
+	if(cell=='#'){
+		if(x==0)
+			return CELLTYPE_IMMUTABLE;
+		else if(x==199)
+			return CELLTYPE_IMMUTABLE;
+		else if(y==0)
+			return CELLTYPE_IMMUTABLE;
+		else if(y==199)
+			return CELLTYPE_IMMUTABLE;
+		else
+			return CELLTYPE_MUTABLE;
+	}
+	return CELLTYPE_IMMUTABLE;
+}
+
 extern void cell_init(Cell* cell, int x, int y,Team_Types turf, Cell_Types type, Mutable_Types is_mutable)
 {
     Mutable_Types is_really_mutable;
@@ -70,13 +106,13 @@ extern void maze_init(Maze * m, int max_x, int max_y)
      m->max_y = (unsigned short int) max_y;
     
      m->pos = (Cell **)malloc(m->max_x*(sizeof(Cell*)));
-     if(m->pos == NULL ) fprintf(stderr,"Unable to Initiale %d columns",m->max_x);
+     if(m->pos == NULL ) fprintf(stderr,"Unable to Initiale %d columns\n",m->max_x);
 
      unsigned short int col;
      for( col = 0; col < m->max_x ; col++ )
      {
         if( ( m->pos[col]=(Cell*)malloc(m->max_y*sizeof(Cell))) == NULL ) 
-        fprintf(stderr,"Unable to Initialize %d rows for %d column",m->max_y,col);
+        fprintf(stderr,"Unable to Initialize %d rows for %d column\n",m->max_y,col);
      }
-     fprintf(stderr,"Successful Initialize %d col(x) by %d row(y) maze",m->max_x,m->max_y);
+     fprintf(stderr,"Successful Initialize %d col(x) by %d row(y) maze\n",m->max_x,m->max_y);
 }

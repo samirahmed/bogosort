@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <poll.h>
 #include <pthread.h>
+#include <string.h>
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/net.h"
@@ -34,10 +35,99 @@
 #include "../lib/protocol_utils.h"
 
 static pthread_mutex_t maplock;
-
+static Maze map; 		//Static Global variable for the map
 int client_lost_handler(Proto_Session *);
 void init_game(void);
 int updateClients(void);
+
+void fillMaze(char buffer[][MAX_COL_MAZE],int max_x, int max_y){
+//	|---------->X Axis
+//	|
+//	|
+//	|
+// 	V
+// 	 Y Axis
+	int x,y;	
+	for(y=0;y<max_y;y++) 				//Y Axis = Row
+		for(x=0;x<max_x;x++){ 			//X Axis = Column
+			cell_init(&(map.pos[x][y]), 		//pos[x][y]
+				  x,
+				  y,
+				  getTurfType(x),
+				  getCellType(buffer[y][x]), 	 	//buffer[row][column] = buffer[y][x]
+				  getMutableType(buffer[y][x],x,y));
+		}
+}
+
+
+int loadMaze(char* filename){
+	FILE* fp;
+	char buffer[MAX_ROW_MAZE][MAX_COL_MAZE];		//This size buffer is okay for now
+	int rowLen = 0; 			//Number of chars in one line of the file
+	int colLen = 0; 			//Index for row into the buffer
+	fp = fopen(filename,"r"); 		//Open File
+	if(fp==NULL){ 				//Check if file was correctly open
+		fprintf(stderr,"Error opening file %s for reading\n",filename);
+		return -1;
+	}
+	else{ 					//Read in the file
+		fgets(buffer[rowLen],MAX_COL_MAZE,fp);
+		colLen = strlen(buffer[rowLen++]);
+		while((fgets(buffer[rowLen++],MAX_COL_MAZE,fp))!=NULL);
+		colLen--;
+		rowLen--;		
+		maze_init(&map,colLen,rowLen);
+		fillMaze(buffer,colLen,rowLen);
+	}
+	if((fclose(fp))!=0) 			//Close the file and check for error
+		fprintf(stderr,"Error closing file");
+	return 1;
+}
+
+void dumpMaze(){
+	int x,y;
+	FILE* dumpfp;
+	dumpfp = fopen("dumpfile.text","w");
+	for(y=0;y<map.max_y;y++){
+		for(x=0;x<map.max_x;x++){
+			if(map.pos[x][y].type==CELL_WALL)
+			{
+				fprintf(stdout,"#");
+				fprintf(dumpfp,"#");
+
+			}
+			else if(map.pos[x][y].type==CELL_FLOOR)
+			{
+				fprintf(stdout," ");
+				fprintf(dumpfp," ");
+			}
+			else if(map.pos[x][y].type==CELL_JAIL && map.pos[x][y].turf==TEAM_RED)
+			{
+				fprintf(stdout,"j");
+				fprintf(dumpfp,"j");
+			}
+			else if(map.pos[x][y].type==CELL_HOME && map.pos[x][y].turf==TEAM_RED)
+			{
+				fprintf(stdout,"h");
+				fprintf(dumpfp,"h");
+			}
+			else if(map.pos[x][y].type==CELL_JAIL && map.pos[x][y].turf==TEAM_BLUE)
+			{
+				fprintf(stdout,"J");
+				fprintf(dumpfp,"J");
+			}
+			else if(map.pos[x][y].type==CELL_HOME && map.pos[x][y].turf==TEAM_BLUE)
+			{
+				fprintf(stdout,"H");
+				fprintf(dumpfp,"H");
+			}
+		}
+		fprintf(stdout,"\n");
+		fprintf(dumpfp,"\n");
+	}
+	close(dumpfp);
+
+}
 
 int hello_handler( Proto_Session *s)
 {
@@ -115,14 +205,21 @@ doUpdateClients(void)
 }
 
 char MenuString[] =
-  "d/D-debug on/off u-update clients q-quit";
+  "Usage: d/D-debug on/off\n\tu-update clients\n\tq-quit\n\tload <filename> - Loads a Map file\n\tdump - dump contents of map data structure\n";
 
 int 
-docmd(char cmd)
+docmd(char* cmd)
 {
   int rc = 1;
 
-  switch (cmd) {
+  if((strncmp(cmd,"load",4))==0)	//Lazily put this here
+	return  loadMaze(cmd+5);
+  else if((strncmp(cmd,"dump",4))==0){	//Lazily put this here
+	dumpMaze();
+	return rc;
+  }
+
+  switch (*cmd) {
   case 'd':
     proto_debug_on();
     break;
@@ -145,22 +242,32 @@ docmd(char cmd)
   return rc;
 }
 
-int
+char*
 prompt(int menu) 
 {
-  int ret;
-  int c=0;
-
-  if (menu) printf("%s:", MenuString);
+  if (menu) printf("%sSERVER_SHELL$ ", MenuString);
   fflush(stdout);
-  c=getchar();;
-  return c;
+  
+  // Pull in input from stdin
+  int bytes_read;
+  int nbytes = 0;
+  char *my_string;
+  bytes_read = getline (&my_string, &nbytes, stdin);
+  
+  char* pch;
+  pch = strchr(my_string,'\n'); 
+  *pch = '\0'; 			//Remove newline character
+
+  if(bytes_read>0)
+	return my_string;
+  else
+	return 0;
 }
 
 void *
 shell(void *arg)
 {
-  int c;
+  char* c;
   int rc=1;
   int menu=1;
 
@@ -169,6 +276,9 @@ shell(void *arg)
     if (rc<0) break;
     if (rc==1) menu=1; else menu=0;
   }
+  if(c!=0)//If this variable was allocated in prompt(menu) please free memory
+	free(c);
+
   fprintf(stderr, "terminating\n");
   fflush(stdout);
   return NULL;

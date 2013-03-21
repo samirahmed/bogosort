@@ -22,7 +22,8 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 *****************************************************************************/
-
+#define MAX_COL_MAZE 1000
+#define MAX_ROW_MAZE 1000
 
 typedef enum{
     CELLTYPE_IMMUTABLE,
@@ -85,7 +86,9 @@ extern int cell_is_unoccupied(Cell* cell);
 extern int cell_is_walkable_type(Cell * cell);
 extern void cell_unmarshall_from_header(Cell * cell, Proto_Msg_Hdr *hdr);
 extern void cell_marshall_into_header(Cell * cell, Proto_Msg_Hdr * hdr);
-
 extern void maze_init(Maze * m,int max_x, int max_y);
+extern Cell_Types getCellType(char cell);
+extern Team_Types getTurfType(int x);
+extern Mutable_Types getMutableType(char cell,int x,int y);
 
 #endif
