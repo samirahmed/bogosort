@@ -372,6 +372,12 @@ put_int(Proto_Session* s, int value)
   if (value!=NULL) proto_session_body_marshall_int(s, value);
 }
 
+extern void
+put_hdr(Proto_Session*s, Proto_Msg_Hdr *hdr)
+{
+  if (hdr!=NULL)  proto_session_hdr_marshall(s,hdr);
+}
+
 extern int
 reply( Proto_Session * s, Proto_Msg_Types mt , int response)
 {

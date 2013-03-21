@@ -79,6 +79,8 @@ typedef struct{
     Cell** pos;
     unsigned short int max_x;
     unsigned short int max_y;
+    unsigned short int min_x;
+    unsigned short int min_y;
 } Maze;
 
 extern void cell_init(Cell* cell,int x, int y, Team_Types turf, Cell_Types type, Mutable_Types is_mutable);

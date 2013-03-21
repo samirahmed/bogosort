@@ -204,6 +204,14 @@ extern int get_int(Proto_Client_Handle ch, int offset, int* result)
   return rc;
 }
 
+extern void get_hdr(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr)
+{
+  Proto_Session *s;
+  Proto_Client *c = ch;
+  s = &(c->rpc_session);
+  proto_session_hdr_unmarshall(s,hdr);
+}
+
 // all rpc's are assume to only reply only with a return code in the body
 // eg.  like the null_mes
 extern int 

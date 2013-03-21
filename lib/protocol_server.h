@@ -37,5 +37,6 @@ extern Proto_Session *proto_server_event_session(void);
 extern int    proto_server_start_rpc_loop(void);
 extern void put_int(Proto_Session *s, int value);
 extern void proto_server_post_event(void);
+extern void put_hdr(Proto_Session*s, Proto_Msg_Hdr *hdr);
 
 #endif

@@ -104,7 +104,9 @@ extern void maze_init(Maze * m, int max_x, int max_y)
 {
      m->max_x = (unsigned short int) max_x;
      m->max_y = (unsigned short int) max_y;
-    
+     m->min_x = 0;
+     m->min_y = 0;
+
      m->pos = (Cell **)malloc(m->max_x*(sizeof(Cell*)));
      if(m->pos == NULL ) fprintf(stderr,"Unable to Initiale %d columns\n",m->max_x);
 

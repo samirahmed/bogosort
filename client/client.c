@@ -161,6 +161,29 @@ doRPCCmd()
       hdr.gstate.v0.raw = request.x;
       hdr.gstate.v1.raw = request.y;
       rc = do_void_rpc(C->ph,&hdr);
+      if (rc > 0)
+      {
+        int is_valid;
+        get_int(C->ph,0,&is_valid);
+        if (is_valid <= 0)
+        {
+          fprintf(stderr,"Invalid cell address x = %d, y= %d\n", 
+            request.x,request.y);
+          fprintf(stderr,"Please use the 'dim' command to find dimensions");
+          rc = -1;
+        }
+        else
+        {
+          Cell cell;
+          Proto_Msg_Hdr hdr;
+          bzero(&cell, sizeof(Cell));
+          bzero(&hdr, sizeof(Proto_Msg_Hdr));
+          
+          get_hdr(C->ph,&hdr);
+          cell_unmarshall_from_header(&cell,&hdr);
+          cell_dump(&cell);
+        }
+      }
     break;
   case PROTO_MT_REQ_BASE_DIM:
      fprintf(stderr,"Dimension COMMAND ISSUED");
@@ -175,7 +198,7 @@ doRPCCmd()
      }
     break;
   case PROTO_MT_REQ_BASE_NUM:
-     fprintf(stderr,"Number request for cell_type %d",request.turf);
+     fprintf(stderr,"Number request for team %d\n",request.turf+1);
      Cell cell;
      cell_init(&cell,0,0,request.turf,request.cell_type,0);
      cell_marshall_into_header(&cell,&hdr);
@@ -344,7 +367,7 @@ int docmd(Client *C, char* cmd)
     else if( strncmp(cmd,"numfloor",sizeof("numfloor")-1)==0)
     {
       request.type = PROTO_MT_REQ_BASE_NUM;
-      request.cell_type = CELL_WALL;
+      request.cell_type = CELL_FLOOR;
       rc=doRPCCmd();  
     }
     else if( strncmp(cmd,"dim",sizeof("dim")-1)==0)

@@ -137,34 +137,95 @@ int hello_handler( Proto_Session *s)
 
 int goodbye_handler( Proto_Session *s)
 {
-  fprintf(stderr, "hello received");
+  fprintf(stderr, "goodbye received");
   return reply(s,PROTO_MT_REP_BASE_GOODBYE,5);
 }
 
 int num_handler( Proto_Session *s)
 {
-  return reply(s,PROTO_MT_REP_BASE_NUM,5);
+  Cell cell;
+  Proto_Msg_Hdr hdr;
+  bzero(&hdr, sizeof(Proto_Msg_Hdr)); 
+  bzero(&cell, sizeof(Cell)); 
+  proto_session_hdr_unmarshall(s, &hdr); 
+  cell_unmarshall_from_header(&cell,&hdr);
+
+  int count;
+  count = 0;
+
+  int col;
+  int row;
+  for (col = 0; col < map.max_x; col++ ) 
+  {
+    for( row = 0; row < map.max_y; row++)
+    {
+      if (map.pos[col][row].type == cell.type)
+      {
+        switch( cell.type )
+        {
+            case CELL_WALL:
+              count++;
+              break;
+            case CELL_FLOOR:
+              count++;
+              break;
+            default:
+              if (map.pos[col][row].turf == cell.turf) count++;
+            break;
+        }
+      }
+    }
+  }
+  
+  return reply(s,PROTO_MT_REP_BASE_NUM,count);
 }
 
 int dim_handler( Proto_Session *s)
 {
   fprintf(stderr, "dim received");
   
-  put_int(s,127);
-  put_int(s,182);
+  put_int(s,map.max_x);
+  put_int(s,map.max_y);
   reply(s,PROTO_MT_REP_BASE_DIM,NULL);
 }
 
 int cinfo_handler( Proto_Session *s)
 {
   fprintf(stderr, "cinfo received");
-  return reply(s,PROTO_MT_REP_BASE_CINFO,5);
+  
+  Proto_Msg_Hdr h;
+  bzero(&h, sizeof(Proto_Msg_Hdr)); 
+  proto_session_hdr_unmarshall(s, &h);
+  
+  int x;
+  int y;
+  int is_valid;
+  x= h.gstate.v0.raw;
+  y= h.gstate.v1.raw;
+
+  is_valid = (x >= map.min_x && 
+             x<map.max_x && 
+             y >= map.min_y && 
+             y <map.max_y ) ? 1 : 0; 
+
+  if (is_valid)
+  {
+     Proto_Msg_Hdr rhdr;
+     bzero(&rhdr, sizeof(Proto_Msg_Hdr)); 
+     Cell cell ;
+     cell = map.pos[x][y];
+     cell_marshall_into_header(&cell,&rhdr);
+     put_hdr(s,&rhdr);
+  }
+
+  return reply(s,PROTO_MT_REP_BASE_CINFO,is_valid);
 }
 
 int dump_handler( Proto_Session *s)
 {
   fprintf(stderr, "dump received");
-  return reply(s,PROTO_MT_REP_BASE_DUMP,5);
+  dumpMaze(); 
+  return reply(s,PROTO_MT_REP_BASE_DUMP,NULL);
 }
 
 extern int client_lost_handler( Proto_Session * s)

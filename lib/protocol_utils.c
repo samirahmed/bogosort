@@ -27,10 +27,64 @@
 #include <errno.h>
 
 #include "protocol.h"
+#include "maze.h"
 #include "protocol_utils.h"
 
 
 int PROTO_DEBUG=0;
+
+extern void
+cell_dump(Cell *cell)
+{ 
+  fprintf(stderr, "Column(x): %d \n",cell->x);
+  fprintf(stderr, "Row   (y): %d \n",cell->y);
+
+  switch(cell->type)
+  {  
+    case CELL_WALL:
+      fprintf(stderr, "CELL TYPE: CELL_WALL");
+      break;
+    case CELL_FLOOR:
+      fprintf(stderr, "CELL TYPE: CELL_FLOOR");
+      break;
+    case CELL_HOME:
+      fprintf(stderr, "CELL TYPE: CELL_HOME");
+      break;
+    case CELL_JAIL:
+      fprintf(stderr, "CELL TYPE: CELL_JAIL");
+      break;
+    default:
+      fprintf(stderr, "CELL TYPE: UNKWOWN");
+      break;
+  }
+  fprintf(stderr, "\n");
+  fprintf(stderr, "CELL TYPE: TEAM %d",cell->turf+1);
+  fprintf(stderr, "\n");
+  
+  switch(cell->cell_state)
+  {  
+    case CELLSTATE_EMPTY:
+      fprintf(stderr, "CELLSTATE: EMPTY");
+      break;
+    case CELLSTATE_HOLDING:
+      fprintf(stderr, "CELLSTATE: HOLDING");
+      fprintf(stderr, "PLAYER OBJECT_TYPE %d \n",cell->object_type);
+      break;
+    case CELLSTATE_OCCUPIED:
+      fprintf(stderr, "CELLSTATE: OCCUPIED\n");
+      fprintf(stderr, "PLAYER TEAM %d \n",cell->player_type+1);
+      break;
+    case CELLSTATE_OCCUPIED_HOLDING:
+      fprintf(stderr, "CELLSTATE: OCCUPIED AND HOLDING");
+      fprintf(stderr, "PLAYER TEAM %d \n",cell->player_type+1);
+      fprintf(stderr, "PLAYER OBJECT_TYPE %d \n",cell->object_type);
+      break;
+    default:
+      fprintf(stderr, "CELLSTATE: UNKWOWN");
+      break;
+  }
+  fprintf(stderr, "\n");
+}
 
 extern void
 proto_dump_mt(Proto_Msg_Types type)
