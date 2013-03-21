@@ -205,7 +205,7 @@ doUpdateClients(void)
 }
 
 char MenuString[] =
-  "d/D-debug on/off u-update clients q-quit";
+  "Usage:\n\td/D-debug on/off\n\tu-update clients\n\t q-quit\n\tload <filename> - Loads a Map file\n\tdump-dump contents of map data structure\n";
 
 int 
 docmd(char* cmd)
@@ -245,7 +245,7 @@ docmd(char* cmd)
 char*
 prompt(int menu) 
 {
-  if (menu) printf("%s: ", MenuString);
+  if (menu) printf("%s\nSERVER_SHELL$ ", MenuString);
   fflush(stdout);
   
   // Pull in input from stdin

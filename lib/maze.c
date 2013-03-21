@@ -106,13 +106,13 @@ extern void maze_init(Maze * m, int max_x, int max_y)
      m->max_y = (unsigned short int) max_y;
     
      m->pos = (Cell **)malloc(m->max_x*(sizeof(Cell*)));
-     if(m->pos == NULL ) fprintf(stderr,"Unable to Initiale %d columns",m->max_x);
+     if(m->pos == NULL ) fprintf(stderr,"Unable to Initiale %d columns\n",m->max_x);
 
      unsigned short int col;
      for( col = 0; col < m->max_x ; col++ )
      {
         if( ( m->pos[col]=(Cell*)malloc(m->max_y*sizeof(Cell))) == NULL ) 
-        fprintf(stderr,"Unable to Initialize %d rows for %d column",m->max_y,col);
+        fprintf(stderr,"Unable to Initialize %d rows for %d column\n",m->max_y,col);
      }
-     fprintf(stderr,"Successful Initialize %d col(x) by %d row(y) maze",m->max_x,m->max_y);
+     fprintf(stderr,"Successful Initialize %d col(x) by %d row(y) maze\n",m->max_x,m->max_y);
 }

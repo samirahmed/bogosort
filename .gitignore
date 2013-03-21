@@ -1,5 +1,6 @@
-# Map files
+# Map files and dumpfile
 *.map
+dumpfile.txt
 
 # vim swap files
 *.swp
