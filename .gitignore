@@ -1,3 +1,6 @@
+# Map files
+*.map
+
 # vim swap files
 *.swp
 
