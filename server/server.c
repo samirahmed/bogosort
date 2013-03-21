@@ -35,7 +35,7 @@
 #include "../lib/protocol_utils.h"
 
 static pthread_mutex_t maplock;
-static Maze* map; 		//Static Global variable for the map
+static Maze map; 		//Static Global variable for the map
 int client_lost_handler(Proto_Session *);
 void init_game(void);
 int updateClients(void);
@@ -50,7 +50,7 @@ void fillMaze(char buffer[][MAX_COL_MAZE],int max_x, int max_y){
 	int x,y;	
 	for(y=0;y<max_y;y++) 				//Y Axis = Row
 		for(x=0;x<max_x;x++){ 			//X Axis = Column
-			cell_init(&(map->pos[x][y]), 		//pos[x][y]
+			cell_init(&(map.pos[x][y]), 		//pos[x][y]
 				  x,
 				  y,
 				  getTurfType(x),
@@ -66,7 +66,7 @@ int loadMaze(char* filename){
 	int rowLen = 0; 			//Number of chars in one line of the file
 	int colLen = 0; 			//Index for row into the buffer
 	fp = fopen(filename,"r"); 		//Open File
-	if(fp=NULL){ 				//Check if file was correctly open
+	if(fp==NULL){ 				//Check if file was correctly open
 		fprintf(stderr,"Error opening file %s for reading\n",filename);
 		return -1;
 	}
@@ -74,7 +74,9 @@ int loadMaze(char* filename){
 		fgets(buffer[rowLen],MAX_COL_MAZE,fp);
 		colLen = strlen(buffer[rowLen++]);
 		while((fgets(buffer[rowLen++],MAX_COL_MAZE,fp))!=NULL);
-		maze_init(map,colLen,rowLen);
+		colLen--;
+		rowLen--;		
+		maze_init(&map,colLen,rowLen);
 		fillMaze(buffer,colLen,rowLen);
 	}
 	if((fclose(fp))!=0) 			//Close the file and check for error
@@ -84,22 +86,46 @@ int loadMaze(char* filename){
 
 void dumpMaze(){
 	int x,y;
-	for(y=0;x<map->max_y;y++){
-		for(x=0;x<map->max_x;x++){
-			if(map->pos[x][y].type==CELL_WALL)
+	FILE* dumpfp;
+	dumpfp = fopen("dumpfile.text","w");
+	for(y=0;y<map.max_y;y++){
+		for(x=0;x<map.max_x;x++){
+			if(map.pos[x][y].type==CELL_WALL)
+			{
 				fprintf(stdout,"#");
-			else if(map->pos[x][y].type==CELL_FLOOR)
+				fprintf(dumpfp,"#");
+
+			}
+			else if(map.pos[x][y].type==CELL_FLOOR)
+			{
 				fprintf(stdout," ");
-			else if(map->pos[x][y].type==CELL_JAIL && map->pos[x][y].turf==TEAM_RED)
+				fprintf(dumpfp," ");
+			}
+			else if(map.pos[x][y].type==CELL_JAIL && map.pos[x][y].turf==TEAM_RED)
+			{
 				fprintf(stdout,"j");
-			else if(map->pos[x][y].type==CELL_HOME && map->pos[x][y].turf==TEAM_RED)
+				fprintf(dumpfp,"j");
+			}
+			else if(map.pos[x][y].type==CELL_HOME && map.pos[x][y].turf==TEAM_RED)
+			{
 				fprintf(stdout,"h");
-			else if(map->pos[x][y].type==CELL_JAIL && map->pos[x][y].turf==TEAM_BLUE)
+				fprintf(dumpfp,"h");
+			}
+			else if(map.pos[x][y].type==CELL_JAIL && map.pos[x][y].turf==TEAM_BLUE)
+			{
 				fprintf(stdout,"J");
-			else if(map->pos[x][y].type==CELL_HOME && map->pos[x][y].turf==TEAM_BLUE)
+				fprintf(dumpfp,"J");
+			}
+			else if(map.pos[x][y].type==CELL_HOME && map.pos[x][y].turf==TEAM_BLUE)
+			{
 				fprintf(stdout,"H");
+				fprintf(dumpfp,"H");
+			}
 		}
+		fprintf(stdout,"\n");
+		fprintf(dumpfp,"\n");
 	}
+	close(dumpfp);
 
 }
 
@@ -187,9 +213,11 @@ docmd(char* cmd)
   int rc = 1;
 
   if((strncmp(cmd,"load",4))==0)	//Lazily put this here
-	rc = loadMaze(cmd+5);
-  else if((strncmp(cmd,"dump",4))==0)	//Lazily put this here
+	return  loadMaze(cmd+5);
+  else if((strncmp(cmd,"dump",4))==0){	//Lazily put this here
 	dumpMaze();
+	return rc;
+  }
 
   switch (*cmd) {
   case 'd':
