@@ -1,4 +1,4 @@
-CFLAGS := -g -pthread
+CFLAGS := -g -pthread -Wall
 targets=server
 src = server.c
 objs = $(patsubst %.c,%.o,$(src))

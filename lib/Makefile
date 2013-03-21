@@ -1,4 +1,4 @@
-CFLAGS := -g
+CFLAGS := -g -Wall
 targets = libdagame.a
 src = $(wildcard *.c)
 objs = $(patsubst %.c,%.o,$(src))
