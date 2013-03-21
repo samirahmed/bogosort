@@ -33,7 +33,6 @@
 #include "../lib/protocol_session.h"
 #include "../lib/protocol_server.h"
 #include "../lib/protocol_utils.h"
-#include "../lib/maze.h"
 
 static pthread_mutex_t maplock;
 static Maze* map; 		//Static Global variable for the map
@@ -66,9 +65,9 @@ int loadMaze(char* filename){
 		return -1;
 	}
 	else{ 					//Read in the file
-		fgets(buffer[rowLen],1000,fp);
+		fgets(buffer[rowLen],MAX_COL_MAZE,fp);
 		colLen = strlen(buffer[rowLen++]);
-		while((fgets(buffer[rowLen++],1000,fp))!=NULL);
+		while((fgets(buffer[rowLen++],MAX_COL_MAZE,fp))!=NULL);
 		maze_init(map,rowLen,colLen);
 		fillMaze(buffer,rowLen,colLen);
 	}
@@ -166,7 +165,8 @@ docmd(char* cmd)
   int rc = 1;
 
   if((strncmp(cmd,"load",4))==0)	//Lazily put this here
-	loadMaze(cmd+5);
+	rc = loadMaze(cmd+5);
+  else if((strncmp(cmd,"dump",4))==0)	//Lazily put this here
 
   switch (*cmd) {
   case 'd':
