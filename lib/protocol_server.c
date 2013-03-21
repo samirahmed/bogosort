@@ -388,8 +388,12 @@ reply( Proto_Session * s, Proto_Msg_Types mt , int response)
   // setup dummy reply header : set correct reply message type and 
   // everything else empty
   bzero(&h, sizeof(s));
-  h.type = mt;
-  proto_session_hdr_marshall(s, &h);
+  
+  if (mt != NULL)
+  {
+    h.type = mt;
+    proto_session_hdr_marshall(s, &h);
+  }
 
   // setup a dummy body that just has a return code 
   if (response!=NULL) proto_session_body_marshall_int(s, response);

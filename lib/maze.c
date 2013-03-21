@@ -75,6 +75,8 @@ extern void cell_unmarshall_from_header(Cell * cell, Proto_Msg_Hdr *hdr)
     x = (unsigned)((0xffff0000 & hdr->pstate.v0.raw)>>16);
     y = (unsigned)((0x0000ffff & hdr->pstate.v0.raw));
 
+    cell->x=x;
+    cell->y=y;
     cell->type =        (Cell_Types)        (unsigned)((0x0000000f & (hdr->pstate.v1.raw)));
     cell->turf =        (Team_Types)        (unsigned)((0x000000f0 & (hdr->pstate.v1.raw))>>4);
     cell->player_type = (Team_Types)        (unsigned)((0x00000f00 & (hdr->pstate.v1.raw))>>8);

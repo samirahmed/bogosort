@@ -191,7 +191,6 @@ int dim_handler( Proto_Session *s)
 
 int cinfo_handler( Proto_Session *s)
 {
-  fprintf(stderr, "cinfo received");
   
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr)); 
@@ -202,6 +201,7 @@ int cinfo_handler( Proto_Session *s)
   int is_valid;
   x= h.gstate.v0.raw;
   y= h.gstate.v1.raw;
+  fprintf(stderr, "cinfo received for x= %d, y=%d \n",x,y);
 
   is_valid = (x >= map.min_x && 
              x<map.max_x && 
@@ -210,15 +210,15 @@ int cinfo_handler( Proto_Session *s)
 
   if (is_valid)
   {
-     Proto_Msg_Hdr rhdr;
-     bzero(&rhdr, sizeof(Proto_Msg_Hdr)); 
+     Proto_Msg_Hdr shdr;
+     bzero(&shdr, sizeof(Proto_Msg_Hdr)); 
      Cell cell ;
      cell = map.pos[x][y];
-     cell_marshall_into_header(&cell,&rhdr);
-     put_hdr(s,&rhdr);
+     cell_marshall_into_header(&cell,&shdr);
+     put_hdr(s,&shdr);
   }
 
-  return reply(s,PROTO_MT_REP_BASE_CINFO,is_valid);
+  return reply(s,NULL,is_valid);
 }
 
 int dump_handler( Proto_Session *s)

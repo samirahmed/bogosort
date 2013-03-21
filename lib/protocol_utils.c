@@ -36,8 +36,9 @@ int PROTO_DEBUG=0;
 extern void
 cell_dump(Cell *cell)
 { 
-  fprintf(stderr, "Column(x): %d \n",cell->x);
-  fprintf(stderr, "Row   (y): %d \n",cell->y);
+  fprintf(stderr, "\n");
+  fprintf(stderr, "COLUMN - (x) - %d \n",cell->x);
+  fprintf(stderr, "ROW    - (y) - %d \n",cell->y);
 
   switch(cell->type)
   {  
@@ -58,7 +59,7 @@ cell_dump(Cell *cell)
       break;
   }
   fprintf(stderr, "\n");
-  fprintf(stderr, "CELL TYPE: TEAM %d",cell->turf+1);
+  fprintf(stderr, "CELL TURF: %d",cell->turf+1);
   fprintf(stderr, "\n");
   
   switch(cell->cell_state)

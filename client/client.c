@@ -175,12 +175,12 @@ doRPCCmd()
         else
         {
           Cell cell;
-          Proto_Msg_Hdr hdr;
+          Proto_Msg_Hdr rhdr;
           bzero(&cell, sizeof(Cell));
-          bzero(&hdr, sizeof(Proto_Msg_Hdr));
+          bzero(&rhdr, sizeof(Proto_Msg_Hdr));
           
-          get_hdr(C->ph,&hdr);
-          cell_unmarshall_from_header(&cell,&hdr);
+          get_hdr(C->ph,&rhdr);
+          cell_unmarshall_from_header(&cell,&rhdr);
           cell_dump(&cell);
         }
       }
