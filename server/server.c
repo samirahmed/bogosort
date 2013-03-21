@@ -41,15 +41,21 @@ void init_game(void);
 int updateClients(void);
 
 void fillMaze(char buffer[][MAX_COL_MAZE],int max_x, int max_y){
-	int ii,jj;	
-	for(ii=0;ii<max_x;ii++)
-		for(jj=0;jj<max_y;jj++){
-			cell_init(&(map->pos[ii][jj]),
-				  ii,
-				  jj,
-				  getTurfType(jj),
-				  getCellType(buffer[ii][jj]),
-				  getMutableType(buffer[ii][jj],ii,jj));
+//	|---------->X Axis
+//	|
+//	|
+//	|
+// 	V
+// 	 Y Axis
+	int x,y;	
+	for(y=0;y<max_y;y++) 				//Y Axis = Row
+		for(x=0;x<max_x;x++){ 			//X Axis = Column
+			cell_init(&(map->pos[x][y]), 		//pos[x][y]
+				  x,
+				  y,
+				  getTurfType(x),
+				  getCellType(buffer[y][x]), 	 	//buffer[row][column] = buffer[y][x]
+				  getMutableType(buffer[y][x],x,y));
 		}
 }
 
@@ -68,16 +74,32 @@ int loadMaze(char* filename){
 		fgets(buffer[rowLen],MAX_COL_MAZE,fp);
 		colLen = strlen(buffer[rowLen++]);
 		while((fgets(buffer[rowLen++],MAX_COL_MAZE,fp))!=NULL);
-		maze_init(map,rowLen,colLen);
-		fillMaze(buffer,rowLen,colLen);
+		maze_init(map,colLen,rowLen);
+		fillMaze(buffer,colLen,rowLen);
 	}
 	if((fclose(fp))!=0) 			//Close the file and check for error
 		fprintf(stderr,"Error closing file");
 	return 1;
 }
 
-int dumpMaze(){
-
+void dumpMaze(){
+	int x,y;
+	for(y=0;x<map->max_y;y++){
+		for(x=0;x<map->max_x;x++){
+			if(map->pos[x][y].type==CELL_WALL)
+				fprintf(stdout,"#");
+			else if(map->pos[x][y].type==CELL_FLOOR)
+				fprintf(stdout," ");
+			else if(map->pos[x][y].type==CELL_JAIL && map->pos[x][y].turf==TEAM_RED)
+				fprintf(stdout,"j");
+			else if(map->pos[x][y].type==CELL_HOME && map->pos[x][y].turf==TEAM_RED)
+				fprintf(stdout,"h");
+			else if(map->pos[x][y].type==CELL_JAIL && map->pos[x][y].turf==TEAM_BLUE)
+				fprintf(stdout,"J");
+			else if(map->pos[x][y].type==CELL_HOME && map->pos[x][y].turf==TEAM_BLUE)
+				fprintf(stdout,"H");
+		}
+	}
 
 }
 
@@ -167,6 +189,7 @@ docmd(char* cmd)
   if((strncmp(cmd,"load",4))==0)	//Lazily put this here
 	rc = loadMaze(cmd+5);
   else if((strncmp(cmd,"dump",4))==0)	//Lazily put this here
+	dumpMaze();
 
   switch (*cmd) {
   case 'd':
@@ -194,7 +217,7 @@ docmd(char* cmd)
 char*
 prompt(int menu) 
 {
-  if (menu) printf("%s", MenuString);
+  if (menu) printf("%s: ", MenuString);
   fflush(stdout);
   
   // Pull in input from stdin
@@ -202,6 +225,10 @@ prompt(int menu)
   int nbytes = 0;
   char *my_string;
   bytes_read = getline (&my_string, &nbytes, stdin);
+  
+  char* pch;
+  pch = strchr(my_string,'\n'); 
+  *pch = '\0'; 			//Remove newline character
 
   if(bytes_read>0)
 	return my_string;
