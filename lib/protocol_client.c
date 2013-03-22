@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <strings.h>
 #include <errno.h>
@@ -66,6 +67,7 @@ proto_client_set_session_lost_handler(Proto_Client_Handle ch, Proto_MT_Handler h
 {
   Proto_Client *c = ch;
   c->session_lost_handler = h;
+  return 1;
 }
 
 extern int
@@ -110,7 +112,6 @@ proto_client_event_dispatcher(void * arg)
   Proto_Session *s;
   Proto_Msg_Types mt;
   Proto_MT_Handler hdlr;
-  int i;
 
   pthread_detach(pthread_self());
 
@@ -183,15 +184,6 @@ proto_client_connect(Proto_Client_Handle ch, char *host, PortType port)
 
   return 0;
 }
-
-static void
-marshall_mtonly(Proto_Session *s, Proto_Msg_Types mt) {
-  Proto_Msg_Hdr h;
-  
-  bzero(&h, sizeof(h));
-  h.type = mt;
-  proto_session_hdr_marshall(s, &h);
-};
 
 extern int get_int(Proto_Client_Handle ch, int offset, int* result)
 {

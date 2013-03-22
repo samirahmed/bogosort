@@ -31,10 +31,13 @@ extern int proto_server_init(void);
 extern int proto_server_set_session_lost_handler(Proto_MT_Handler h);
 extern int proto_server_set_req_handler(Proto_Msg_Types mt, Proto_MT_Handler h);
 
+extern PortType proto_server_eventport(void);
+
 extern PortType proto_server_rpcport(void);
 extern PortType proto_server_listenport(void);
 extern Proto_Session *proto_server_event_session(void);
-extern int    proto_server_start_rpc_loop(void);
+
+extern int  proto_server_start_rpc_loop(void);
 extern void put_int(Proto_Session *s, int value);
 extern void proto_server_post_event(void);
 extern void put_hdr(Proto_Session*s, Proto_Msg_Hdr *hdr);

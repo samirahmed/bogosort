@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/maze.h"
@@ -85,7 +86,7 @@ clientInit(Client *C)
 static int
 update_event_handler(Proto_Session *s)
 {
-  Client *C = proto_session_get_data(s);
+  /*Client *C = proto_session_get_data(s);*/
 
   fprintf(stderr, "%s: called", __func__);
   return 1;
@@ -121,7 +122,7 @@ prompt(int menu)
   
   // Pull in input from stdin
   int bytes_read;
-  int nbytes = 0;
+  size_t nbytes = 0;
   char *my_string;
   bytes_read = getline(&my_string, &nbytes, stdin);
 

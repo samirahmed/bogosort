@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <poll.h>
 #include <pthread.h>
@@ -186,7 +187,7 @@ int dim_handler( Proto_Session *s)
   
   put_int(s,map.max_x);
   put_int(s,map.max_y);
-  reply(s,PROTO_MT_REP_BASE_DIM,NULL);
+  return reply(s,PROTO_MT_REP_BASE_DIM,NULL);
 }
 
 int cinfo_handler( Proto_Session *s)
@@ -311,7 +312,7 @@ prompt(int menu)
   
   // Pull in input from stdin
   int bytes_read;
-  int nbytes = 0;
+  size_t nbytes = 0;
   char *my_string;
   bytes_read = getline (&my_string, &nbytes, stdin);
   

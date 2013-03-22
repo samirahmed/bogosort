@@ -19,6 +19,7 @@ extern Cell_Types get_cell_type(char cell)
 	}
 	return 0;
 }
+
 extern Team_Types get_turf_type(int x,int max_x){
 	if(x<(max_x/2)) 	//This will not work is the maze is larger FIXME
 		return TEAM_RED;
@@ -26,6 +27,7 @@ extern Team_Types get_turf_type(int x,int max_x){
 		return TEAM_BLUE;
 	return 0;
 }
+
 extern Mutable_Types get_mutable_type(char cell,int x,int y,int max_x,int max_y)
 {
 	if(cell=='#'){

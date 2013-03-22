@@ -72,6 +72,7 @@ extern int
 proto_server_set_session_lost_handler(Proto_MT_Handler h)
 {
   Proto_Server.session_lost_handler = h;
+  return 1;
 }
 
 extern int
@@ -206,7 +207,6 @@ proto_server_req_dispatcher(void * arg)
   Proto_Session s;
   Proto_Msg_Types mt;
   Proto_MT_Handler hdlr;
-  int i;
   unsigned long arg_value = (unsigned long) arg;
   
   pthread_detach(pthread_self());
@@ -216,14 +216,14 @@ proto_server_req_dispatcher(void * arg)
   s.fd = (FDType) arg_value;
 
   fprintf(stderr, "proto_rpc_dispatcher: %p: Started: fd=%d\n", 
-	  pthread_self(), s.fd);
+	  (void *)pthread_self(), s.fd);
 
   for (;;) {
     if (proto_session_rcv_msg(&s)==1) {
  		mt = (Proto_Msg_Types) proto_session_hdr_unmarshall_type(&s);
 		fprintf(stderr,"proto_rpc_dispatcher: mt=%d ",mt);
 		fprintf(stderr,"proto_rpc_dispatcher: type=%d ", proto_session_hdr_unmarshall_type(&s));
-		if ( PROTO_MT_REQ_BASE_RESERVED_FIRST < mt < PROTO_MT_REQ_BASE_RESERVED_LAST )
+		if ( PROTO_MT_REQ_BASE_RESERVED_FIRST < mt && mt < PROTO_MT_REQ_BASE_RESERVED_LAST )
 		{ 
 		  hdlr = Proto_Server.base_req_handlers[mt-PROTO_MT_REQ_BASE_RESERVED_FIRST-1];
 		}
@@ -369,13 +369,13 @@ proto_server_init(void)
 extern void
 put_int(Proto_Session* s, int value)
 {
-  if (value!=NULL) proto_session_body_marshall_int(s, value);
+  proto_session_body_marshall_int(s, value);
 }
 
 extern void
 put_hdr(Proto_Session*s, Proto_Msg_Hdr *hdr)
 {
-  if (hdr!=NULL)  proto_session_hdr_marshall(s,hdr);
+  proto_session_hdr_marshall(s,hdr);
 }
 
 extern int
@@ -396,7 +396,7 @@ reply( Proto_Session * s, Proto_Msg_Types mt , int response)
   }
 
   // setup a dummy body that just has a return code 
-  if (response!=NULL) proto_session_body_marshall_int(s, response);
+  if (response != NULL) proto_session_body_marshall_int(s, response);
   rc=proto_session_send_msg(s,1);
   return rc;
 }
