@@ -7,7 +7,7 @@
 #include "protocol_session.h"
 #include "maze.h"
 
-extern Cell_Types getCellType(char cell)
+extern Cell_Types get_cell_type(char cell)
 {
 	switch(cell){
 		case ' ':return CELL_FLOOR;
@@ -19,14 +19,14 @@ extern Cell_Types getCellType(char cell)
 	}
 	return 0;
 }
-extern Team_Types getTurfType(int x,int max_x){
+extern Team_Types get_turf_type(int x,int max_x){
 	if(x<(max_x/2)) 	//This will not work is the maze is larger FIXME
 		return TEAM_RED;
 	else
 		return TEAM_BLUE;
 	return 0;
 }
-extern Mutable_Types getMutableType(char cell,int x,int y,int max_x,int max_y)
+extern Mutable_Types get_mutable_type(char cell,int x,int y,int max_x,int max_y)
 {
 	if(cell=='#'){
 		if(x==0)

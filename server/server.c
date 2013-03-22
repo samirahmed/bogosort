@@ -53,9 +53,9 @@ void fill_maze(char buffer[][MAX_COL_MAZE],int max_x, int max_y){
 			cell_init(&(map.pos[x][y]), 		//pos[x][y]
 				  x,
 				  y,
-				  getTurfType(x,max_x),
-				  getCellType(buffer[y][x]),  	//buffer[row][column] = buffer[y][x]
-				  getMutableType(buffer[y][x],x,y,max_x,max_y));
+				  get_turf_type(x,max_x),
+				  get_cell_type(buffer[y][x]),  	//buffer[row][column] = buffer[y][x]
+				  get_mutable_type(buffer[y][x],x,y,max_x,max_y));
 		}
 }
 
