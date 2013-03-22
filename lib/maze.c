@@ -19,23 +19,23 @@ extern Cell_Types getCellType(char cell)
 	}
 	return 0;
 }
-extern Team_Types getTurfType(int x){
-	if(x<100) 	//This will not work is the maze is larger FIXME
+extern Team_Types getTurfType(int x,int max_x){
+	if(x<(max_x/2)) 	//This will not work is the maze is larger FIXME
 		return TEAM_RED;
 	else
 		return TEAM_BLUE;
 	return 0;
 }
-extern Mutable_Types getMutableType(char cell,int x,int y)
+extern Mutable_Types getMutableType(char cell,int x,int y,int max_x,int max_y)
 {
 	if(cell=='#'){
 		if(x==0)
 			return CELLTYPE_IMMUTABLE;
-		else if(x==199)
+		else if(x==(max_x-1))
 			return CELLTYPE_IMMUTABLE;
 		else if(y==0)
 			return CELLTYPE_IMMUTABLE;
-		else if(y==199)
+		else if(y==(max_y-1))
 			return CELLTYPE_IMMUTABLE;
 		else
 			return CELLTYPE_MUTABLE;
