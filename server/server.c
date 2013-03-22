@@ -40,7 +40,7 @@ int client_lost_handler(Proto_Session *);
 void init_game(void);
 int updateClients(void);
 
-void fillMaze(char buffer[][MAX_COL_MAZE],int max_x, int max_y){
+void fill_maze(char buffer[][MAX_COL_MAZE],int max_x, int max_y){
 //	|---------->X Axis
 //	|
 //	|
@@ -53,14 +53,14 @@ void fillMaze(char buffer[][MAX_COL_MAZE],int max_x, int max_y){
 			cell_init(&(map.pos[x][y]), 		//pos[x][y]
 				  x,
 				  y,
-				  getTurfType(x),
-				  getCellType(buffer[y][x],max_x),  	//buffer[row][column] = buffer[y][x]
+				  getTurfType(x,max_x),
+				  getCellType(buffer[y][x]),  	//buffer[row][column] = buffer[y][x]
 				  getMutableType(buffer[y][x],x,y,max_x,max_y));
 		}
 }
 
 
-int loadMaze(char* filename){
+int load_maze(char* filename){
 	FILE* fp;
 	char buffer[MAX_ROW_MAZE][MAX_COL_MAZE];		//This size buffer is okay for now
 	int rowLen = 0; 			//Number of chars in one line of the file
@@ -77,14 +77,14 @@ int loadMaze(char* filename){
 		colLen--;
 		rowLen--;		
 		maze_init(&map,colLen,rowLen);
-		fillMaze(buffer,colLen,rowLen);
+		fill_maze(buffer,colLen,rowLen);
 	}
 	if((fclose(fp))!=0) 			//Close the file and check for error
 		fprintf(stderr,"Error closing file");
 	return 1;
 }
 
-void dumpMaze(){
+void dump_maze(){
 	int x,y;
 	FILE* dumpfp;
 	dumpfp = fopen("dumpfile.text","w");
@@ -224,7 +224,7 @@ int cinfo_handler( Proto_Session *s)
 int dump_handler( Proto_Session *s)
 {
   fprintf(stderr, "dump received");
-  dumpMaze(); 
+  dump_maze(); 
   return reply(s,PROTO_MT_REP_BASE_DUMP,NULL);
 }
 
@@ -274,9 +274,9 @@ docmd(char* cmd)
   int rc = 1;
 
   if((strncmp(cmd,"load",4))==0)	//Lazily put this here
-	return  loadMaze(cmd+5);
+	return  load_maze(cmd+5);
   else if((strncmp(cmd,"dump",4))==0){	//Lazily put this here
-	dumpMaze();
+	dump_maze();
 	return rc;
   }
 
