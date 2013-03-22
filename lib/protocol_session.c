@@ -22,6 +22,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <arpa/inet.h>
 #include <sys/types.h>
 #include <strings.h>
 #include <errno.h>
@@ -342,7 +344,7 @@ proto_session_send_msg(Proto_Session *s, int reset)
   if (net_writen( s->fd, (s->sbuf) , s->slen )!= s->slen ) return 0;
  
   if (proto_debug()) {
-    fprintf(stderr, "%p: proto_session_send_msg: SENT:\n", pthread_self());
+    fprintf(stderr, "%p: proto_session_send_msg: SENT:\n", (void *) pthread_self());
     proto_session_dump(s);
   }
 
@@ -375,7 +377,7 @@ proto_session_rcv_msg(Proto_Session *s)
   if (net_readn( s->fd, &(s->rbuf) , s->rlen ) != s->rlen ) return 0;
 
   if (proto_debug()) {
-    fprintf(stderr, "%p: proto_session_rcv_msg: RCVED:\n", pthread_self());
+    fprintf(stderr, "%p: proto_session_rcv_msg: RCVED:\n", (void *) pthread_self());
     proto_session_dump(s);
   }
   return 1;
@@ -388,7 +390,7 @@ extern int
 proto_session_rpc(Proto_Session *s)
 {
   int rc;
-  rc = NULL;  
+  
   //ADD CODE
   //Send Message
   proto_session_send_msg(s,1);
