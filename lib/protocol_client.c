@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <strings.h>
 #include <errno.h>
@@ -66,6 +67,7 @@ proto_client_set_session_lost_handler(Proto_Client_Handle ch, Proto_MT_Handler h
 {
   Proto_Client *c = ch;
   c->session_lost_handler = h;
+  return 1;
 }
 
 extern int
@@ -110,7 +112,6 @@ proto_client_event_dispatcher(void * arg)
   Proto_Session *s;
   Proto_Msg_Types mt;
   Proto_MT_Handler hdlr;
-  int i;
 
   pthread_detach(pthread_self());
 
@@ -184,100 +185,55 @@ proto_client_connect(Proto_Client_Handle ch, char *host, PortType port)
   return 0;
 }
 
-static void
-marshall_mtonly(Proto_Session *s, Proto_Msg_Types mt) {
-  Proto_Msg_Hdr h;
-  
-  bzero(&h, sizeof(h));
-  h.type = mt;
-  proto_session_hdr_marshall(s, &h);
-};
-
-// all rpc's are assume to only reply only with a return code in the body
-// eg.  like the null_mes
-static int 
-do_generic_dummy_rpc(Proto_Client_Handle ch, Proto_Msg_Types mt)
+extern int get_int(Proto_Client_Handle ch, int offset, int* result)
 {
   int rc;
-  Proto_Session *s;
-  Proto_Client *c = ch;
-  
-  /*NOT_IMPL; //ADD CODE*/
-  s = &(c->rpc_session);//s = ADD CODE
-  // marshall
-
-  marshall_mtonly(s, mt);
-  /*NOT_IMPL;//ADD CODE*/
-  rc = proto_session_send_msg(s,1);
-  rc = proto_session_rcv_msg(s);
-  //rc = proto_session_ADD CODE
-
-  if (rc==1) {
-    proto_session_body_unmarshall_int(s, 0, &rc);
-  } else {
-    rc = -1;
-	/*NOT_IMPL;//ADD CODE*/
-  }
-  
-  return rc;
-}
-extern int 
-proto_client_hello(Proto_Client_Handle ch)
-{
-  return do_generic_dummy_rpc(ch,PROTO_MT_REQ_BASE_HELLO);  
-}
-
-extern int 
-proto_client_move(Proto_Client_Handle ch, int id, char data)
-{
-  // Setup Hdr and Body 
-  int rc;
-  int position;
-  Proto_Msg_Hdr h;
-  rc = 1;
-  
-  // Get Session Handle
   Proto_Session *s;
   Proto_Client *c = ch;
   s = &(c->rpc_session);
   
-  // Setup Header and Marshall
-  bzero(&h, sizeof(h));
-  h.type = PROTO_MT_REQ_BASE_MOVE;
-  h.pstate.v2.raw = id;
-  proto_session_hdr_marshall(s, &h);
-
-  // Setup body and marshall
-  position = ((int)data - 48);
-  proto_session_body_marshall_int(s , position); 
-  
-  // Send Msg
-  rc = proto_session_send_msg( s, 1);
-  if (rc < 0) return rc;
-  
-  // Recv Response
-  rc = proto_session_rcv_msg(s);
+  rc = proto_session_body_unmarshall_int(s, offset, result);
   return rc;
+}
 
+extern void get_hdr(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr)
+{
+  Proto_Session *s;
+  Proto_Client *c = ch;
+  s = &(c->rpc_session);
+  proto_session_hdr_unmarshall(s,hdr);
+}
+
+// all rpc's are assume to only reply only with a return code in the body
+// eg.  like the null_mes
+extern int 
+do_void_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
+{
+  int rc;
+  Proto_Session *s;
+  Proto_Client *c = ch;
+  
+  s = &(c->rpc_session);
+  proto_session_hdr_marshall(s,h);
+  
+  rc = proto_session_send_msg(s,1);
+  rc = proto_session_rcv_msg(s);
+  
+  if(rc<=0) rc =-1;
+
+  return rc;
+}
+
+extern int 
+proto_client_hello(Proto_Client_Handle ch)
+{
+  return -1;
 }
 
 extern int 
 proto_client_goodbye(Proto_Client_Handle ch)
 {
-  int rc;
-  Proto_Session *s;
-  Proto_Client *c = ch;
-  
-  s = &(c->rpc_session);
-  marshall_mtonly(s, PROTO_MT_REQ_BASE_GOODBYE);
-  rc = proto_session_send_msg(s,1);
-
-  if (rc==1) {
-  } else {
-    rc = -1;
-  }
-  
-  return rc;
+  return -1;
 }
 
 

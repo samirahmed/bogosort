@@ -1,3 +1,31 @@
+## 3-19-2013
+### Attendees:
+Samir A, Katsutoshi K.
+
+### Questions:
+
+none
+
+### Todo:
+
+- Server Load and Dump - this involves reading the map file/parsing it and initializing the map struct
+- Client Querying and RPC using the maze object and cell structs
+
+### Comments/Notes:
+
+We implemented `maze.h` and `maze.c` files in the lib folder. 
+The only dynamic object is the maze itself, which consists of cells.
+
+maze_init
+cell_init
+
+We also implemented the marshalling of a cell into a header and unmarshalling.
+cell_marshall
+cell_unmarshall
+
+There are no locks but we have planned for them in the next phase.
+
+
 ## 3-16-2013
 ### Attendees:
 Samir A, Will S.

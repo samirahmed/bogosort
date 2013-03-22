@@ -25,6 +25,10 @@ typedef enum  {
   PROTO_MT_REQ_BASE_HELLO, // establish connection to server and add player to game
   PROTO_MT_REQ_BASE_MOVE, // attempt to mark square as client who submitted request
   PROTO_MT_REQ_BASE_GOODBYE, //disconnect client from server
+  PROTO_MT_REQ_BASE_NUM, // ask for number of home/jail/floor/wall cellss
+  PROTO_MT_REQ_BASE_DIM, // ask for dimension
+  PROTO_MT_REQ_BASE_CINFO, // ask for cell info
+  PROTO_MT_REQ_BASE_DUMP, // ask for server map dump
   // RESERVED LAST REQ MT PUT ALL NEW REQ MTS ABOVE
   PROTO_MT_REQ_BASE_RESERVED_LAST,
   
@@ -34,6 +38,10 @@ typedef enum  {
   PROTO_MT_REP_BASE_MOVE, // 1 if square is empty and was marked succesfully, 0 if square is already full and cannot be marked, -1 if fail
   PROTO_MT_REP_BASE_GOODBYE, // 1 if succesful, -1 if fails
   // RESERVED LAST REP MT PUT ALL NEW REP MTS ABOVE
+  PROTO_MT_REP_BASE_NUM,// reply with number of home/jail/wall/cells
+  PROTO_MT_REP_BASE_DIM, // reply with dimension
+  PROTO_MT_REP_BASE_CINFO, // reply with cell info
+  PROTO_MT_REP_BASE_DUMP, // reply with server map dump
   PROTO_MT_REP_BASE_RESERVED_LAST,
 
   // Events  
