@@ -246,7 +246,7 @@ void *
 proto_server_rpc_listen(void *arg)
 {
   int fd = Proto_Server.RPCListenFD;
-  unsigned long connfd;
+  int connfd;
   pthread_t tid;
   
   if (net_listen(fd) < 0) {
