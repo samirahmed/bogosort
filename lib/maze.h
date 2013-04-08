@@ -22,75 +22,80 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 *****************************************************************************/
-#define MAX_COL_MAZE 1000
-#define MAX_ROW_MAZE 1000
+#include "./types.h" 
+#include "./player.h" 
 
-typedef enum{
-    CELLTYPE_IMMUTABLE,
-    CELLTYPE_MUTABLE
-} Mutable_Types;
-
-typedef enum{
-    TEAM_RED,
-    TEAM_BLUE
-} Team_Types;
-
-typedef enum{
-    OBJECT_SHOVEL,
-    OBJECT_RED_FLAG,
-    OBJECT_BLUE_FLAG
-} Object_Types;
-
-typedef enum{
-    CELL_WALL,
-    CELL_FLOOR,
-    CELL_JAIL,
-    CELL_HOME
-} Cell_Types;
-
-typedef enum{
-    CELLSTATE_EMPTY,
-    CELLSTATE_OCCUPIED,
-    CELLSTATE_HOLDING,
-    CELLSTATE_OCCUPIED_HOLDING
-} Cell_State_Types;
-
-typedef enum{
-    FREE,
-    JAILED
-} Player_State_Types;
+#define MAX_COL_MAZE  200
+#define MAX_ROW_MAZE  200
+#define NUM_TEAMS     2
+#define NUM_OBJECTS   4
 
 typedef struct{
-    
-    short int        x;
-    short int        y;
+    Pos              pos;
     Cell_Types       type;
     Cell_State_Types cell_state;
     Team_Types       turf;
-    Team_Types       player_type;
     Mutable_Types    is_mutable;
-    Object_Types     object_type;
-    //Player*       player;
-    //Object*       object;
-
+    Player*          player;
+    Object*          object;
 } Cell;
 
 typedef struct{
-    Cell** pos;
-    unsigned short int max_x;
-    unsigned short int max_y;
-    unsigned short int min_x;
-    unsigned short int min_y;
+    Pos             min;
+    Pos             max;
+    Team_Types      team;
+    pthread_mutex_t jail_wrlock;
+} Jail;
+
+typedef struct{
+    Pos             min;
+    Pos             max;
+    pthread_mutex_t count_wrlock;
+    int             count;
+    Team_Types      team;
+} Home;
+
+typedef struct{
+    Pos             min;
+    Pos             max;
+    Cell**          get;
+    int**           broken_walls;
+    Object          objects[NUM_OBJECTS];
+    Plist           players[NUM_TEAMS];
+    Jail            jail[NUM_TEAMS];
+    Home            home[NUM_TEAMS];
+    pthread_mutex_t wall_wrlock;
+    pthread_mutex_t object_wrlock;
 } Maze;
 
+
+extern void home_init(Home * home);
+extern void home_count_increment(Home * home);
+extern void home_count_decrement(Home * home);
+extern void home_count_read(Home * home);
+
+extern void maze_init(Maze * m,int max_x, int max_y);
+extern void maze_update_player_position( Maze*m, Player* player, Cell* NextCell);
+extern void maze_update_object_cell( Maze*m, Object* object, Player* player );
+extern void maze_update_object_player( Maze*m, Object* object, Player* player );
+extern void maze_move_player( Maze*m, Cell* current, Cell* next);
+extern void maze_jail_player( Maze*m, Cell* current, Cell* next);
+extern void maze_jailbreak( Maze*m, Team_Types team );
+extern void maze_jailbreak( Maze*m, Team_Types team );
+extern void maze_use_shovel( Maze*m, Cell* current, Cell* next);
+extern void maze_object_drop_pickup( Maze*m, Action action, Cell* current, Cell* next);
+extern void maze_spawn_player(Maze* m, Player* p);
+extern void maze_reset_shovel(Maze* m, Object* object);
+
 extern void cell_init(Cell* cell,int x, int y, Team_Types turf, Cell_Types type, Mutable_Types is_mutable);
+
 extern int cell_is_unoccupied(Cell* cell);
 extern int cell_is_walkable_type(Cell * cell);
-extern void cell_unmarshall_from_header(Cell * cell, Proto_Msg_Hdr *hdr);
-extern void cell_marshall_into_header(Cell * cell, Proto_Msg_Hdr * hdr);
-extern void maze_init(Maze * m,int max_x, int max_y);
-extern Cell_Types get_cell_type(char cell);
-extern Team_Types get_turf_type(int x,int max_x);
-extern Mutable_Types get_mutable_type(char cell,int x,int y,int max_x,int max_y);
+
+extern Cell_Types cell_get_cell_type(char cell);
+extern Team_Types cell_get_turf_type(int x,int max_x);
+extern Mutable_Types cell_get_mutable_type(char cell,int x,int y,int max_x,int max_y);
+//extern void cell_unmarshall_from_header(Cell * cell, Proto_Msg_Hdr *hdr);
+//extern void cell_marshall_into_header(Cell * cell, Proto_Msg_Hdr * hdr);
 
 #endif
