@@ -23,7 +23,7 @@
 * THE SOFTWARE.
 *****************************************************************************/
 #include "./types.h" 
-#include "./player.h" 
+#include "./game_pieces.h" 
 
 #define MAX_COL_MAZE  200
 #define MAX_ROW_MAZE  200
@@ -67,7 +67,6 @@ typedef struct{
     pthread_mutex_t wall_wrlock;
     pthread_mutex_t object_wrlock;
 } Maze;
-
 
 extern void home_init(Home * home);
 extern void home_count_increment(Home * home);

@@ -5,7 +5,7 @@
 #include "net.h"
 #include "protocol.h"
 #include "protocol_session.h"
-#include "maze.h"
+#include "game_maze.h"
 
 extern Cell_Types get_cell_type(char cell)
 {
