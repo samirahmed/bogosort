@@ -28,9 +28,6 @@ $(objs_server) : $(src_server)
 $(objs_client) : $(src_client)
 $(objs_commons) : $(src_commons)
 
-clean:
-	rm -f $(objs) $(targets)
-
 server-test: ../lib/libdagame.a
 	gcc $(CFLAGS) -o server-test $(src_server) $(objs_test) $(libs)
 
@@ -39,6 +36,9 @@ commons-test: ../lib/libdagame.a
 
 client-test: ../lib/libdagame.a
 	gcc $(CFLAGS) -o client-test $(src_client) $(objs_test) $(libs)
+
+clean:
+	rm -f $(objs) $(targets)
 
 test:
 	./server-test; ./client-test; ./commons-test;

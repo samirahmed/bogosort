@@ -1,3 +1,4 @@
+.PHONY: all test clean
 all:
 	cd lib; make;
 	cd ..;
@@ -19,3 +20,4 @@ clean:
 
 test:
 	cd test; make test;
+
