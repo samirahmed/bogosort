@@ -257,16 +257,16 @@ void maze_fill_helper(Maze* map, char buffer[][MAX_COL_MAZE],int max_x, int max_
            if (c.type == CELL_JAIL)
            {
               if ( x < jail_min.x ) jail_min.x = x;
-              if ( x < jail_min.y ) jail_min.y = y;
+              if ( y < jail_min.y ) jail_min.y = y;
               if ( x > jail_max.x ) jail_max.x = x;
-              if ( x > jail_max.y ) jail_max.y = y;
+              if ( y > jail_max.y ) jail_max.y = y;
            }
            if (map->get[x][y].type == CELL_HOME)
            {
               if ( x < home_min.x ) home_min.x = x;
-              if ( x < home_min.x ) home_min.y = y;
+              if ( y < home_min.y ) home_min.y = y;
               if ( x > home_max.x ) home_max.x = x;
-              if ( x > home_max.x ) home_max.y = y;
+              if ( y > home_max.y ) home_max.y = y;
            }
         }
       }
