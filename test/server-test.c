@@ -10,7 +10,7 @@
 #include "../lib/net.h"
 #include "../lib/game_commons.h"
 #include "../lib/game_server.h"
-#include "test.h"
+#include "../lib/test.h"
 
 Maze maze;  // global maze
 

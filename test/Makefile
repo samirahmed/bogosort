@@ -1,5 +1,12 @@
+UNAME:=$(shell uname -s)
+ifeq ($(UNAME),Darwin)
+	CC:=cc
+else
+	CC:=gcc
+endif
+
 CFLAGS := -g -pthread -Wall
-targets=bootstrap server-test client-test commons-test
+targets= server-test client-test commons-test
 libs = -L../lib -ldagame
 
 src_client= client-test.c
@@ -14,14 +21,8 @@ objs_server = $(patsubst %.c,%.o,$(src_server))
 src = $(wildcard *.c)
 objs = $(patsubst %.c,%.o,$(src))
 
-src_test = $(wildcard test*.c)
-objs_test = $(patsubst %.c,%.o,$(src_test))
-
 all: $(targets)
 .PHONY: all
-
-bootstrap: 
-	 gcc -c test.c
 
 $(objs) : $(src)
 $(objs_server) : $(src_server)
@@ -29,16 +30,16 @@ $(objs_client) : $(src_client)
 $(objs_commons) : $(src_commons)
 
 server-test: ../lib/libdagame.a
-	gcc $(CFLAGS) -o server-test $(src_server) $(objs_test) $(libs)
+	$(CC) $(CFLAGS) -o server-test $(src_server)  $(libs)
 
 commons-test: ../lib/libdagame.a
-	gcc $(CFLAGS) -o commons-test $(src_commons) $(objs_test) $(libs)
+	$(CC) $(CFLAGS) -o commons-test $(src_commons)  $(libs)
 
 client-test: ../lib/libdagame.a
-	gcc $(CFLAGS) -o client-test $(src_client) $(objs_test) $(libs)
+	$(CC) $(CFLAGS) -o client-test $(src_client) $(libs)
 
 clean:
 	rm -f $(objs) $(targets)
 
 test:
-	./server-test; ./client-test; ./commons-test;
+	./server-test -v; ./client-test -v; ./commons-test -v;

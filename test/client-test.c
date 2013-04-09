@@ -8,7 +8,7 @@
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/net.h"
-#include "test.h"
+#include "../lib/test.h"
 
 int main(int argc, char ** argv )
 {
