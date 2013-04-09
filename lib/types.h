@@ -1,7 +1,7 @@
 #ifndef __DA_GAME_TYPES_H__
 #define __DA_GAME_TYPES_H__
 /******************************************************************************
-* Copyright (C) 2011 by Jonathan Appavoo, Boston University
+* Copyright (C) 2011 by Jonathan Appavoo, Samir Ahmed Boston University
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,63 @@
 
 #include <stdint.h>
 
+/* NETWORK TYPES */
+
 /* native word sized unsigned and signed values */
 typedef unsigned long uval;
 typedef long sval;
+
+/* Common Game Types */
+typedef struct{
+    unsigned short int  x;
+    unsigned short int  y;
+} Pos;
+
+/* GAME TYPES */
+typedef enum{
+    DROP_FLAG,
+    DROP_SHOVEL,
+    PICKUP_FLAG,
+    PICKUP_SHOVEL
+} Action;
+
+typedef enum{
+    TEAM_RED,
+    TEAM_BLUE
+} Team_Types;
+
+typedef enum{
+    VISIBLE,
+    INVISIBLE
+} Visible_Types;
+
+typedef enum{
+    FLAG,
+    SHOVEL
+} Object_Types; 
+
+typedef enum{
+    FREE,
+    JAILED
+} Player_State_Types; 
+
+typedef enum{
+    CELLTYPE_IMMUTABLE,
+    CELLTYPE_MUTABLE
+} Mutable_Types;
+
+typedef enum{
+    CELL_WALL,
+    CELL_FLOOR,
+    CELL_JAIL,
+    CELL_HOME
+} Cell_Types;
+
+typedef enum{
+    CELLSTATE_EMPTY,
+    CELLSTATE_OCCUPIED,
+    CELLSTATE_HOLDING,
+    CELLSTATE_OCCUPIED_HOLDING
+} Cell_State_Types;
 
 #endif /* __DA_GAME_TYPES_H__ */

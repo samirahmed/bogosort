@@ -13,4 +13,4 @@ server: $(objs) ../lib/libdagame.a
 $(objs) : $(src)
 
 clean:
-	rm $(objs) $(targets)
+	rm -f $(objs) $(targets)
