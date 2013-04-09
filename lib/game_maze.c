@@ -129,7 +129,11 @@ void maze_fill_helper(Maze* map, char buffer[][MAX_COL_MAZE],int max_x, int max_
 
       jail_init(&map->jail[team], jail_min, jail_max, team);
       home_init(&map->home[team], home_min, home_max, team);
-      plist_init(&map->players[team], team);
+      
+      int max_players;
+      max_players = (home_max.x - home_min.x) * ( home_max.y - home_min.y );
+      max_players = max_players >= 50 ? max_players-10: max_players;
+      plist_init(&map->players[team], team, max_players );
   }
 }
 

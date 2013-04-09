@@ -73,18 +73,20 @@ extern int home_count_decrement(Home* home)
   return count;
 }
 
-extern void plist_init(Plist* plist, Team_Types team )
+extern void plist_init(Plist* plist, Team_Types team, int max_players )
 {
    bzero(plist,sizeof(Plist));
    plist->count = 0;
    plist->next  = 0;
    plist->team  = team;
+   plist->max   = max_players;
    pthread_rwlock_init(&(plist->plist_wrlock),NULL);
 }
 
 extern Cell_Types cell_calculate_type(char cell)
 {
-	switch(cell){
+	switch(cell)
+  {
 		case ' ':return CELL_FLOOR;
 		case '#':return CELL_WALL;
 		case 'h':return CELL_HOME;
@@ -95,13 +97,15 @@ extern Cell_Types cell_calculate_type(char cell)
 	return 0;
 }
 
-extern Team_Types cell_calculate_turf(int x, int max){
+extern Team_Types cell_calculate_turf(int x, int max)
+{
 	return x< (max/2) ?  TEAM_RED : TEAM_BLUE ;
 }
 
 extern Mutable_Types cell_calculate_mutable(char cell,int x,int y,int max_x,int max_y)
 {
-	if(cell=='#'){
+	if(cell=='#')
+  {
 		if(x==0)                return CELLTYPE_IMMUTABLE;
 		else if(x==(max_x-1))   return CELLTYPE_IMMUTABLE;
 		else if(y==0)           return CELLTYPE_IMMUTABLE;
@@ -123,6 +127,25 @@ extern void cell_init( Cell* cell, int x, int y, Team_Types turf, Cell_Types typ
     cell->turf = turf;
     cell->type = type;
     cell->is_mutable = is_really_mutable;
+}
+
+
+extern int cell_is_near(Cell* current, Cell* next)
+{
+  if (current->pos.x == next->pos.x)
+  {
+      if (next->pos.y == current->pos.y+1) return 1;
+      if (next->pos.y == current->pos.y-1) return 1;
+      return 0;
+  }
+  if (current->pos.y == next->pos.y)
+  {
+      if (next->pos.x == current->pos.x+1) return 1;
+      if (next->pos.x == current->pos.x-1) return 1;
+      return 0;
+  }
+
+  return 0;
 }
 
 extern int cell_is_unoccupied(Cell* cell)

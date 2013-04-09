@@ -58,6 +58,7 @@ typedef struct{
     Player              at[MAX_TEAM_SIZE];
     int                 count;
     int                 next;
+    int                 max;
     Team_Types          team;
     pthread_rwlock_t    plist_wrlock;
 } Plist;
@@ -103,7 +104,7 @@ extern Team_Types cell_calculate_turf(int col, int max_col);
 extern Mutable_Types cell_calculate_mutable(char cell,int x,int y,int max_x,int max_y);
 
 // PLIST METHODS
-extern void plist_init(Plist * plist, Team_Types team);
+extern void plist_init(Plist * plist, Team_Types team, int max_player_size);
 extern void plist_player_count( Plist * plist );
 extern void plist_add_player(Plist* plist, Player * player);
 extern void plist_drop_player_using_fd(Plist* plist, int fd );
