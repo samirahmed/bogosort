@@ -25,8 +25,6 @@
 #define MAX_TEAM_SIZE 175
 #define MAX_PLAYERS   350
 
-#include "net.h"
-
 typedef struct{
     struct Player *        player;
     struct Cell *          object;
@@ -43,26 +41,73 @@ typedef struct{
     Player_State_Types  state;
     Team_Types          team;
     unsigned short int  id;
-    FDType              fd;
+    int                 fd;
 } Player;
+
+typedef struct{
+    Pos              pos;
+    Cell_Types       type;
+    Cell_State_Types cell_state;
+    Team_Types       turf;
+    Mutable_Types    is_mutable;
+    Player*          player;
+    Object*          object;
+} Cell;
 
 typedef struct{
     Player              at[MAX_TEAM_SIZE];
     int                 count;
-    int                 unique;
+    int                 next;
     Team_Types          team;
-    pthread_mutex_t     plist_wrlock;
+    pthread_rwlock_t    plist_wrlock;
 } Plist;
 
+typedef struct{
+    Pos              min;
+    Pos              max;
+    Team_Types       team;
+    pthread_mutex_t  jail_recursive_lock;
+} Jail;
+
+typedef struct{
+    Pos              min;
+    Pos              max;
+    pthread_rwlock_t count_wrlock;
+    int              count;
+    Team_Types       team;
+} Home;
+
+// JAIL METHODS
+extern void jail_init(Jail*jail, Pos min, Pos max, Team_Types team);
+extern void jail_lock(Jail * jail );
+extern void jail_unlock(Jail * jail);
+
+// HOME METHODS
+extern void home_init(Home * home, Pos min, Pos max, Team_Types team );
+extern int  home_count_increment(Home * home);
+extern int  home_count_decrement(Home * home);
+extern int  home_count_read(Home * home);
+
+// PLAYER METHODS
 extern void player_init(Player * player);
 extern void player_drop(Player * player);
 extern int player_has_shovel(Player * player);
 extern int player_has_flag(Player * player);
 
-extern void plist_init(Plist * plist);
+// CELL METHODS
+extern void cell_init(Cell* cell,int x, int y, Team_Types turf, Cell_Types type, Mutable_Types is_mutable);
+extern int cell_is_unoccupied(Cell* cell);
+extern int cell_is_walkable_type(Cell * cell);
+extern Cell_Types cell_calculate_type(char cell);
+extern Team_Types cell_calculate_turf(int col, int max_col);
+extern Mutable_Types cell_calculate_mutable(char cell,int x,int y,int max_x,int max_y);
+
+// PLIST METHODS
+extern void plist_init(Plist * plist, Team_Types team);
 extern void plist_player_count( Plist * plist );
 extern void plist_add_player(Plist* plist, Player * player);
-extern void plist_drop_player_using_fd(Plist* plist, FDType fd );
+extern void plist_drop_player_using_fd(Plist* plist, int fd );
 extern void plist_drop_player_using_id(Plist* plist, int id );
+
 
 #endif

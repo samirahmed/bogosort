@@ -30,50 +30,31 @@
 #define NUM_TEAMS     2
 #define NUM_OBJECTS   4
 
-typedef struct{
-    Pos              pos;
-    Cell_Types       type;
-    Cell_State_Types cell_state;
-    Team_Types       turf;
-    Mutable_Types    is_mutable;
-    Player*          player;
-    Object*          object;
-} Cell;
 
 typedef struct{
-    Pos             min;
-    Pos             max;
-    Team_Types      team;
-    pthread_mutex_t jail_wrlock;
-} Jail;
-
-typedef struct{
-    Pos             min;
-    Pos             max;
-    pthread_mutex_t count_wrlock;
-    int             count;
-    Team_Types      team;
-} Home;
-
-typedef struct{
-    Pos             min;
-    Pos             max;
-    Cell**          get;
-    int**           broken_walls;
-    Object          objects[NUM_OBJECTS];
-    Plist           players[NUM_TEAMS];
-    Jail            jail[NUM_TEAMS];
-    Home            home[NUM_TEAMS];
-    pthread_mutex_t wall_wrlock;
-    pthread_mutex_t object_wrlock;
+    Pos              min;
+    Pos              max;
+    Cell**           get;
+    int**            wall;
+    Object           objects[NUM_OBJECTS];
+    Plist            players[NUM_TEAMS];
+    Jail             jail[NUM_TEAMS];
+    Home             home[NUM_TEAMS];
+    pthread_rwlock_t wall_wrlock;
+    pthread_rwlock_t object_wrlock;
 } Maze;
 
-extern void home_init(Home * home);
-extern void home_count_increment(Home * home);
-extern void home_count_decrement(Home * home);
-extern void home_count_read(Home * home);
-
+// Maze Construction
 extern void maze_init(Maze * m,int max_x, int max_y);
+extern void maze_dump(Maze*map);
+extern int  maze_build_from_file(Maze*map, char* filename);
+
+// Locking Methods
+extern void maze_lock(Maze*m, Pos current, Pos next);
+extern void maze_unlock(Maze*m, Pos current, Pos next);
+//extern void jail_lock(Maze*m, Team_Types team);
+
+// Maze Manipulation
 extern void maze_update_player_position( Maze*m, Player* player, Cell* NextCell);
 extern void maze_update_object_cell( Maze*m, Object* object, Player* player );
 extern void maze_update_object_player( Maze*m, Object* object, Player* player );
@@ -86,14 +67,7 @@ extern void maze_object_drop_pickup( Maze*m, Action action, Cell* current, Cell*
 extern void maze_spawn_player(Maze* m, Player* p);
 extern void maze_reset_shovel(Maze* m, Object* object);
 
-extern void cell_init(Cell* cell,int x, int y, Team_Types turf, Cell_Types type, Mutable_Types is_mutable);
 
-extern int cell_is_unoccupied(Cell* cell);
-extern int cell_is_walkable_type(Cell * cell);
-
-extern Cell_Types cell_get_cell_type(char cell);
-extern Team_Types cell_get_turf_type(int x,int max_x);
-extern Mutable_Types cell_get_mutable_type(char cell,int x,int y,int max_x,int max_y);
 //extern void cell_unmarshall_from_header(Cell * cell, Proto_Msg_Hdr *hdr);
 //extern void cell_marshall_into_header(Cell * cell, Proto_Msg_Hdr * hdr);
 
