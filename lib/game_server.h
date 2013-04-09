@@ -23,31 +23,7 @@
 * THE SOFTWARE.
 *****************************************************************************/
 #include "./types.h" 
-#include "./game_pieces.h" 
-
-#define MAX_COL_MAZE  200
-#define MAX_ROW_MAZE  200
-#define NUM_TEAMS     2
-#define NUM_OBJECTS   4
-
-
-typedef struct{
-    Pos              min;
-    Pos              max;
-    Cell**           get;
-    int**            wall;
-    Object           objects[NUM_OBJECTS];
-    Plist            players[NUM_TEAMS];
-    Jail             jail[NUM_TEAMS];
-    Home             home[NUM_TEAMS];
-    pthread_rwlock_t wall_wrlock;
-    pthread_rwlock_t object_wrlock;
-} Maze;
-
-// Maze Construction
-extern void maze_init(Maze * m,int max_x, int max_y);
-extern void maze_dump(Maze*map);
-extern int  maze_build_from_file(Maze*map, char* filename);
+#include "./game_commons.h" 
 
 // Locking Methods
 extern void maze_lock(Maze*m, Pos current, Pos next);
@@ -66,7 +42,6 @@ extern void maze_use_shovel( Maze*m, Cell* current, Cell* next);
 extern void maze_object_drop_pickup( Maze*m, Action action, Cell* current, Cell* next);
 extern void maze_spawn_player(Maze* m, Player* p);
 extern void maze_reset_shovel(Maze* m, Object* object);
-
 
 //extern void cell_unmarshall_from_header(Cell * cell, Proto_Msg_Hdr *hdr);
 //extern void cell_marshall_into_header(Cell * cell, Proto_Msg_Hdr * hdr);

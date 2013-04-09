@@ -1,7 +1,7 @@
 #ifndef __DA_GAME_TYPES_H__
 #define __DA_GAME_TYPES_H__
 /******************************************************************************
-* Copyright (C) 2011 by Jonathan Appavoo, Boston University
+* Copyright (C) 2011 by Jonathan Appavoo, Samir Ahmed Boston University
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,8 @@
 
 #include <stdint.h>
 
+/* NETWORK TYPES */
+
 /* native word sized unsigned and signed values */
 typedef unsigned long uval;
 typedef long sval;
@@ -34,6 +36,7 @@ typedef struct{
     unsigned short int  y;
 } Pos;
 
+/* GAME TYPES */
 typedef enum{
     DROP_FLAG,
     DROP_SHOVEL,

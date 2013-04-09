@@ -22,7 +22,7 @@
 * THE SOFTWARE.
 *****************************************************************************/
 
-#include "game_maze.h"
+#include "game_commons.h"
 
 extern int PROTO_DEBUG;
 

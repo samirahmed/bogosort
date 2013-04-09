@@ -28,7 +28,6 @@
 #include <errno.h>
 
 #include "protocol.h"
-#include "game_maze.h"
 #include "protocol_utils.h"
 
 int PROTO_DEBUG=0;

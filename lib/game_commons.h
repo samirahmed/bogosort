@@ -22,8 +22,16 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 *****************************************************************************/
+#include "types.h"
+
 #define MAX_TEAM_SIZE 175
 #define MAX_PLAYERS   350
+#define MAX_COL_MAZE  1000
+#define MAX_ROW_MAZE  1000
+#define MAX_COLUMNS   200
+#define MAX_ROWS      200
+#define NUM_TEAMS     2
+#define NUM_OBJECTS   4
 
 typedef struct{
     struct Player *        player;
@@ -78,6 +86,20 @@ typedef struct{
     Team_Types       team;
 } Home;
 
+typedef struct{
+    Pos              min;
+    Pos              max;
+    Cell**           get;
+    int**            wall;
+    Object           objects[NUM_OBJECTS];
+    Plist            players[NUM_TEAMS];
+    Jail             jail[NUM_TEAMS];
+    Home             home[NUM_TEAMS];
+    pthread_rwlock_t wall_wrlock;
+    pthread_rwlock_t object_wrlock;
+} Maze;
+
+
 // JAIL METHODS
 extern void jail_init(Jail*jail, Pos min, Pos max, Team_Types team);
 extern void jail_lock(Jail * jail );
@@ -110,5 +132,9 @@ extern void plist_add_player(Plist* plist, Player * player);
 extern void plist_drop_player_using_fd(Plist* plist, int fd );
 extern void plist_drop_player_using_id(Plist* plist, int id );
 
+// Maze Construction
+extern void maze_init(Maze * m,int max_x, int max_y);
+extern void maze_dump(Maze*map);
+extern int  maze_build_from_file(Maze*map, char* filename);
 
 #endif
