@@ -4,6 +4,8 @@ all:
 	cd client; make;
 	cd ..;
 	cd server; make;
+	cd ..;
+	cd test; make;
 
 
 clean:
@@ -12,3 +14,5 @@ clean:
 	cd client; make clean;
 	cd ..;
 	cd server; make clean;
+	cd ..;
+	cd test; make clean;
