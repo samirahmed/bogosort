@@ -127,10 +127,6 @@ extern Mutable_Types cell_calculate_mutable(char cell,int x,int y,int max_x,int 
 
 // PLIST METHODS
 extern void plist_init(Plist * plist, Team_Types team, int max_player_size);
-extern void plist_player_count( Plist * plist );
-extern void plist_add_player(Plist* plist, Player * player);
-extern void plist_drop_player_using_fd(Plist* plist, int fd );
-extern void plist_drop_player_using_id(Plist* plist, int id );
 
 // Maze Construction
 extern void maze_init(Maze * m,int max_x, int max_y);

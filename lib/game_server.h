@@ -37,7 +37,6 @@ extern void maze_update_object_player( Maze*m, Object* object, Player* player );
 extern void maze_move_player( Maze*m, Cell* current, Cell* next);
 extern void maze_jail_player( Maze*m, Cell* current, Cell* next);
 extern void maze_jailbreak( Maze*m, Team_Types team );
-extern void maze_jailbreak( Maze*m, Team_Types team );
 extern void maze_use_shovel( Maze*m, Cell* current, Cell* next);
 extern void maze_object_drop_pickup( Maze*m, Action action, Cell* current, Cell* next);
 extern void maze_spawn_player(Maze* m, Player* p);
@@ -45,5 +44,11 @@ extern void maze_reset_shovel(Maze* m, Object* object);
 
 //extern void cell_unmarshall_from_header(Cell * cell, Proto_Msg_Hdr *hdr);
 //extern void cell_marshall_into_header(Cell * cell, Proto_Msg_Hdr * hdr);
+
+// PLIST METHODS
+extern void plist_player_count( Plist * plist );
+extern void plist_add_player(Plist* plist, Player * player);
+extern void plist_drop_player_using_fd(Plist* plist, int fd );
+extern void plist_drop_player_using_id(Plist* plist, int id );
 
 #endif
