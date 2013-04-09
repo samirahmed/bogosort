@@ -1,5 +1,5 @@
 CFLAGS := -g -pthread -Wall
-targets=test server-test client-test commons-test
+targets=bootstrap server-test client-test commons-test
 libs = -L../lib -ldagame
 
 src_client= client-test.c
@@ -20,7 +20,7 @@ objs_test = $(patsubst %.c,%.o,$(src_test))
 all: $(targets)
 .PHONY: all
 
-test: 
+bootstrap: 
 	 gcc -c test.c
 
 $(objs) : $(src)
@@ -39,3 +39,6 @@ commons-test: ../lib/libdagame.a
 
 client-test: ../lib/libdagame.a
 	gcc $(CFLAGS) -o client-test $(src_client) $(objs_test) $(libs)
+
+test:
+	./server-test; ./client-test; ./commons-test;

@@ -16,3 +16,6 @@ clean:
 	cd server; make clean;
 	cd ..;
 	cd test; make clean;
+
+test:
+	cd test; make test;
