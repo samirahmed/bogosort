@@ -14,7 +14,16 @@
 
 Maze maze;  // global maze
 
-int test_jail_locks(TestContext * tc)
+int test_home_counter(TestContext * tc)
+{
+    maze_build_from_file(&maze,"test.map");
+    
+   
+    maze_destroy(&maze);
+    return 1;
+}
+
+int test_server_locks(TestContext * tc)
 {
     maze_build_from_file(&maze,"test.map");
     
@@ -36,7 +45,8 @@ int test_jail_locks(TestContext * tc)
     printf("Exited reentrant locks\n");
     should(1,"allow of re-entry and exit of locks",tc); 
     
-    return 0;
+    maze_destroy(&maze);
+    return 1;
 }
 
 int main(int argc, char ** argv )
@@ -45,7 +55,8 @@ int main(int argc, char ** argv )
     test_init(argc, argv, &tc);
       
     // ADD TESTS HERE
-    run(&test_jail_locks,"Jail Locks",&tc);
+    run(&test_server_locks,"Server Locks",&tc);
+    run(&test_home_counter,"Home Counter",&tc);
     
     // TEST END HERE
     

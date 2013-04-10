@@ -130,6 +130,7 @@ extern void cell_unlock(Cell*);
 // Maze Construction
 extern void maze_init(Maze * m,int max_x, int max_y);
 extern void maze_dump(Maze*map);
+extern void maze_destroy(Maze*map);
 extern int  maze_build_from_file(Maze*map, char* filename);
 
 #endif

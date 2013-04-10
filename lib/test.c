@@ -53,4 +53,6 @@ extern void test_init(int argc, char** argv, TestContext *tc)
   tc->pass=0;
   tc->fail=0;
   tc->num =0;
+  
+  printf("\n" COLOR_HEADER "%s---------------------\n" COLOR_END "\n",argv[0]);
 }

@@ -299,6 +299,21 @@ extern int maze_build_from_file(Maze*map, char* filename)
   return 1;
 }
 
+extern void maze_destroy(Maze*maze)
+{
+     int col;
+     for( col = maze->min.x; col < maze->max.x ; col++ )
+     {
+        free( maze->wall[col] ); 
+        free( maze->get[col] );
+     }
+     free( maze->wall);
+     free( maze->get);
+     
+     fprintf(stderr,"cleaned up maze struct\n");
+     bzero(maze,sizeof(Maze)); 
+}
+
 extern void maze_dump(Maze*map)
 {
 	int x,y;
