@@ -105,10 +105,10 @@ extern int cell_is_walkable(Cell * cell)
 }
 
 /***********************/
-/* CELL HELPER METHODS */
+/* MAZE HELPER METHODS */
 /***********************/
 
-extern Cell_Types cell_calculate_type(char cell)
+extern Cell_Types maze_calculate_cell_type(char cell)
 {
 	switch(cell)
   {
@@ -122,12 +122,12 @@ extern Cell_Types cell_calculate_type(char cell)
 	return 0;
 }
 
-extern Team_Types cell_calculate_turf(int x, int max)
+extern Team_Types maze_calculate_turf(int x, int max)
 {
 	return x< (max/2) ?  TEAM_RED : TEAM_BLUE ;
 }
 
-extern Mutable_Types cell_calculate_mutable(char cell,int x,int y,int max_x,int max_y)
+extern Mutable_Types maze_calculate_mutable(char cell,int x,int y,int max_x,int max_y)
 {
 	if(cell=='#')
   {
@@ -209,9 +209,9 @@ void maze_fill_helper(Maze* map, char buffer[][MAX_COL_MAZE],int max_x, int max_
       cell_init(&(map->get[x][y]), 
                   x, 
                   y, 
-                  cell_calculate_turf(x,map->max.x),
-                  cell_calculate_type(buffer[y][x]), 
-                  cell_calculate_mutable(buffer[y][x],x,y,max_x,max_y));
+                  maze_calculate_turf(x,map->max.x),
+                  maze_calculate_cell_type(buffer[y][x]), 
+                  maze_calculate_mutable(buffer[y][x],x,y,max_x,max_y));
 		}
   }
 
