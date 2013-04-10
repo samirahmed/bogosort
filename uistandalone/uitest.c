@@ -96,7 +96,7 @@ main(int argc, char **argv)
 
   // WITH OSX ITS IS EASIEST TO KEEP UI ON MAIN THREAD
   // SO JUMP THROW HOOPS :-(
-  ui_main_loop(ui, 320, 320);
+  ui_main_loop(ui, 640, 640);
 
   return 0;
 }

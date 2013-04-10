@@ -316,14 +316,30 @@ draw_cell(UI *ui, SPRITE_INDEX si, SDL_Rect *t, SDL_Surface *s)
 static sval
 ui_paintmap(UI *ui) 
 {
+  FILE *fp;
+  fp = fopen("../daGame.map", "r"); 
   SDL_Rect t;
   int i, j;
+  int map_char;
+ 
   t.y = 0; t.x = 0; t.h = ui->tile_h; t.w = ui->tile_w; 
 
   for (t.y=0; t.y<ui->screen->h; t.y+=t.h) {
     for (t.x=0; t.x<ui->screen->w; t.x+=t.w) {
-      draw_cell(ui, FLOOR_S, &t, ui->screen);
-    }
+        map_char = fgetc(fp);
+	printf("%c", map_char);
+	if(map_char == ' ' && t.x){
+		draw_cell(ui, FLOOR_S, &t, ui->screen);
+ 	   }
+	if(map_char == '#' && t.x < 100){
+		draw_cell(ui, REDWALL_S, &t, ui->screen);
+    	}
+	if(map_char == '#' && t.x >= 100){
+		draw_cell(ui, GREENWALL_S, &t, ui->screen);
+	
+	}
+	}
+			
   }
 
   dummyPlayer_paint(ui, &t);
