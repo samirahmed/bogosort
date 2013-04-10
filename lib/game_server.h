@@ -28,6 +28,9 @@
 // Locking Methods
 extern void server_maze_lock(Maze*m, Pos current, Pos next);
 extern void server_maze_unlock(Maze*m, Pos current, Pos next);
+extern void server_jail_lock(Jail * jail );
+extern void server_jail_unlock(Jail * jail);
+
 //extern void jail_lock(Maze*m, Team_Types team);
 
 // Maze Manipulation
@@ -54,11 +57,7 @@ extern int  server_home_count_increment(Home * home);
 extern int  server_home_count_decrement(Home * home);
 extern int  server_home_count_read(Home * home);
 
-
 // JAIL METHODS
-extern void server_jail_lock(Jail * jail );
-extern void server_jail_unlock(Jail * jail);
-
 
 // PLIST METHODS
 extern void server_plist_player_count( Plist * plist );

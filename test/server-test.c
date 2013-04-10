@@ -14,14 +14,38 @@
 
 Maze maze;  // global maze
 
+int test_jail_locks(TestContext * tc)
+{
+    maze_build_from_file(&maze,"test.map");
+    
+    printf("Starting recursive jail lock test\n");
+    int ii, times;
+    times = 20;
+    for (ii=0; ii<times ;ii++)
+    {
+        server_jail_lock(&maze.jail[TEAM_RED]);
+        server_jail_lock(&maze.jail[TEAM_BLUE]);
+    }
+    printf("We are %d jail locks deep\n",times);
+
+    for (ii=0; ii<times ;ii++)
+    {
+        server_jail_unlock(&maze.jail[TEAM_BLUE]);
+        server_jail_unlock(&maze.jail[TEAM_RED]);
+    }
+    printf("Exited reentrant locks\n");
+    should(1,"allow of re-entry and exit of locks",tc); 
+    
+    return 0;
+}
+
 int main(int argc, char ** argv )
 {
     TestContext tc;
     test_init(argc, argv, &tc);
       
     // ADD TESTS HERE
-    /*run(&test_maze_load,"Maze Load",&tc); */
-
+    run(&test_jail_locks,"Jail Locks",&tc);
     
     // TEST END HERE
     
