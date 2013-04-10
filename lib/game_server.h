@@ -26,8 +26,8 @@
 #include "./game_commons.h" 
 
 // Locking Methods
-extern void maze_lock(Maze*m, Pos current, Pos next);
-extern void maze_unlock(Maze*m, Pos current, Pos next);
+extern void server_maze_lock(Maze*m, Pos current, Pos next);
+extern void server_maze_unlock(Maze*m, Pos current, Pos next);
 //extern void jail_lock(Maze*m, Team_Types team);
 
 // Maze Manipulation
@@ -45,10 +45,25 @@ extern void maze_reset_shovel(Maze* m, Object* object);
 //extern void cell_unmarshall_from_header(Cell * cell, Proto_Msg_Hdr *hdr);
 //extern void cell_marshall_into_header(Cell * cell, Proto_Msg_Hdr * hdr);
 
+// PLAYER METHODS
+extern void player_drop(Player * player);
+
+
+// HOME METHODS
+extern int  server_home_count_increment(Home * home);
+extern int  server_home_count_decrement(Home * home);
+extern int  server_home_count_read(Home * home);
+
+
+// JAIL METHODS
+extern void server_jail_lock(Jail * jail );
+extern void server_jail_unlock(Jail * jail);
+
+
 // PLIST METHODS
-extern void plist_player_count( Plist * plist );
-extern void plist_add_player(Plist* plist, Player * player);
-extern void plist_drop_player_using_fd(Plist* plist, int fd );
-extern void plist_drop_player_using_id(Plist* plist, int id );
+extern void server_plist_player_count( Plist * plist );
+extern void server_plist_add_player(Plist* plist, Player * player);
+extern void server_plist_drop_player_using_fd(Plist* plist, int fd );
+extern void server_plist_drop_player_using_id(Plist* plist, int id );
 
 #endif

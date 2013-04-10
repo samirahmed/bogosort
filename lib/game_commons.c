@@ -25,16 +25,6 @@ extern void jail_init(Jail* jail, Pos min, Pos max, Team_Types team)
   pthread_mutexattr_destroy(&attr);  // after initialization this attr object doesn't affect the pthread  
 }
 
-extern void jail_lock(Jail * jail)
-{
-  pthread_mutex_lock(&(jail->jail_recursive_lock));
-}
-
-extern void jail_unlock(Jail * jail)
-{
-  pthread_mutex_unlock(&(jail->jail_recursive_lock));
-}
-
 extern void home_init(Home* home, Pos min, Pos max, Team_Types team)
 {
   bzero(home,sizeof(Home));
@@ -47,35 +37,6 @@ extern void home_init(Home* home, Pos min, Pos max, Team_Types team)
   pthread_rwlock_init(&home->count_wrlock,NULL);
 }
 
-extern int home_count_read(Home* home)
-{
-  int count;
-  pthread_rwlock_rdlock(&home->count_wrlock);
-  count = home->count;
-  pthread_rwlock_unlock(&home->count_wrlock);
-  return count;
-}
-
-extern int home_count_increment(Home* home)
-{
-  int count;
-  pthread_rwlock_wrlock(&home->count_wrlock);
-  home->count--;
-  count = home->count;
-  pthread_rwlock_unlock(&home->count_wrlock);
-  return count;
-}
-
-extern int home_count_decrement(Home* home)
-{
-  int count;
-  pthread_rwlock_wrlock(&home->count_wrlock);
-  home->count--;
-  count = home->count;
-  pthread_rwlock_unlock(&home->count_wrlock);
-  return count;
-}
-
 extern void plist_init(Plist* plist, Team_Types team, int max_players )
 {
    bzero(plist,sizeof(Plist));
@@ -85,6 +46,67 @@ extern void plist_init(Plist* plist, Team_Types team, int max_players )
    plist->max   = max_players;
    pthread_rwlock_init(&(plist->plist_wrlock),NULL);
 }
+
+/****************/
+/* CELL METHODS */
+/****************/
+
+extern void cell_init( Cell* cell, int x, int y, Team_Types turf, Cell_Types type, Mutable_Types is_mutable)
+{
+    Mutable_Types is_really_mutable;
+    is_really_mutable = CELLTYPE_IMMUTABLE;
+    if (type == CELL_WALL && is_mutable) is_really_mutable = CELLTYPE_MUTABLE;    
+
+    bzero(cell,sizeof(Cell));
+    cell->pos.x = x;
+    cell->pos.y = y;
+    cell->turf = turf;
+    cell->type = type;
+    cell->is_mutable = is_really_mutable;
+    pthread_mutex_init(&cell->lock,NULL);
+}
+
+extern void cell_lock(Cell* cell)
+{
+  pthread_mutex_lock(&(cell->lock));
+}
+
+extern void cell_unlock(Cell* cell)
+{
+  pthread_mutex_unlock(&(cell->lock));
+}
+
+extern int cell_is_near(Cell* current, Cell* next)
+{
+  if (current->pos.x == next->pos.x)
+  {
+      if (next->pos.y == current->pos.y+1) return 1;
+      if (next->pos.y == current->pos.y-1) return 1;
+      return 0;
+  }
+  if (current->pos.y == next->pos.y)
+  {
+      if (next->pos.x == current->pos.x+1) return 1;
+      if (next->pos.x == current->pos.x-1) return 1;
+      return 0;
+  }
+
+  return 0;
+}
+
+extern int cell_is_unoccupied(Cell* cell)
+{
+    return (cell->cell_state == CELLSTATE_OCCUPIED || cell->cell_state == CELLSTATE_OCCUPIED_HOLDING );
+}
+
+extern int cell_is_walkable(Cell * cell)
+{
+    return (cell->type != CELL_WALL );
+}
+
+/***********************/
+/* CELL HELPER METHODS */
+/***********************/
 
 extern Cell_Types cell_calculate_type(char cell)
 {
@@ -118,49 +140,9 @@ extern Mutable_Types cell_calculate_mutable(char cell,int x,int y,int max_x,int 
 	return CELLTYPE_IMMUTABLE;
 }
 
-extern void cell_init( Cell* cell, int x, int y, Team_Types turf, Cell_Types type, Mutable_Types is_mutable)
-{
-    Mutable_Types is_really_mutable;
-    is_really_mutable = CELLTYPE_IMMUTABLE;
-    if (type == CELL_WALL && is_mutable) is_really_mutable = CELLTYPE_MUTABLE;    
-
-    bzero(cell,sizeof(Cell));
-    cell->pos.x = x;
-    cell->pos.y = y;
-    cell->turf = turf;
-    cell->type = type;
-    cell->is_mutable = is_really_mutable;
-}
-
-
-extern int cell_is_near(Cell* current, Cell* next)
-{
-  if (current->pos.x == next->pos.x)
-  {
-      if (next->pos.y == current->pos.y+1) return 1;
-      if (next->pos.y == current->pos.y-1) return 1;
-      return 0;
-  }
-  if (current->pos.y == next->pos.y)
-  {
-      if (next->pos.x == current->pos.x+1) return 1;
-      if (next->pos.x == current->pos.x-1) return 1;
-      return 0;
-  }
-
-  return 0;
-}
-
-extern int cell_is_unoccupied(Cell* cell)
-{
-    return (cell->cell_state == CELLSTATE_OCCUPIED || cell->cell_state == CELLSTATE_OCCUPIED_HOLDING );
-}
-
-extern int cell_is_walkable(Cell * cell)
-{
-    return (cell->type != CELL_WALL );
-}
-
+/****************/
+/* MAZE METHODS */
+/****************/
 
 extern void maze_init(Maze * m, int max_x, int max_y)
 {

@@ -33,9 +33,15 @@
 #define NUM_TEAMS     2
 #define NUM_OBJECTS   4
 
+/* Common Game Types */
 typedef struct{
-    struct Player *        player;
-    struct Cell *          object;
+    unsigned short int  x;
+    unsigned short int  y;
+} Pos;
+
+typedef struct{
+    struct Player * player;
+    struct Cell *   object;
     Pos             position;
     Object_Types    type;
     Team_Types      team;
@@ -60,6 +66,7 @@ typedef struct{
     Mutable_Types    is_mutable;
     Player*          player;
     Object*          object;
+    pthread_mutex_t  lock;
 } Cell;
 
 typedef struct{
@@ -99,34 +106,26 @@ typedef struct{
     pthread_rwlock_t object_wrlock;
 } Maze;
 
-
 // JAIL METHODS
 extern void jail_init(Jail*jail, Pos min, Pos max, Team_Types team);
-extern void jail_lock(Jail * jail );
-extern void jail_unlock(Jail * jail);
 
 // HOME METHODS
 extern void home_init(Home * home, Pos min, Pos max, Team_Types team );
-extern int  home_count_increment(Home * home);
-extern int  home_count_decrement(Home * home);
-extern int  home_count_read(Home * home);
+
+// PLIST METHODS
+extern void plist_init(Plist * plist, Team_Types team, int max_player_size);
 
 // PLAYER METHODS
 extern void player_init(Player * player);
-extern void player_drop(Player * player);
 extern int player_has_shovel(Player * player);
 extern int player_has_flag(Player * player);
 
 // CELL METHODS
 extern void cell_init(Cell* cell,int x, int y, Team_Types turf, Cell_Types type, Mutable_Types is_mutable);
-extern int cell_is_unoccupied(Cell* cell);
-extern int cell_is_walkable_type(Cell * cell);
-extern Cell_Types cell_calculate_type(char cell);
-extern Team_Types cell_calculate_turf(int col, int max_col);
-extern Mutable_Types cell_calculate_mutable(char cell,int x,int y,int max_x,int max_y);
-
-// PLIST METHODS
-extern void plist_init(Plist * plist, Team_Types team, int max_player_size);
+extern int  cell_is_unoccupied(Cell* cell);
+extern int  cell_is_walkable_type(Cell * cell);
+extern void cell_lock(Cell*);
+extern void cell_unlock(Cell*);
 
 // Maze Construction
 extern void maze_init(Maze * m,int max_x, int max_y);

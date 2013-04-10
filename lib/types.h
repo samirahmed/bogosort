@@ -30,11 +30,6 @@
 typedef unsigned long uval;
 typedef long sval;
 
-/* Common Game Types */
-typedef struct{
-    unsigned short int  x;
-    unsigned short int  y;
-} Pos;
 
 /* GAME TYPES */
 typedef enum{
