@@ -115,5 +115,17 @@ extern int server_home_count_decrement(Home* home)
 }
 
 /*****************/
+/* JAIL  METHODS */
+/*****************/
+
+extern void _server_jailbreak( Maze*m, Team_Types team )
+{
+}
+
+/*****************/
 /* PLIST METHODS */
 /*****************/
+
+/****************/
+/* MOVE METHODS */
+/****************/ 

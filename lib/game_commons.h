@@ -39,17 +39,24 @@ typedef struct{
     unsigned short int  y;
 } Pos;
 
+
+// forward declarations
+struct CellStruct;
+struct PlayerStruct;
+typedef struct CellStruct* cell_t;
+typedef struct PlayerStruct* player_t;
+
 typedef struct{
-    struct Player * player;
-    struct Cell *   object;
+    cell_t          player;
+    player_t        object;
     Pos             position;
     Object_Types    type;
     Team_Types      team;
     Visible_Types   visiblity;
 } Object;
 
-typedef struct{
-    struct Cell*        cell;
+typedef struct PlayerStruct{
+    cell_t              cell;
     Object*             shovel;
     Object*             flag;
     Player_State_Types  state;
@@ -58,7 +65,7 @@ typedef struct{
     int                 fd;
 } Player;
 
-typedef struct{
+typedef struct CellStruct{
     Pos              pos;
     Cell_Types       type;
     Cell_State_Types cell_state;
@@ -119,6 +126,7 @@ extern void plist_init(Plist * plist, Team_Types team, int max_player_size);
 extern void player_init(Player * player);
 extern int player_has_shovel(Player * player);
 extern int player_has_flag(Player * player);
+extern int player_get_position(Player * player, Pos*pos);
 
 // CELL METHODS
 extern void cell_init(Cell* cell,int x, int y, Team_Types turf, Cell_Types type, Mutable_Types is_mutable);
