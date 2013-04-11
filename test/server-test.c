@@ -14,11 +14,24 @@
 
 Maze maze;  // global maze
 
-int test_home_counter(TestContext * tc)
+int test_home(TestContext * tc)
 {
+    int assertion, key, team;
     maze_build_from_file(&maze,"test.map");
-   
+    Cell * cell;
+    assertion = 1;
+    for ( team =0; team<NUM_TEAMS ; team++)
+    {
+        for ( key = -1000 ; key<1000000 && assertion ;key++ )
+        { 
+          server_hash_id(&maze, key, &cell, TEAM_BLUE); 
+          assertion = ( cell->pos.x < maze.max.x && cell->pos.x >= maze.min.x &&
+                        cell->pos.y < maze.max.y && cell->pos.y >= maze.min.y && assertion);
+        }
+    }
+    should(assertion,"hash any integer to a valid home position",tc);
     maze_destroy(&maze);
+    should(0,"auto fail",tc);
     return 1;
 }
 
@@ -55,7 +68,7 @@ int main(int argc, char ** argv )
       
     // ADD TESTS HERE
     run(&test_server_locks,"Server Locks",&tc);
-    run(&test_home_counter,"Home Counter",&tc);
+    run(&test_home,"Home",&tc);
     
     // TEST END HERE
     

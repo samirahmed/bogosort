@@ -7,12 +7,49 @@
 #include <string.h>
 #include "test.h"
 
+extern void where(void)
+{
+  fprintf(stderr,"In %s at %d\n", __FILE__, __LINE__ );
+}
+
+/*void test_context_block(TestContext*tc)*/
+/*{*/
+  /*pthread_mutex_lock(&tc->lock);*/
+  /*tc->blocking = 1;*/
+  /*pthread_mutex_unlock(&tc->lock);*/
+/*}*/
+
+/*int test_context_is_blocked(TestContext*tc)*/
+/*{*/
+  /*int blocked;*/
+  /*pthread_mutex_lock(&tc->lock);*/
+  /*blocked = tc->blocking == 1;*/
+  /*pthread_mutex_unlock(&tc->lock);*/
+/*}*/
+
+/*int test_context_unblock(TestContext*tc)*/
+/*{*/
+  /*pthread_mutex_lock(&tc->lock);*/
+  /*tc->blocking = 0;*/
+  /*pthread_mutex_lock(&tc->lock);*/
+/*}*/
+
+/*int test_is_running(pthread_t * thread)*/
+/*{*/
+  
+/*}*/
+
 extern void should( int valid , const char* message, TestContext *tc)
 {
     if (!valid) 
+    {
       printf("  "COLOR_FAIL SYMBOL_CROSS COLOR_END " %s should %s\n" , tc->current, message ); 
+      where();
+      BREAKPOINT();
+    }
     if (valid && tc->verbose) 
       printf("  "COLOR_OKGREEN SYMBOL_TICK COLOR_END " %s should %s\n", tc->current, message );
+
 }
 
 extern void run( int (*func)(TestContext*), char * test_name , TestContext *tc)

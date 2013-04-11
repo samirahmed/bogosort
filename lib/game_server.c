@@ -98,7 +98,7 @@ extern void server_object_unlock(Maze*m)
 /****************/
 /* HOME METHODS */
 /****************/
-extern void server_hash_id( Maze* m, int key, Cell* cell, Team_Types team)
+extern void server_hash_id( Maze* m, int key, Cell** cell, Team_Types team)
 {
   Home*home = &m->home[team];
   int yy,xx, xlen, ylen;
@@ -106,9 +106,10 @@ extern void server_hash_id( Maze* m, int key, Cell* cell, Team_Types team)
   ylen = (home->max.y-home->min.y);
   
   yy =( key / xlen )%( ylen );
+  yy += home->min.y;
   xx = key % xlen;
-
-  cell = &(m->get[xx][yy]);
+  xx += home->min.x;
+  *cell = &(m->get[xx][yy]);
 }
 
 // try many home cells for a lock

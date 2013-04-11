@@ -57,7 +57,7 @@ extern void player_drop(Player * player);
 
 
 // HOME METHODS
-extern void server_hash_id( Maze* m, int key, Cell* cell, Team_Types team);
+extern void server_hash_id( Maze* m, int key, Cell** cell, Team_Types team);
 extern int  server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell* c ,int id, int query);
 extern int  server_home_count_increment(Home * home);
 extern int  server_home_count_decrement(Home * home);
