@@ -30,14 +30,24 @@
 typedef unsigned long uval;
 typedef long sval;
 
+typedef enum{
+    GAME_STATE_UNCHANGED =  0,
+    GAME_STATE_WAITING   =  1,
+    GAME_STATE_ACTIVE    =  2,
+    GAME_STATE_RED_WIN   =  3,
+    GAME_STATE_BLUE_WIN  =  4,
+    GAME_STATE_ERROR     = -1
+} Game_State_Types;
 
 /* GAME TYPES */
 typedef enum{
-    DROP_FLAG,
-    DROP_SHOVEL,
-    PICKUP_FLAG,
-    PICKUP_SHOVEL
-} Action;
+    ACTION_NOOP,
+    ACTION_MOVE,
+    ACTION_DROP_FLAG,
+    ACTION_DROP_SHOVEL,
+    ACTION_PICKUP_FLAG,
+    ACTION_PICKUP_SHOVEL
+} Action_Types;
 
 typedef enum{
     TEAM_RED,
@@ -45,18 +55,18 @@ typedef enum{
 } Team_Types;
 
 typedef enum{
-    VISIBLE,
-    INVISIBLE
+    OBJECT_VISIBLE,
+    OBJECT_INVISIBLE
 } Visible_Types;
 
 typedef enum{
-    FLAG,
-    SHOVEL
+    OBJECT_FLAG,
+    OBJECT_SHOVEL
 } Object_Types; 
 
 typedef enum{
-    FREE,
-    JAILED
+    PLAYER_FREE,
+    PLAYER_JAILED
 } Player_State_Types; 
 
 typedef enum{

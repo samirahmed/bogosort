@@ -7,6 +7,7 @@
 #include <strings.h>
 #include "net.h"
 #include "protocol.h"
+#include "protocol_utils.h"
 #include "protocol_session.h"
 #include "game_commons.h"
 
@@ -180,14 +181,14 @@ extern void maze_init(Maze * m, int max_x, int max_y)
      m->min.y = 0;
 
      // Configure objects for indexing
-     m->objects[FLAG + 2*(TEAM_RED)].type    = FLAG;
-     m->objects[FLAG + 2*(TEAM_RED)].team    = TEAM_RED;
-     m->objects[FLAG + 2*(TEAM_BLUE)].type   = FLAG;
-     m->objects[FLAG + 2*(TEAM_BLUE)].team   = TEAM_BLUE;
-     m->objects[SHOVEL + 2*(TEAM_RED)].type  = SHOVEL;
-     m->objects[SHOVEL + 2*(TEAM_RED)].team  = TEAM_RED;
-     m->objects[SHOVEL + 2*(TEAM_BLUE)].type = SHOVEL;
-     m->objects[SHOVEL + 2*(TEAM_BLUE)].team = TEAM_BLUE;
+     m->objects[OBJECT_FLAG + 2*(TEAM_RED)].type    = OBJECT_FLAG;
+     m->objects[OBJECT_FLAG + 2*(TEAM_RED)].team    = TEAM_RED;
+     m->objects[OBJECT_FLAG + 2*(TEAM_BLUE)].type   = OBJECT_FLAG;
+     m->objects[OBJECT_FLAG + 2*(TEAM_BLUE)].team   = TEAM_BLUE;
+     m->objects[OBJECT_SHOVEL + 2*(TEAM_RED)].type  = OBJECT_SHOVEL;
+     m->objects[OBJECT_SHOVEL + 2*(TEAM_RED)].team  = TEAM_RED;
+     m->objects[OBJECT_SHOVEL + 2*(TEAM_BLUE)].type = OBJECT_SHOVEL;
+     m->objects[OBJECT_SHOVEL + 2*(TEAM_BLUE)].team = TEAM_BLUE;
      
      // Setup locks
      pthread_rwlock_init(&m->wall_wrlock,NULL);
@@ -203,7 +204,7 @@ extern void maze_init(Maze * m, int max_x, int max_y)
         if( ( m->get[col]=(Cell*)malloc(m->max.y*sizeof(Cell))) == NULL ) 
         fprintf(stderr,"Unable to Initialize %d rows for %d column\n",m->max.y,col);
      }
-     fprintf(stderr,"Successful Initialize %d col(x) by %d row(y) maze\n",m->max.x,m->max.y);
+     if (proto_debug()) fprintf(stderr,"Successful Initialize %d col(x) by %d row(y) maze\n",m->max.x,m->max.y);
 
      // Initialize wall
      m->wall = (int **)(malloc(m->max.x*sizeof(int*)));
@@ -215,7 +216,7 @@ extern void maze_init(Maze * m, int max_x, int max_y)
         if( ( m->wall[col]=(int*)malloc(m->max.y*sizeof(int))) == NULL ) 
         fprintf(stderr,"Unable to Initialize walls %d rows for %d column\n",m->max.y,col);
      }
-     fprintf(stderr,"Successful Initialize %d col(x) by %d row(y) maze walls \n",m->max.x,m->max.y);
+     if (proto_debug() ) fprintf(stderr,"Successful Initialize %d col(x) by %d row(y) maze walls \n",m->max.x,m->max.y);
 
 }
 

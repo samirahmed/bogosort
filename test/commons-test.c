@@ -14,6 +14,29 @@
 
 Maze maze;  // global maze
 
+int test_cell(TestContext *tc)
+{
+    int rc;
+    rc = 1;
+    maze_build_from_file(&maze, "test.map");
+    int xx,yy;
+    
+    for(xx = maze.min.x ; xx < maze.max.x ; xx++ )
+    {
+      for(yy = maze.min.y ; yy < maze.max.y ; yy++ )
+      {
+        cell_lock(&(maze.get[xx][yy])); 
+        rc = ((pthread_mutex_trylock(&(maze.get[xx][yy].lock)) != 0) && rc );
+        cell_unlock(&(maze.get[xx][yy]));
+      }
+    }
+    rc = rc!=0;
+    should(rc!=0,"lock properly",tc);
+
+    if(rc) return 0;
+    else return -1;
+}
+
 int test_maze_load(TestContext *tc)
 {
     int rc;
@@ -44,6 +67,8 @@ int test_maze_load(TestContext *tc)
     should(rc,"know successfully initialize the plists",tc);
     if (!rc) return rc;
 
+    maze_destroy(&maze);
+
     return 1;
 }
 
@@ -54,6 +79,7 @@ int main(int argc, char ** argv )
       
     // ADD TESTS HERE
     run(&test_maze_load,"Maze Load",&tc); 
+    run(&test_cell,"Cells",&tc); 
     
     // TEST END HERE
     

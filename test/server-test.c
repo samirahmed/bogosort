@@ -17,7 +17,6 @@ Maze maze;  // global maze
 int test_home_counter(TestContext * tc)
 {
     maze_build_from_file(&maze,"test.map");
-    
    
     maze_destroy(&maze);
     return 1;

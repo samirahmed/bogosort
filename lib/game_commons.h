@@ -141,4 +141,18 @@ extern void maze_dump(Maze*map);
 extern void maze_destroy(Maze*map);
 extern int  maze_build_from_file(Maze*map, char* filename);
 
+// Marshalling and Compression
+extern int decompress_is_ignoreable(int * compressed);
+
+extern int compress_player(Player* player, int* compressed );
+extern int decompress_player(Player* player, int* compressed );
+
+extern int compress_object(Object* object, int* compressed );
+extern int decompress_object(Object* object, int* compressed );
+
+extern int compress_game_state(Maze* object, int* compressed);
+extern int decompress_game_state(Game_State_Types* gstate, int* compressed);
+extern int compress_broken_wall(Pos * position, int* compressed);
+extern int decompress_broken_wall(Pos * position, int* compressed);
+
 #endif

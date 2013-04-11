@@ -118,8 +118,32 @@ extern int server_home_count_decrement(Home* home)
 /* JAIL  METHODS */
 /*****************/
 
-extern void _server_jailbreak( Maze*m, Team_Types team )
+extern int _server_jailbreak( Maze*m, Team_Types team )
 {
+   int startx, starty, stopx, stopy, xx, yy;
+   Player* prisoner;
+   Jail* jail = &(m->jail[team]);
+   startx = jail->min.x;
+   starty = jail->min.y;
+   stopx  = jail->max.x;
+   stopy  = jail->max.y;
+
+   for (xx = startx; xx< stopx ; xx++ )
+   {
+      for( yy = starty; yy < stopy ; yy++ )
+      {
+        prisoner = m->get[xx][yy].player;
+        if ( prisoner )
+        {
+          if (prisoner->state == PLAYER_JAILED)
+          {
+             prisoner->state = PLAYER_FREE;
+          }
+        }
+      }
+   }
+
+   return 1;
 }
 
 /*****************/

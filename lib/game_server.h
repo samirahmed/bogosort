@@ -39,7 +39,7 @@ extern void maze_update_object_cell( Maze*m, Object* object, Player* player );
 extern void maze_update_object_player( Maze*m, Object* object, Player* player );
 extern void maze_move_player( Maze*m, Cell* current, Cell* next);
 extern void maze_use_shovel( Maze*m, Cell* current, Cell* next);
-extern void maze_object_drop_pickup( Maze*m, Action action, Cell* current, Cell* next);
+extern void maze_object_drop_pickup( Maze*m, Action_Types action, Cell* current, Cell* next);
 extern void maze_spawn_player(Maze* m, Player* p);
 extern void maze_reset_shovel(Maze* m, Object* object);
 
