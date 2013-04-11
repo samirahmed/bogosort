@@ -14,7 +14,7 @@
 
 Maze maze;  // global maze
 
-int test_compression(TestContext *tc)
+void test_compression(TestContext *tc)
 {
   int assertion,compressed;
   assertion = 1;
@@ -32,7 +32,6 @@ int test_compression(TestContext *tc)
 
   assertion = !decompress_is_ignoreable(&compressed);
   should(assertion, "correctly set a player's do not ignore bit", tc);
-  if (!assertion) return -1;
  
   Player_Update_Types update_type;
   update_type = PLAYER_UNCHANGED;
@@ -44,7 +43,6 @@ int test_compression(TestContext *tc)
                 plr.id == test_plr.id &&
                 update_type == PLAYER_ADDED);
   should(assertion,"compress and decompress player objects correctly",tc);
-  if (!assertion) return -1;
 
   // OBJECT COMPRESSION
   Object obj,test_obj;
@@ -54,7 +52,6 @@ int test_compression(TestContext *tc)
   
   assertion = !decompress_is_ignoreable(&compressed);
   should(assertion, "correctly set an object's do not ignore bit", tc);
-  if (!assertion) return -1;
 
   decompress_object(&test_obj,&compressed);
   assertion = ( obj.team == test_obj.team && 
@@ -63,7 +60,6 @@ int test_compression(TestContext *tc)
          obj.type == test_obj.type && 
          test_obj.client_has_player == 0 );
   should(assertion,"compress and decompress objects WITHOUT a player correctly",tc);
-  if (!assertion) return -1;
   
   // OBJECT WITH PLAYER
   obj.player = &plr;
@@ -77,7 +73,6 @@ int test_compression(TestContext *tc)
                  plr.id == test_obj.client_player_id && 
                  plr.team == test_obj.client_player_team);
   should(assertion,"compress and decompress objects WITH a player correctly",tc);
-  if (!assertion) return -1;
 
   maze_destroy(&maze);
   
@@ -96,21 +91,17 @@ int test_compression(TestContext *tc)
   assertion = decompress_game_state(&test_state, &compressed);
   assertion = (assertion >=0 ) && (test_state == maze_get_state(&maze));
   should(assertion,"compress and decompress the game state correctly",tc);
-  if (!assertion) return -1;
   
   assertion = !decompress_is_ignoreable(&compressed);
   should(assertion, "correctly set an object's do not ignore bit", tc);
-  if (!assertion) return -1;
  
   decompress_broken_wall(&test_pos, &compressed);
   assertion = (test_pos.x = broken.x && test_pos.y == broken.y);
   should(assertion, "compress and decompress broken wall positions correctly", tc);
-  if (!assertion) return -1;
 
-  return (assertion ? 0 : -1);
 }
 
-int test_cell(TestContext *tc)
+void test_cell(TestContext *tc)
 {
     int rc;
     rc = 1;
@@ -129,43 +120,35 @@ int test_cell(TestContext *tc)
     rc = rc!=0;
     should(rc!=0,"lock properly",tc);
 
-    if(rc) return 0;
-    else return -1;
 }
 
-int test_maze_load(TestContext *tc)
+void test_maze_load(TestContext *tc)
 {
     int rc;
     rc = maze_build_from_file(&maze,"test.map");
     should(rc>0,"build from file without errors",tc);
-    if (rc<0) return rc;
 
     rc = (maze.min.x == 0 && maze.min.y == 0) && (maze.max.x == 200 && maze.max.y == 200);
     should(rc,"build with correct dimensions",tc);
-    if (!rc) return -1;
 
     rc = (maze.home[TEAM_RED].min.x == 2   && maze.home[TEAM_RED].min.y == 90) &&
          (maze.home[TEAM_RED].max.x == 12  && maze.home[TEAM_RED].max.y == 109) &&
          (maze.home[TEAM_BLUE].min.x == 188 && maze.home[TEAM_BLUE].min.y == 90) &&
          (maze.home[TEAM_BLUE].max.x == 198 && maze.home[TEAM_BLUE].max.y == 109);
     should(rc,"know where the homebase min and max positions are",tc);
-    if (!rc) return rc;
    
     rc = (maze.jail[TEAM_RED].min.x == 90   && maze.jail[TEAM_RED].min.y == 90) &&
          (maze.jail[TEAM_RED].max.x == 98  && maze.jail[TEAM_RED].max.y == 109) &&
          (maze.jail[TEAM_BLUE].min.x == 102 && maze.jail[TEAM_BLUE].min.y == 90) &&
          (maze.jail[TEAM_BLUE].max.x == 110 && maze.jail[TEAM_BLUE].max.y == 109);
     should(rc,"know where the jail min and max positions are",tc);
-    if (!rc) return rc;
 
     rc = (maze.players[TEAM_RED].count == 0 && maze.players[TEAM_BLUE].count == 0) &&
          (maze.players[TEAM_RED].max < 192 && maze.players[TEAM_BLUE].max < 192);
     should(rc,"know successfully initialize the plists",tc);
-    if (!rc) return rc;
 
     maze_destroy(&maze);
 
-    return 1;
 }
 
 int main(int argc, char ** argv )

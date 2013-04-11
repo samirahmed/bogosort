@@ -6,38 +6,12 @@
 #include <pthread.h>
 #include <string.h>
 #include "test.h"
+#include "errno.h"
 
 extern void where(void)
 {
   fprintf(stderr,"In %s at %d\n", __FILE__, __LINE__ );
 }
-
-/*void test_context_block(TestContext*tc)*/
-/*{*/
-  /*pthread_mutex_lock(&tc->lock);*/
-  /*tc->blocking = 1;*/
-  /*pthread_mutex_unlock(&tc->lock);*/
-/*}*/
-
-/*int test_context_is_blocked(TestContext*tc)*/
-/*{*/
-  /*int blocked;*/
-  /*pthread_mutex_lock(&tc->lock);*/
-  /*blocked = tc->blocking == 1;*/
-  /*pthread_mutex_unlock(&tc->lock);*/
-/*}*/
-
-/*int test_context_unblock(TestContext*tc)*/
-/*{*/
-  /*pthread_mutex_lock(&tc->lock);*/
-  /*tc->blocking = 0;*/
-  /*pthread_mutex_lock(&tc->lock);*/
-/*}*/
-
-/*int test_is_running(pthread_t * thread)*/
-/*{*/
-  
-/*}*/
 
 extern void should( int valid , const char* message, TestContext *tc)
 {
@@ -46,28 +20,61 @@ extern void should( int valid , const char* message, TestContext *tc)
       printf("  "COLOR_FAIL SYMBOL_CROSS COLOR_END " %s should %s\n" , tc->current, message ); 
       where();
       BREAKPOINT();
+      tc->current_test_status=-1;
+      pthread_exit( (void*)-1 );
     }
     if (valid && tc->verbose) 
       printf("  "COLOR_OKGREEN SYMBOL_TICK COLOR_END " %s should %s\n", tc->current, message );
 
 }
 
-extern void run( int (*func)(TestContext*), char * test_name , TestContext *tc)
+void* threaded_test( void* arg)
 {
-    tc->current = test_name;
-    printf(COLOR_OKBLUE "%d. %s" COLOR_END "\n" , tc->num++ , test_name ); 
-    int result;
-    result = (*func)(tc);
+  TestContext* tc = (TestContext*) arg;
+  TestFunction test_function;
+  test_function = (TestFunction) tc->test_function;
+  tc->current_test_status = 0; 
+  (*test_function)(tc);
+  tc->current_test_status = 1;  //redundant but for testing purposes
+  pthread_exit( (void*) 0); 
+}
 
-    if (result < 0)
+extern void run( void (*func)(TestContext*), char * test_name , TestContext *tc)
+{
+    int rc;
+    void* status;
+    pthread_t thread;
+    pthread_attr_t attr;
+
+    tc->current = test_name;
+    tc->test_function = (void(*)(void*)) func;
+
+    printf(COLOR_OKBLUE "%d. %s" COLOR_END "\n" , tc->num++ , test_name ); 
+    
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
+    pthread_create(&thread, &attr, threaded_test, (void*) tc );
+    pthread_attr_destroy(&attr);
+   
+    BREAKPOINT();
+    rc = pthread_join( thread, &status); 
+    if (rc == EINVAL || rc == EDEADLK )
     {
-      printf(COLOR_FAIL "%s failed \n" COLOR_END "\n" , test_name ); 
-      tc->fail++;
+      printf(COLOR_FAIL "Test Exception in %s line %d - pthread_join returned %d \n" COLOR_END , 
+        __FILE__, __LINE__,rc );
     }
     else
     {
-      printf( COLOR_OKGREEN "%s passed \n" COLOR_END "\n" , test_name ); 
-      tc->pass++;
+        if (tc->current_test_status < 0)
+        {
+          printf(COLOR_FAIL "%s failed \n" COLOR_END "\n" , test_name ); 
+          tc->fail++;
+        }
+        else
+        {
+          printf( COLOR_OKGREEN "%s passed \n" COLOR_END "\n" , test_name ); 
+          tc->pass++;
+        }
     }
 }
 

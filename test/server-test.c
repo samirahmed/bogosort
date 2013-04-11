@@ -12,11 +12,12 @@
 #include "../lib/game_server.h"
 #include "../lib/test.h"
 
-Maze maze;  // global maze
+/*Maze maze;  // global maze*/
 
-int test_home(TestContext * tc)
+void test_home(TestContext * tc)
 {
     int assertion, key, team;
+    Maze maze;
     maze_build_from_file(&maze,"test.map");
     Cell * cell;
     assertion = 1;
@@ -30,16 +31,18 @@ int test_home(TestContext * tc)
         }
     }
     should(assertion,"hash any integer to a valid home position",tc);
-    maze_destroy(&maze);
     should(0,"auto fail",tc);
-    return 1;
+    maze_destroy(&maze);
 }
 
-int test_server_locks(TestContext * tc)
+void test_server_locks(TestContext * tc)
 {
+    Maze maze;
+    int xx=0;
+    xx++;
     maze_build_from_file(&maze,"test.map");
     
-    printf("Starting recursive jail lock test\n");
+    if (tc->verbose) printf("Starting recursive jail lock test\n");
     int ii, times;
     times = 20;
     for (ii=0; ii<times ;ii++)
@@ -47,18 +50,17 @@ int test_server_locks(TestContext * tc)
         server_jail_lock(&maze.jail[TEAM_RED]);
         server_jail_lock(&maze.jail[TEAM_BLUE]);
     }
-    printf("We are %d jail locks deep\n",times);
+    if (tc->verbose) printf("We are %d jail locks deep\n",times);
 
     for (ii=0; ii<times ;ii++)
     {
         server_jail_unlock(&maze.jail[TEAM_BLUE]);
         server_jail_unlock(&maze.jail[TEAM_RED]);
     }
-    printf("Exited reentrant locks\n");
+    if (tc->verbose) printf("Exited reentrant locks\n");
     should(1,"allow of re-entry and exit of locks",tc); 
     
     maze_destroy(&maze);
-    return 1;
 }
 
 int main(int argc, char ** argv )
@@ -67,7 +69,7 @@ int main(int argc, char ** argv )
     test_init(argc, argv, &tc);
       
     // ADD TESTS HERE
-    run(&test_server_locks,"Server Locks",&tc);
+    /*run(&test_server_locks,"Server Locks",&tc);*/
     run(&test_home,"Home",&tc);
     
     // TEST END HERE

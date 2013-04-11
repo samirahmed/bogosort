@@ -345,8 +345,9 @@ extern int maze_build_from_file(Maze*map, char* filename)
 {
   FILE* fp;
 	char buffer[MAX_ROW_MAZE][MAX_COL_MAZE];		//This size buffer is okay for now
-	int rowLen = 0; 			                      //Number of chars in one line of the file
-	int colLen = 0; 			                      //Index for row into the buffer
+	int rowLen,colLen; 
+  rowLen = 0; 			                      //Number of chars in one line of the file
+	colLen = 0; 			                      //Index for row into the buffer
 	fp = fopen(filename,"r"); 		              //Open File
 
   // close the file and check for errors

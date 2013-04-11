@@ -13,19 +13,24 @@
 #define BREAKPOINT() raise(SIGINFO);    // should be caught in gdb - is ignorable (unix only)
 #define SUICIDE() raise(SIGUSR1);
 
+
 typedef struct {
 int pass;
 int fail;
 int num;
 int verbose;
 char * current;
+int current_test_status;
 int blocking;
+void (*test_function)(void *);
 pthread_mutex_t lock;
 } TestContext;
+
+typedef void(*TestFunction)(TestContext*);
 
 extern void where(void);
 extern void should(int valid, const char* message, TestContext*tc);
 extern void test_summary(TestContext *tc);
 extern void test_init(int argc, char** argv, TestContext *tc);
-extern void run( int (*func)(TestContext*), char * test_name , TestContext *tc);
+extern void run( void (*func)(TestContext*), char * test_name , TestContext *tc);
 
