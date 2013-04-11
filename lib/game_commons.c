@@ -11,6 +11,14 @@
 #include "protocol_session.h"
 #include "game_commons.h"
 
+/******************/
+/* UTIL   METHODS */
+/******************/
+
+extern Team_Types opposite_team(Team_Types team)
+{
+  return (team == TEAM_RED ? TEAM_RED: TEAM_BLUE);
+}
 
 /******************/
 /* OBJECT METHODS */
@@ -20,6 +28,7 @@ extern int object_get_index(Team_Types team , Object_Types object)
 {
     return object+(team*2);
 }
+
 
 /******************/
 /* PLAYER METHODS */
@@ -152,7 +161,12 @@ extern int cell_is_near(Cell* current, Cell* next)
 
 extern int cell_is_unoccupied(Cell* cell)
 {
-    return (cell->cell_state == CELLSTATE_OCCUPIED || cell->cell_state == CELLSTATE_OCCUPIED_HOLDING );
+   return ((!cell->player) ? 0: 1 );
+}
+
+extern int cell_is_not_holding(Cell* cell)
+{
+   return ((!cell->object) ? 0: 1 );
 }
 
 extern int cell_is_walkable(Cell * cell)

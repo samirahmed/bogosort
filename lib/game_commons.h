@@ -39,7 +39,6 @@ typedef struct{
     unsigned short int  y;
 } Pos;
 
-
 // forward declarations
 struct CellStruct;
 struct PlayerStruct;
@@ -120,6 +119,9 @@ typedef struct{
     pthread_mutex_t  state_lock;
 } Maze;
 
+// UTIL METHODS
+extern Team_Types opposite_team(Team_Types team);
+
 // OBJECT METHODS
 extern int object_get_index(Team_Types team , Object_Types object);
 
@@ -145,6 +147,7 @@ extern int player_get_position(Player * player, Pos*pos);
 // CELL METHODS
 extern void cell_init(Cell* cell,int x, int y, Team_Types turf, Cell_Types type, Mutable_Types is_mutable);
 extern int  cell_is_unoccupied(Cell* cell);
+extern int  cell_is_not_holding(Cell* cell);
 extern int  cell_is_walkable_type(Cell * cell);
 extern void cell_lock(Cell*);
 extern void cell_unlock(Cell*);

@@ -30,6 +30,9 @@ extern void server_maze_lock(Maze*m, Pos current, Pos next);
 extern void server_maze_unlock(Maze*m, Pos current, Pos next);
 extern void server_jail_lock(Jail * jail );
 extern void server_jail_unlock(Jail * jail);
+extern void server_object_unlock(Maze*m);
+extern void server_object_read_lock(Maze*m);
+extern void server_object_write_lock(Maze*m);
 
 //extern void jail_lock(Maze*m, Team_Types team);
 
@@ -48,13 +51,14 @@ extern void maze_reset_shovel(Maze* m, Object* object);
 
 // JAIL METHODS
 extern void server_jail_player( Maze*m, Cell* current, Cell* next);
-extern void server_jailbreak( Maze*m, Team_Types team );
 
 // PLAYER METHODS
 extern void player_drop(Player * player);
 
 
 // HOME METHODS
+extern void server_hash_id( Maze* m, int key, Cell* cell, Team_Types team);
+extern int  server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell* c ,int id, int query);
 extern int  server_home_count_increment(Home * home);
 extern int  server_home_count_decrement(Home * home);
 extern int  server_home_count_read(Home * home);
@@ -64,5 +68,18 @@ extern void server_plist_player_count( Plist * plist );
 extern void server_plist_add_player(Plist* plist, Player * player);
 extern void server_plist_drop_player_using_fd(Plist* plist, int fd );
 extern void server_plist_drop_player_using_id(Plist* plist, int id );
+
+// ACTION METHODS
+
+extern int _server_action_drop_flag(Maze*m , Player* player);
+extern int _server_action_drop_shovel(Maze*m , Player*player);
+extern int _server_action_player_reset_shovel(Maze*m, Player*player);
+extern int _server_action_pickup_object(Maze*m, Player* player);
+extern int _server_action_update_cell(Maze*m, Object* object, Cell* newcell );
+extern int _server_action_update_cell_and_player(Maze*m, Object* object, Cell* newcell, Player* player);
+extern int _server_action_update_player(Maze*m, Player*player, Cell*newcell);
+extern int _server_action_move_player(Maze*m, Cell* currentcell , Cell* nextcell );
+extern int _server_action_jailbreak( Maze*m, Team_Types team );
+extern int _server_action_jail_player(Maze*m, Cell* currentcell);
 
 #endif
