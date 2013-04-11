@@ -47,12 +47,16 @@ typedef struct CellStruct* cell_t;
 typedef struct PlayerStruct* player_t;
 
 typedef struct{
-    cell_t          player;
-    player_t        object;
-    Pos             position;
+    cell_t          cell;
+    player_t        player;
     Object_Types    type;
     Team_Types      team;
     Visible_Types   visiblity;
+    
+    Pos             client_position;
+    int             client_player_id;
+    Team_Types      client_player_team;
+    int             client_has_player;
 } Object;
 
 typedef struct PlayerStruct{
@@ -63,6 +67,7 @@ typedef struct PlayerStruct{
     Team_Types          team;
     unsigned short int  id;
     int                 fd;
+    Pos                 client_position;
 } Player;
 
 typedef struct CellStruct{
@@ -111,7 +116,12 @@ typedef struct{
     Home             home[NUM_TEAMS];
     pthread_rwlock_t wall_wrlock;
     pthread_rwlock_t object_wrlock;
+    Game_State_Types current_game_state;
+    pthread_mutex_t  state_lock;
 } Maze;
+
+// OBJECT METHODS
+extern int object_get_index(Team_Types team , Object_Types object);
 
 // JAIL METHODS
 extern void jail_init(Jail*jail, Pos min, Pos max, Team_Types team);
@@ -121,6 +131,10 @@ extern void home_init(Home * home, Pos min, Pos max, Team_Types team );
 
 // PLIST METHODS
 extern void plist_init(Plist * plist, Team_Types team, int max_player_size);
+
+// MAZE METHODS
+extern void maze_set_state(Maze*m,Game_State_Types state);
+extern Game_State_Types  maze_get_state(Maze*m);
 
 // PLAYER METHODS
 extern void player_init(Player * player);
@@ -144,15 +158,15 @@ extern int  maze_build_from_file(Maze*map, char* filename);
 // Marshalling and Compression
 extern int decompress_is_ignoreable(int * compressed);
 
-extern int compress_player(Player* player, int* compressed );
-extern int decompress_player(Player* player, int* compressed );
+extern void compress_player(Player* player, int* compressed , Player_Update_Types type);
+extern void decompress_player(Player* player, int* compressed, Player_Update_Types *type);
 
-extern int compress_object(Object* object, int* compressed );
-extern int decompress_object(Object* object, int* compressed );
+extern void compress_object(Object* object, int* compressed );
+extern void decompress_object(Object* object, int* compressed );
 
-extern int compress_game_state(Maze* object, int* compressed);
+extern void compress_game_state(Maze* object, int* compressed);
 extern int decompress_game_state(Game_State_Types* gstate, int* compressed);
-extern int compress_broken_wall(Pos * position, int* compressed);
-extern int decompress_broken_wall(Pos * position, int* compressed);
+extern void compress_broken_wall(Pos * position, int* compressed);
+extern void decompress_broken_wall(Pos * position, int* compressed);
 
 #endif

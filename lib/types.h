@@ -36,8 +36,14 @@ typedef enum{
     GAME_STATE_ACTIVE    =  2,
     GAME_STATE_RED_WIN   =  3,
     GAME_STATE_BLUE_WIN  =  4,
-    GAME_STATE_ERROR     = -1
+    GAME_STATE_ERROR     =  5
 } Game_State_Types;
+
+typedef enum{
+    PLAYER_UNCHANGED =  0,
+    PLAYER_ADDED     =  1,
+    PLAYER_DROPPED   =  2
+} Player_Update_Types;
 
 /* GAME TYPES */
 typedef enum{

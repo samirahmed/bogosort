@@ -11,6 +11,16 @@
 #include "protocol_session.h"
 #include "game_commons.h"
 
+
+/******************/
+/* OBJECT METHODS */
+/******************/
+
+extern int object_get_index(Team_Types team , Object_Types object)
+{
+    return object+(team*2);
+}
+
 /******************/
 /* PLAYER METHODS */
 /******************/
@@ -71,6 +81,26 @@ extern void plist_init(Plist* plist, Team_Types team, int max_players )
    plist->team  = team;
    plist->max   = max_players;
    pthread_rwlock_init(&(plist->plist_wrlock),NULL);
+}
+
+/*********************/
+/* MAZE LOCK METHODS */
+/*********************/
+
+extern void maze_set_state(Maze*m, Game_State_Types state)
+{
+  pthread_mutex_lock(&(m->state_lock));
+  m->current_game_state = state;
+  pthread_mutex_unlock(&(m->state_lock));
+}
+
+extern Game_State_Types  maze_get_state(Maze *m)
+{
+  Game_State_Types current_game_state;
+  pthread_mutex_lock(&(m->state_lock));
+  current_game_state = m->current_game_state;
+  pthread_mutex_unlock(&(m->state_lock));
+  return current_game_state;
 }
 
 /****************/
@@ -193,6 +223,8 @@ extern void maze_init(Maze * m, int max_x, int max_y)
      // Setup locks
      pthread_rwlock_init(&m->wall_wrlock,NULL);
      pthread_rwlock_init(&m->object_wrlock,NULL);
+     pthread_mutex_init(&m->state_lock,NULL);
+     m->current_game_state = GAME_STATE_WAITING; 
 
      // Initialize cells
      m->get = (Cell **)malloc(m->max.x*(sizeof(Cell*)));
@@ -385,3 +417,98 @@ extern void maze_dump(Maze*map)
 	}
 	close((int)dumpfp);
 }
+
+/****************************/
+/* MARSHALL AND COMPRESSION */
+/****************************/
+
+extern int decompress_is_ignoreable(int * compressed)
+{
+  return ( *compressed & 0x80000000 ? 0 : 1 ) ;
+}
+
+extern void compress_player(Player* player, int* compressed , Player_Update_Types update_type )
+{
+   *compressed = 0;
+   *compressed = ((0x000000ff & (player->cell->pos.y))          |
+                  (0x0000ff00 & ((player->cell->pos.x) << 8 ))  |
+                  (0x00ff0000 & ( player->id           << 16 )) |
+                  (0x01000000 & ( player->state        << 24 )) |
+                  (0x02000000 & ( player->team         << 25 )) |
+                  (0x0c000000 & ( update_type          << 26 )) |
+                  (0x80000000)); // do not ignore bit
+}
+
+extern void decompress_player(Player* player, int* compressed, Player_Update_Types *update_type)
+{
+  player->client_position.y =  (unsigned)( 0x000000ff & *compressed );
+  player->client_position.x =  (unsigned)((0x0000ff00 & *compressed ) >> 8  );
+  player->id                =  (unsigned)((0x00ff0000 & *compressed ) >> 16 );
+  
+  player->state   = (Player_State_Types )((0x01000000 & *compressed ) >> 24 );
+  player->team    = (Team_Types         )((0x02000000 & *compressed ) >> 25 );
+  *update_type    = (Player_Update_Types)((0x0c000000 & *compressed ) >> 26 );
+}
+
+extern void compress_object(Object* object, int* compressed)
+{
+   *compressed = 0;
+   *compressed |=  (0x000000ff & ( object->cell->pos.y));
+   *compressed |=  (0x0000ff00 & ((object->cell->pos.x) << 8 ));
+   *compressed |=  (0x04000000 & ((object->type)        << 26 ));
+   *compressed |=  (0x08000000 & ((object->team)        << 27 ));
+   *compressed |=  (0x80000000); // do not ignore bit
+
+   if (object->player)
+   {
+      *compressed |= (0x00ff0000 & ( object->player->id)   << 16);
+      *compressed |= (0x01000000 & ( object->player->team) << 24);
+      *compressed |= (0x02000000 ); // has player
+   }
+}
+
+extern void decompress_object(Object* object, int* compressed)
+{
+  object->client_position.y =  (unsigned)( 0x000000ff & *compressed );
+  object->client_position.x =  (unsigned)((0x0000ff00 & *compressed ) >> 8  );
+  object->type =           (Object_Types)((0x04000000 & *compressed ) >> 26 );
+  object->team =             (Team_Types)((0x08000000 & *compressed ) >> 27 );
+  object->client_has_player =  (unsigned)((0x02000000 & *compressed ) >> 25 );
+
+  if (object->client_has_player)
+  {
+     object->client_player_id =      (unsigned)((0x00ff0000 & *compressed ) >> 16 );
+     object->client_player_team =  (Team_Types)((0x01000000 & *compressed ) >> 24 );
+  }
+
+}
+
+extern void compress_game_state(Maze* maze, int* compressed)
+{
+  *compressed &=  0xfff8ffff; // clear state bits
+  *compressed |= (0x00070000 & (maze_get_state(maze) << 16)); // write state bits
+}
+
+extern int decompress_game_state(Game_State_Types *gstate, int* compressed)
+{
+  int  val;
+  val = (((unsigned)(*compressed & 0x00070000)) >> 16) ;
+  if ( val>GAME_STATE_ERROR ) return -1;
+  *gstate = (Game_State_Types)val;
+  return 0;
+}
+
+extern void compress_broken_wall(Pos * position, int* compressed)
+{
+   *compressed &= 0x7fff0000;   // clear used bits
+   *compressed |=  (0x000000ff & ( position->y));
+   *compressed |=  (0x0000ff00 & ( position->x << 8 ));
+   *compressed |=  (0x80000000); // set do not ignore
+}
+
+extern void decompress_broken_wall(Pos * position, int* compressed)
+{
+  position->y =  (unsigned)( 0x000000ff & *compressed );
+  position->x =  (unsigned)((0x0000ff00 & *compressed ) >> 8  );
+}
+
