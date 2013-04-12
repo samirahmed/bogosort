@@ -34,8 +34,8 @@ static void dummyPlayer_init(UI *ui);
 static void dummyPlayer_paint(UI *ui, SDL_Rect *t);
 
 
-#define SPRITE_H 32
-#define SPRITE_W 32
+#define SPRITE_H 1
+#define SPRITE_W 1
 
 #define UI_FLOOR_BMP "floor.bmp"
 #define UI_REDWALL_BMP "redwall.bmp"
@@ -300,11 +300,21 @@ load_sprites(UI *ui)
   return 1;
 }
 
+/*
+inline static void draw_color_cell(UI *ui, int color, SDL_Rect *t, SDL_Surface *){
+
+       SDL_Surface *ts;
+       uint32_t tc
+    	SDL_BlitSurface(ts, NULL, s, t);
+}
+
+*/
 
 inline static void
 draw_cell(UI *ui, SPRITE_INDEX si, SDL_Rect *t, SDL_Surface *s)
 {
   SDL_Surface *ts=NULL;
+  
   uint32_t tc;
 
   ts = ui->sprites[si].img;
@@ -326,19 +336,30 @@ ui_paintmap(UI *ui)
 
   for (t.y=0; t.y<ui->screen->h; t.y+=t.h) {
     for (t.x=0; t.x<ui->screen->w; t.x+=t.w) {
-        map_char = fgetc(fp);
+        ui_putpixel(ui->screen, t.x, t.y, ui->red_c); 
+	map_char = fgetc(fp);
 	printf("%c", map_char);
-	if(map_char == ' ' && t.x){
-		draw_cell(ui, FLOOR_S, &t, ui->screen);
- 	   }
+        if(map_char == ' '){
+		ui_putpixel(ui->screen, t.x, t.y, ui-> isle_c);
+ 	}
 	if(map_char == '#' && t.x < 100){
-		draw_cell(ui, REDWALL_S, &t, ui->screen);
+		ui_putpixel(ui->screen, t.x, t.y, ui-> wall_teama_c);
     	}
 	if(map_char == '#' && t.x >= 100){
-		draw_cell(ui, GREENWALL_S, &t, ui->screen);
-	
+		ui_putpixel(ui->screen, t.x, t.y, ui-> wall_teamb_c);
 	}
+	//for now paint home areas white and jail areas yellow
+        
+	if(map_char == 'j' || map_char == 'J'){
+		ui_putpixel(ui->screen, t.x, t.y, ui-> yellow_c);
 	}
+
+
+	if(map_char == 'h' || map_char == 'H'){
+		ui_putpixel(ui->screen, t.x, t.y, ui-> white_c);
+	}	
+// draw_color_cell(ui, 1, &t, ui->screen);	
+}
 			
   }
 
@@ -383,7 +404,8 @@ ui_init_sdl(UI *ui, int32_t h, int32_t w, int32_t d)
   ui->green_c      = SDL_MapRGB(ui->screen->format, 0x00, 0xff, 0x00);
   ui->yellow_c     = SDL_MapRGB(ui->screen->format, 0xff, 0xff, 0x00);
   ui->purple_c     = SDL_MapRGB(ui->screen->format, 0xff, 0x00, 0xff);
-
+  
+  
   ui->isle_c         = ui->black_c;
   ui->wall_teama_c   = ui->red_c;
   ui->wall_teamb_c   = ui->green_c;
