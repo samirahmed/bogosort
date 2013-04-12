@@ -1,5 +1,8 @@
 # Bogosort Tests
 
+
+## Running Tests
+
 To run test just use
 
 ```shell
@@ -13,25 +16,25 @@ make test
 
 (Tests only depend on lib/ at the moment, so client and server don't actually have to build)
 
-
 Running a test works something like this ... 
+
+## Writing your own
 
 ```c
 #include "test.h"
 
 // this is a test function
-// it takes a test_context and returns an int
-int test_increment(TestContext * tc)
+// it takes a test_context that asserts using "should" clauses
+void test_increment(TestContext * tc)
 {
     int x,rc;           // setup a return code
     x = 0;              // set x to 
     x++;                // perform increment
     
     // Check that it should equal 1
-    should( x==1 , "make zero become one",&tc);
-    
-    if ( x==1 ) return 0;   // return 0 or more to indicate test passes
-    else return -1;         // return -1 to indicate test fails
+    should("make zero become one",x==1,&tc); 
+    // should will automatic trigger a break point on failure
+    // if the assertion fails, the function will stop executing
 }
 
 // sample main func
@@ -47,4 +50,24 @@ int main(int argc, char** argv)
 }
 ```
 
-see $BOGOSORT/lib/test.h / 
+## Test Framework
+
+
+The `TestContext` object is a variable passed through your tests to share information 
+between tests themselves and the test framework code.
+
+Each test runs on its own thread, one test at a time. When a test finishes its thread 
+joins the main thread and execution continues
+
+the framework provides the following functions
+
+- **Assertions**  `should("do someting",assertion,tc)` 
+- **Run Tests**  `run(&testHome,"Home",&testcontext);` 
+
+## Debugging
+
+A `SIGINFO` is raised whenever an assertion fails. If you just run the test in gdb
+
+`gdb commons-test` and run the executable. You will automatically be stopped at the `SIGINFO` from where you use the 'next' and 'frame' command to debug the process;
+
+see `$BOGOSORT/lib/test.c` for implementation details 
