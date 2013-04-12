@@ -30,7 +30,7 @@ void test_home(TestContext * tc)
                         cell->pos.y < maze.max.y && cell->pos.y >= maze.min.y && assertion);
         }
     }
-    should(assertion,"hash any integer to a valid home position",tc);
+    should("hash any integer to a valid home position",assertion,tc);
     
     maze_destroy(&maze);
 }
@@ -40,7 +40,7 @@ void test_server_locks(TestContext * tc)
     Maze maze;
     maze_build_from_file(&maze,"test.map");
     
-    if (tc->verbose) printf("Starting recursive jail lock test\n");
+    if (tc->verbose) fprintf(stderr,"Starting recursive jail lock test\n");
     int ii, times;
     times = 20;
     for (ii=0; ii<times ;ii++)
@@ -48,15 +48,15 @@ void test_server_locks(TestContext * tc)
         server_jail_lock(&maze.jail[TEAM_RED]);
         server_jail_lock(&maze.jail[TEAM_BLUE]);
     }
-    if (tc->verbose) printf("We are %d jail locks deep\n",times);
+    if (tc->verbose) fprintf(stderr,"We are %d jail locks deep\n",times);
 
     for (ii=0; ii<times ;ii++)
     {
         server_jail_unlock(&maze.jail[TEAM_BLUE]);
         server_jail_unlock(&maze.jail[TEAM_RED]);
     }
-    if (tc->verbose) printf("Exited reentrant locks\n");
-    should(1,"allow of re-entry and exit of locks",tc); 
+    if (tc->verbose) fprintf(stderr,"Exited reentrant locks\n");
+    should("allow of re-entry and exit of locks",1,tc); 
     
     maze_destroy(&maze);
 }

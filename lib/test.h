@@ -28,8 +28,7 @@ pthread_mutex_t lock;
 
 typedef void(*TestFunction)(TestContext*);
 
-extern void where(void);
-extern void should(int valid, const char* message, TestContext*tc);
+extern void should(const char* message, int valid, TestContext *tc);
 extern void test_summary(TestContext *tc);
 extern void test_init(int argc, char** argv, TestContext *tc);
 extern void run( void (*func)(TestContext*), char * test_name , TestContext *tc);

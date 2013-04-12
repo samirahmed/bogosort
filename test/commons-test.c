@@ -31,7 +31,7 @@ void test_compression(TestContext *tc)
   compress_player(&plr,&compressed,PLAYER_ADDED);
 
   assertion = !decompress_is_ignoreable(&compressed);
-  should(assertion, "correctly set a player's do not ignore bit", tc);
+  should("correctly set a player's do not ignore bit",assertion, tc);
  
   Player_Update_Types update_type;
   update_type = PLAYER_UNCHANGED;
@@ -42,7 +42,7 @@ void test_compression(TestContext *tc)
                 plr.cell->pos.y == test_plr.client_position.y &&
                 plr.id == test_plr.id &&
                 update_type == PLAYER_ADDED);
-  should(assertion,"compress and decompress player objects correctly",tc);
+  should("compress and decompress player objects correctly",assertion,tc);
 
   // OBJECT COMPRESSION
   Object obj,test_obj;
@@ -51,7 +51,7 @@ void test_compression(TestContext *tc)
   compress_object(&obj,&compressed);
   
   assertion = !decompress_is_ignoreable(&compressed);
-  should(assertion, "correctly set an object's do not ignore bit", tc);
+  should("correctly set an object's do not ignore bit",assertion, tc);
 
   decompress_object(&test_obj,&compressed);
   assertion = ( obj.team == test_obj.team && 
@@ -59,7 +59,7 @@ void test_compression(TestContext *tc)
          obj.cell->pos.y == test_obj.client_position.y &&
          obj.type == test_obj.type && 
          test_obj.client_has_player == 0 );
-  should(assertion,"compress and decompress objects WITHOUT a player correctly",tc);
+  should("compress and decompress objects WITHOUT a player correctly",assertion,tc);
   
   // OBJECT WITH PLAYER
   obj.player = &plr;
@@ -72,7 +72,7 @@ void test_compression(TestContext *tc)
                  test_obj.client_has_player == 1 && 
                  plr.id == test_obj.client_player_id && 
                  plr.team == test_obj.client_player_team);
-  should(assertion,"compress and decompress objects WITH a player correctly",tc);
+  should("compress and decompress objects WITH a player correctly",assertion,tc);
 
   maze_destroy(&maze);
   
@@ -90,14 +90,14 @@ void test_compression(TestContext *tc)
   
   assertion = decompress_game_state(&test_state, &compressed);
   assertion = (assertion >=0 ) && (test_state == maze_get_state(&maze));
-  should(assertion,"compress and decompress the game state correctly",tc);
+  should("compress and decompress the game state correctly",assertion,tc);
   
   assertion = !decompress_is_ignoreable(&compressed);
-  should(assertion, "correctly set an object's do not ignore bit", tc);
+  should("correctly set an object's do not ignore bit",assertion, tc);
  
   decompress_broken_wall(&test_pos, &compressed);
   assertion = (test_pos.x = broken.x && test_pos.y == broken.y);
-  should(assertion, "compress and decompress broken wall positions correctly", tc);
+  should("compress and decompress broken wall positions correctly",assertion, tc);
 
 }
 
@@ -117,7 +117,7 @@ void test_cell(TestContext *tc)
         cell_unlock(&(maze.get[xx][yy]));
       }
     };
-    should(assertion,"lock properly",tc);
+    should("lock properly",assertion,tc);
 
 }
 
@@ -125,26 +125,26 @@ void test_maze_load(TestContext *tc)
 {
     int assertion;
     assertion = maze_build_from_file(&maze,"test.map");
-    should(assertion>=0,"build from file without errors",tc);
+    should("build from file without errors", assertion>=0,tc);
 
     assertion = (maze.min.x == 0 && maze.min.y == 0) && (maze.max.x == 200 && maze.max.y == 200);
-    should(assertion,"build with correct dimensions",tc);
+    should("build with correct dimensions",assertion,tc);
 
     assertion = (maze.home[TEAM_RED].min.x == 2  && maze.home[TEAM_RED].min.y == 90) &&
          (maze.home[TEAM_RED].max.x == 12  && maze.home[TEAM_RED].max.y == 109) &&
          (maze.home[TEAM_BLUE].min.x == 188 && maze.home[TEAM_BLUE].min.y == 90) &&
          (maze.home[TEAM_BLUE].max.x == 198 && maze.home[TEAM_BLUE].max.y == 109);
-    should(assertion,"know where the homebase min and max positions are",tc);
+    should("know where the homebase min and max positions are",assertion,tc);
    
     assertion = (maze.jail[TEAM_RED].min.x == 90   && maze.jail[TEAM_RED].min.y == 90) &&
          (maze.jail[TEAM_RED].max.x == 98  && maze.jail[TEAM_RED].max.y == 109) &&
          (maze.jail[TEAM_BLUE].min.x == 102 && maze.jail[TEAM_BLUE].min.y == 90) &&
          (maze.jail[TEAM_BLUE].max.x == 110 && maze.jail[TEAM_BLUE].max.y == 109);
-    should(assertion,"know where the jail min and max positions are",tc);
+    should("know where the jail min and max positions are",assertion,tc);
 
     assertion = (maze.players[TEAM_RED].count == 0 && maze.players[TEAM_BLUE].count == 0) &&
          (maze.players[TEAM_RED].max < 192 && maze.players[TEAM_BLUE].max < 192);
-    should(assertion,"know successfully initialize the plists",tc);
+    should("know successfully initialize the plists",assertion,tc);
 
     maze_destroy(&maze);
 
