@@ -383,7 +383,7 @@ extern void maze_destroy(Maze*maze)
      free( maze->wall);
      free( maze->get);
      
-     fprintf(stderr,"cleaned up maze struct\n");
+     if(proto_debug()) fprintf(stderr,"cleaned up maze struct\n");
      bzero(maze,sizeof(Maze)); 
 }
 

@@ -101,13 +101,13 @@ extern void server_object_unlock(Maze*m)
 extern void server_hash_id( Maze* m, int key, Cell** cell, Team_Types team)
 {
   Home*home = &m->home[team];
-  int yy,xx, xlen, ylen;
+  unsigned int yy,xx, xlen, ylen;
   xlen = (home->max.x-home->min.x);
   ylen = (home->max.y-home->min.y);
   
-  yy =( key / xlen )%( ylen );
+  yy = (unsigned) ( key / xlen )%( ylen );
   yy += home->min.y;
-  xx = key % xlen;
+  xx = (unsigned) key % xlen;
   xx += home->min.x;
   *cell = &(m->get[xx][yy]);
 }

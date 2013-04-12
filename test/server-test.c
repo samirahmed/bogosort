@@ -19,19 +19,23 @@ void test_home(TestContext * tc)
     int assertion, key, team;
     Maze maze;
     maze_build_from_file(&maze,"test.map");
+    
     Cell * cell;
     assertion = 1;
     for ( team =0; team<NUM_TEAMS ; team++)
     {
         for ( key = -1000 ; key<1000000 && assertion ;key++ )
         { 
-          server_hash_id(&maze, key, &cell, TEAM_BLUE); 
+          server_hash_id(&maze, key, &cell, team); 
           assertion = ( cell->pos.x < maze.max.x && cell->pos.x >= maze.min.x &&
                         cell->pos.y < maze.max.y && cell->pos.y >= maze.min.y && assertion);
         }
     }
     should("hash any integer to a valid home position",assertion,tc);
     
+    key = 16;
+    /*server_hash_id(&maze,key,&cell,);
+
     maze_destroy(&maze);
 }
 
