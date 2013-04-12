@@ -161,12 +161,12 @@ extern int cell_is_near(Cell* current, Cell* next)
 
 extern int cell_is_unoccupied(Cell* cell)
 {
-   return ((!cell->player) ? 0: 1 );
+   return ( cell->player ? 0: 1 );
 }
 
-extern int cell_is_not_holding(Cell* cell)
+extern int cell_is_holding(Cell* cell)
 {
-   return ((!cell->object) ? 0: 1 );
+   return ( cell->object ? 1: 0 );
 }
 
 extern int cell_is_walkable(Cell * cell)

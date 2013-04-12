@@ -56,6 +56,7 @@ extern void server_maze_lock(Maze*m , Pos current, Pos next)
     // if current != next;
     cell_lock(&second);
   }
+
 }
 
 extern void server_maze_unlock(Maze*m, Pos current, Pos next)
@@ -109,6 +110,7 @@ extern void server_hash_id( Maze* m, int key, Cell** cell, Team_Types team)
   yy += home->min.y;
   xx = (unsigned) key % xlen;
   xx += home->min.x;
+  /*fprintf(stderr,"%d,%d\n",xx,yy);*/
   *cell = &(m->get[xx][yy]);
 }
 
@@ -117,23 +119,26 @@ extern void server_hash_id( Maze* m, int key, Cell** cell, Team_Types team)
 // query 1 = not holding object
 extern int server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell** cell ,int id, int query)
 {
-   int try, found;
+   int try, found, home_size;
    
    try = 0;
    found = -1;
-   Cell * c = *cell;
-   while ( try < (MAX_TEAM_SIZE*2) || (found!=0) )
+   Cell * c;
+   Home *home = &(m->home[team]);
+   home_size = (home->max.x-home->min.x)*(home->max.y-home->min.y);
+   while ( (try < home_size*2) && (found!=0) )
    {
       server_hash_id( m, id+try, cell, team);
+      c = *cell;
+      try++;
       found = pthread_mutex_trylock(&(c->lock));
-      if ((found==0 && query==0 && !cell_is_unoccupied) || 
-          (found==0 && query!=0 && !cell_is_not_holding(c)))
+     
+      if (found != 0) { continue;}
+      else if ((query==0 && !cell_is_unoccupied(c)) || (query!=0 && cell_is_holding(c))) 
       {
         found = -1;
         cell_unlock(c);
       }
-
-      try++;
    }
    
    if (found != 0) return -1;

@@ -16,11 +16,12 @@
 
 void test_home(TestContext * tc)
 {
-    int assertion, key, team;
+    int assertion, key, team , xx,yy;
     Maze maze;
     maze_build_from_file(&maze,"test.map");
     
     Cell * cell;
+    Cell * test;
     assertion = 1;
     for ( team =0; team<NUM_TEAMS ; team++)
     {
@@ -33,8 +34,45 @@ void test_home(TestContext * tc)
     }
     should("hash any integer to a valid home position",assertion,tc);
     
-    key = 16;
-    /*server_hash_id(&maze,key,&cell,);
+    for ( team=0; team<NUM_TEAMS; team++)
+    {
+      key = 173;
+      server_hash_id(&maze,key,&cell,team);
+      /*fprintf(stderr,"Target is  %d, %d" , cell->pos.x,cell->pos.y );*/
+      Home *home = &(maze.home[team]);
+      for ( xx = home->min.x ; xx < home->max.x ; xx++)
+      { 
+        for ( yy = home->min.y ; yy < home->max.y ;yy++)
+        {
+           if (!(xx == cell->pos.x && yy==cell->pos.y))
+           {
+              if ( (xx+yy)%3 == 0 )
+              { 
+                cell_lock(&(maze.get[xx][yy]));
+              }
+              else 
+              {
+                maze.get[xx][yy].player=(Player*)1;
+                maze.get[xx][yy].object=(Object*)1;
+              }
+           }
+        }
+      }
+        // now there should be only one position which works
+        // query player type
+        
+        server_find_empty_home_cell_and_lock(&maze,team, &test, 0, 0);
+        assertion = (cell->pos.x == test->pos.x && cell->pos.y == test->pos.y && (pthread_mutex_trylock(&cell->lock)!=0) );
+        should("correctly find an empty home cell to place a player in team",assertion,tc);
+        cell_unlock(cell); 
+        
+        // query for object type
+        server_find_empty_home_cell_and_lock(&maze,team, &test, 0, 1);
+        assertion = (cell->pos.x == test->pos.x && cell->pos.y == test->pos.y && (pthread_mutex_trylock(&cell->lock)!=0) );
+        should("correctly find an empty home cell to place an object",assertion,tc);
+        cell_unlock(cell); 
+    }
+    /*server_hash_id(&maze,key,&cell,);*/
 
     maze_destroy(&maze);
 }

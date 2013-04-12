@@ -147,7 +147,7 @@ extern int player_get_position(Player * player, Pos*pos);
 // CELL METHODS
 extern void cell_init(Cell* cell,int x, int y, Team_Types turf, Cell_Types type, Mutable_Types is_mutable);
 extern int  cell_is_unoccupied(Cell* cell);
-extern int  cell_is_not_holding(Cell* cell);
+extern int  cell_is_holding(Cell* cell);
 extern int  cell_is_walkable_type(Cell * cell);
 extern void cell_lock(Cell*);
 extern void cell_unlock(Cell*);
