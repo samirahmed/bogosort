@@ -115,16 +115,16 @@ extern void server_hash_id( Maze* m, int key, Cell** cell, Team_Types team)
 // try many home cells for a lock
 // query 0 = unoccupied
 // query 1 = not holding object
-extern int server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell* c ,int id, int query)
+extern int server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell** cell ,int id, int query)
 {
    int try, found;
    
    try = 0;
    found = -1;
-   
+   Cell * c = *cell;
    while ( try < (MAX_TEAM_SIZE*2) || (found!=0) )
    {
-      server_hash_id( m, id+try, c, team);
+      server_hash_id( m, id+try, cell, team);
       found = pthread_mutex_trylock(&(c->lock));
       if ((found==0 && query==0 && !cell_is_unoccupied) || 
           (found==0 && query!=0 && !cell_is_not_holding(c)))
@@ -205,10 +205,10 @@ extern int _server_action_player_reset_shovel(Maze*m, Player*player)
   int rc;
   Object * object = player->shovel;
   Cell * cell = player->cell;
-  Cell * next = 0;
+  Cell * next;
 
   // find next cell and set its object
-  rc = server_find_empty_home_cell_and_lock(m, object->team, next, 0, 1); // 0=seed, 1=not-holding query
+  rc = server_find_empty_home_cell_and_lock(m, object->team, &next, 0, 1); // 0=seed, 1=not-holding query
   if (rc < 0) return -1;
   _server_action_update_cell_and_player(m,object,next,0);
   next->object = object;

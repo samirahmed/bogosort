@@ -46,9 +46,6 @@ extern void maze_object_drop_pickup( Maze*m, Action_Types action, Cell* current,
 extern void maze_spawn_player(Maze* m, Player* p);
 extern void maze_reset_shovel(Maze* m, Object* object);
 
-//extern void cell_unmarshall_from_header(Cell * cell, Proto_Msg_Hdr *hdr);
-//extern void cell_marshall_into_header(Cell * cell, Proto_Msg_Hdr * hdr);
-
 // JAIL METHODS
 extern void server_jail_player( Maze*m, Cell* current, Cell* next);
 
@@ -58,7 +55,7 @@ extern void player_drop(Player * player);
 
 // HOME METHODS
 extern void server_hash_id( Maze* m, int key, Cell** cell, Team_Types team);
-extern int  server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell* c ,int id, int query);
+extern int  server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell** cell ,int id, int query);
 extern int  server_home_count_increment(Home * home);
 extern int  server_home_count_decrement(Home * home);
 extern int  server_home_count_read(Home * home);
