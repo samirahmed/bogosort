@@ -31,7 +31,7 @@ void test_home(TestContext * tc)
         }
     }
     should(assertion,"hash any integer to a valid home position",tc);
-    should(0,"auto fail",tc);
+    
     maze_destroy(&maze);
 }
 

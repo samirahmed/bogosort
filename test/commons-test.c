@@ -103,8 +103,8 @@ void test_compression(TestContext *tc)
 
 void test_cell(TestContext *tc)
 {
-    int rc;
-    rc = 1;
+    int assertion;
+    assertion = 1;
     maze_build_from_file(&maze, "test.map");
     int xx,yy;
     
@@ -113,39 +113,38 @@ void test_cell(TestContext *tc)
       for(yy = maze.min.y ; yy < maze.max.y ; yy++ )
       {
         cell_lock(&(maze.get[xx][yy])); 
-        rc = ((pthread_mutex_trylock(&(maze.get[xx][yy].lock)) != 0) && rc );
+        assertion = ((pthread_mutex_trylock(&(maze.get[xx][yy].lock)) != 0) && assertion );
         cell_unlock(&(maze.get[xx][yy]));
       }
-    }
-    rc = rc!=0;
-    should(rc!=0,"lock properly",tc);
+    };
+    should(assertion,"lock properly",tc);
 
 }
 
 void test_maze_load(TestContext *tc)
 {
-    int rc;
-    rc = maze_build_from_file(&maze,"test.map");
-    should(rc>0,"build from file without errors",tc);
+    int assertion;
+    assertion = maze_build_from_file(&maze,"test.map");
+    should(assertion>=0,"build from file without errors",tc);
 
-    rc = (maze.min.x == 0 && maze.min.y == 0) && (maze.max.x == 200 && maze.max.y == 200);
-    should(rc,"build with correct dimensions",tc);
+    assertion = (maze.min.x == 0 && maze.min.y == 0) && (maze.max.x == 200 && maze.max.y == 200);
+    should(assertion,"build with correct dimensions",tc);
 
-    rc = (maze.home[TEAM_RED].min.x == 2   && maze.home[TEAM_RED].min.y == 90) &&
+    assertion = (maze.home[TEAM_RED].min.x == 2  && maze.home[TEAM_RED].min.y == 90) &&
          (maze.home[TEAM_RED].max.x == 12  && maze.home[TEAM_RED].max.y == 109) &&
          (maze.home[TEAM_BLUE].min.x == 188 && maze.home[TEAM_BLUE].min.y == 90) &&
          (maze.home[TEAM_BLUE].max.x == 198 && maze.home[TEAM_BLUE].max.y == 109);
-    should(rc,"know where the homebase min and max positions are",tc);
+    should(assertion,"know where the homebase min and max positions are",tc);
    
-    rc = (maze.jail[TEAM_RED].min.x == 90   && maze.jail[TEAM_RED].min.y == 90) &&
+    assertion = (maze.jail[TEAM_RED].min.x == 90   && maze.jail[TEAM_RED].min.y == 90) &&
          (maze.jail[TEAM_RED].max.x == 98  && maze.jail[TEAM_RED].max.y == 109) &&
          (maze.jail[TEAM_BLUE].min.x == 102 && maze.jail[TEAM_BLUE].min.y == 90) &&
          (maze.jail[TEAM_BLUE].max.x == 110 && maze.jail[TEAM_BLUE].max.y == 109);
-    should(rc,"know where the jail min and max positions are",tc);
+    should(assertion,"know where the jail min and max positions are",tc);
 
-    rc = (maze.players[TEAM_RED].count == 0 && maze.players[TEAM_BLUE].count == 0) &&
+    assertion = (maze.players[TEAM_RED].count == 0 && maze.players[TEAM_BLUE].count == 0) &&
          (maze.players[TEAM_RED].max < 192 && maze.players[TEAM_BLUE].max < 192);
-    should(rc,"know successfully initialize the plists",tc);
+    should(assertion,"know successfully initialize the plists",tc);
 
     maze_destroy(&maze);
 
