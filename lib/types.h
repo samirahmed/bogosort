@@ -24,9 +24,12 @@
 
 #include <stdint.h>
 
+#define PTHREAD_STACK_SIZE 16384
+
 /* NETWORK TYPES */
 
 /* native word sized unsigned and signed values */
+
 typedef unsigned long uval;
 typedef long sval;
 

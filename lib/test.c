@@ -5,8 +5,9 @@
 #include <poll.h>
 #include <pthread.h>
 #include <string.h>
+#include <errno.h>
+#include "types.h"
 #include "test.h"
-#include "errno.h"
 
 extern void where(void)
 {
@@ -53,6 +54,7 @@ extern void run( void (*func)(TestContext*), char * test_name , TestContext *tc)
     
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
+    pthread_attr_setstacksize(&attr,PTHREAD_STACK_SIZE*1000 );
     pthread_create(&thread, &attr, threaded_test, (void*) tc );
     pthread_attr_destroy(&attr);
    

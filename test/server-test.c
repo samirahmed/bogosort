@@ -38,8 +38,6 @@ void test_home(TestContext * tc)
 void test_server_locks(TestContext * tc)
 {
     Maze maze;
-    int xx=0;
-    xx++;
     maze_build_from_file(&maze,"test.map");
     
     if (tc->verbose) printf("Starting recursive jail lock test\n");
@@ -67,9 +65,9 @@ int main(int argc, char ** argv )
 {
     TestContext tc;
     test_init(argc, argv, &tc);
-      
+    
     // ADD TESTS HERE
-    /*run(&test_server_locks,"Server Locks",&tc);*/
+    run(&test_server_locks,"Server Locks",&tc);
     run(&test_home,"Home",&tc);
     
     // TEST END HERE

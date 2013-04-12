@@ -343,11 +343,11 @@ void maze_fill_helper(Maze* map, char buffer[][MAX_COL_MAZE],int max_x, int max_
 
 extern int maze_build_from_file(Maze*map, char* filename)
 {
-  FILE* fp;
-	char buffer[MAX_ROW_MAZE][MAX_COL_MAZE];		//This size buffer is okay for now
 	int rowLen,colLen; 
   rowLen = 0; 			                      //Number of chars in one line of the file
 	colLen = 0; 			                      //Index for row into the buffer
+	char buffer[MAX_ROW_MAZE][MAX_COL_MAZE]; //This size buffer is okay for now
+  FILE* fp;
 	fp = fopen(filename,"r"); 		              //Open File
 
   // close the file and check for errors
