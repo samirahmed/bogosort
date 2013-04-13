@@ -47,7 +47,7 @@ static void dummyPlayer_paint(UI *ui, SDL_Rect *t);
 #define UI_GREENFLAG_BMP "greenflag.bmp"
 #define UI_JACKHAMMER_BMP "shovel.bmp"
 
-int map[200][200];
+int map[201][201];
 int init_mapload = 0;
 typedef enum {UI_SDLEVENT_UPDATE, UI_SDLEVENT_QUIT} UI_SDL_Event;
 
@@ -364,8 +364,8 @@ FILE *fp;
 fp = fopen("../daGame.map", "r");
 int i,j;
 
-for(i = 0; i < 200; i++){
-   for(j = 0; j < 200; j++){
+for(i = 0; i < 201; i++){
+   for(j = 0; j < 201; j++){
     map_char = fgetc(fp);
     map[i][j] = map_char;
 	}
@@ -381,8 +381,8 @@ int x,y;
   int scale_x, scale_y;
  
   
-  for (x = 0; x < 200; x++) {
-    for (y = 0; y < 200; y++) {
+  for (x = 0; x < 201; x++) {
+    for (y = 0; y < 201; y++) {
         map_char = map[x][y];
 	scale_x = x * SPRITE_W;
 	scale_y = y * SPRITE_H;
