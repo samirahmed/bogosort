@@ -34,8 +34,8 @@ static void dummyPlayer_init(UI *ui);
 static void dummyPlayer_paint(UI *ui, SDL_Rect *t);
 
 
-#define SPRITE_H 1
-#define SPRITE_W 1
+#define SPRITE_H 3
+#define SPRITE_W 3
 
 #define UI_FLOOR_BMP "floor.bmp"
 #define UI_REDWALL_BMP "redwall.bmp"
@@ -47,7 +47,10 @@ static void dummyPlayer_paint(UI *ui, SDL_Rect *t);
 #define UI_GREENFLAG_BMP "greenflag.bmp"
 #define UI_JACKHAMMER_BMP "shovel.bmp"
 
+int map[200][200];
+int init_mapload = 0;
 typedef enum {UI_SDLEVENT_UPDATE, UI_SDLEVENT_QUIT} UI_SDL_Event;
+
 
 struct UI_Player_Struct {
   SDL_Surface *img;
@@ -300,16 +303,6 @@ load_sprites(UI *ui)
   return 1;
 }
 
-/*
-inline static void draw_color_cell(UI *ui, int color, SDL_Rect *t, SDL_Surface *){
-
-       SDL_Surface *ts;
-       uint32_t tc
-    	SDL_BlitSurface(ts, NULL, s, t);
-}
-
-*/
-
 inline static void
 draw_cell(UI *ui, SPRITE_INDEX si, SDL_Rect *t, SDL_Surface *s)
 {
@@ -322,46 +315,96 @@ draw_cell(UI *ui, SPRITE_INDEX si, SDL_Rect *t, SDL_Surface *s)
   if ( ts && t->h == SPRITE_H && t->w == SPRITE_W) 
     SDL_BlitSurface(ts, NULL, s, t);
 }
+/*
+static sval 
+ui_initmap(){
+FILE *fp;
+fp = fopen("../daGame.map", "r");
+int i,j;
+int map_char;
+for(i = 0; i < 200; i++){
+   for(j = 0; j < 200; j++){
+ 
+    map_char = fgetc(fp);
+   printf("loading character %c", map_char);
+    map[i][j] = map_char; 		
+		}
+	}
+
+}
+*/
+
+
+
+//helper function for ui_put pixel
+//paints SPRITE_W x SPRITE_H pixels starting with x,y at the upper left corner
+static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel, char c){
+	int w,h;
+	for(h = y; h < y+SPRITE_H; h++){
+		for(w = x; w < x+SPRITE_W; w++){
+			
+			ui_putpixel(surface, h, w, pixel);
+		
+	}
+}
+} 
+
+
+
+
 
 static sval
 ui_paintmap(UI *ui) 
 {
-  FILE *fp;
-  fp = fopen("../daGame.map", "r"); 
+printf("mapload is %d", init_mapload);
+int w,h;
+int map_char;
+if(!init_mapload){  
+FILE *fp;
+fp = fopen("../daGame.map", "r");
+int i,j;
+
+for(i = 0; i < 200; i++){
+   for(j = 0; j < 200; j++){
+    map_char = fgetc(fp);
+    map[i][j] = map_char;
+	}
+}
+init_mapload = 1;
+}
+int x,y;
   SDL_Rect t;
-  int i, j;
-  int map_char;
+  //int i, j
+
+  y = 0; 
+  x = 0;
+  int scale_x, scale_y;
  
-  t.y = 0; t.x = 0; t.h = ui->tile_h; t.w = ui->tile_w; 
-
-  for (t.y=0; t.y<ui->screen->h; t.y+=t.h) {
-    for (t.x=0; t.x<ui->screen->w; t.x+=t.w) {
-        ui_putpixel(ui->screen, t.x, t.y, ui->red_c); 
-	map_char = fgetc(fp);
-	printf("%c", map_char);
-        if(map_char == ' '){
-		ui_putpixel(ui->screen, t.x, t.y, ui-> isle_c);
- 	}
-	if(map_char == '#' && t.x < 100){
-		ui_putpixel(ui->screen, t.x, t.y, ui-> wall_teama_c);
-    	}
-	if(map_char == '#' && t.x >= 100){
-		ui_putpixel(ui->screen, t.x, t.y, ui-> wall_teamb_c);
-	}
+  
+  for (x = 0; x < 200; x++) {
+    for (y = 0; y < 200; y++) {
+        map_char = map[x][y];
+	scale_x = x * SPRITE_W;
+	scale_y = y * SPRITE_H;
+	if(map_char == ' '){
+		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> isle_c, 'e');
+ 			}
+	if(map_char == '#' && y < 100){
+		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teama_c, 'a');
+ 			}
+	if(map_char == '#' && y >= 100){ 
+		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teamb_c, 'b');
+			}
 	//for now paint home areas white and jail areas yellow
-        
-	if(map_char == 'j' || map_char == 'J'){
-		ui_putpixel(ui->screen, t.x, t.y, ui-> yellow_c);
-	}
-
+       	if(map_char == 'j' || map_char == 'J'){
+		ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c, 'j');
+			}
 
 	if(map_char == 'h' || map_char == 'H'){
-		ui_putpixel(ui->screen, t.x, t.y, ui-> white_c);
+		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> white_c, 'h');
+			}
+		}
 	}	
-// draw_color_cell(ui, 1, &t, ui->screen);	
-}
-			
-  }
 
   dummyPlayer_paint(ui, &t);
 
@@ -464,7 +507,9 @@ ui_process(UI *ui)
     default:
       fprintf(stderr, "%s: e.type=%d NOT Handled\n", __func__, e.type);
     }
-    if (rc==2) { ui_paintmap(ui); }
+    if (rc==2) { 
+	
+	ui_paintmap(ui); }
     if (rc<0) break;
   }
   return rc;
@@ -524,8 +569,7 @@ ui_main_loop(UI *ui, uval h, uval w)
   ui_init_sdl(ui, h, w, 32);
 
   dummyPlayer_init(ui);
-
-  ui_paintmap(ui);
+    ui_paintmap(ui);
    
   
   while (1) {

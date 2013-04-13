@@ -57,6 +57,7 @@ struct UI_Struct {
 
 typedef struct UI_Struct UI;
 
+extern int map[200][200];
 
 sval ui_zoom(UI *ui, sval fac);
 sval ui_pan(UI *ui, sval xdir, sval ydir);
