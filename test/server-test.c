@@ -12,16 +12,105 @@
 #include "../lib/game_server.h"
 #include "../lib/test.h"
 
-Maze maze;  // global maze
+/*Maze maze;  // global maze*/
+
+void test_home(TestContext * tc)
+{
+    int assertion, key, team , xx,yy;
+    Maze maze;
+    maze_build_from_file(&maze,"test.map");
+    
+    Cell * cell;
+    Cell * test;
+    assertion = 1;
+    for ( team =0; team<NUM_TEAMS ; team++)
+    {
+        for ( key = -1000 ; key<1000000 && assertion ;key++ )
+        { 
+          server_hash_id(&maze, key, &cell, team); 
+          assertion = ( cell->pos.x < maze.max.x && cell->pos.x >= maze.min.x &&
+                        cell->pos.y < maze.max.y && cell->pos.y >= maze.min.y && assertion);
+        }
+    }
+    should("hash any integer to a valid home position",assertion,tc);
+    
+    for ( team=0; team<NUM_TEAMS; team++)
+    {
+      key = 173;
+      server_hash_id(&maze,key,&cell,team);
+      /*fprintf(stderr,"Target is  %d, %d" , cell->pos.x,cell->pos.y );*/
+      Home *home = &(maze.home[team]);
+      for ( xx = home->min.x ; xx < home->max.x ; xx++)
+      { 
+        for ( yy = home->min.y ; yy < home->max.y ;yy++)
+        {
+           if (!(xx == cell->pos.x && yy==cell->pos.y))
+           {
+              if ( (xx+yy)%3 == 0 )
+              { 
+                cell_lock(&(maze.get[xx][yy]));
+              }
+              else 
+              {
+                maze.get[xx][yy].player=(Player*)1;
+                maze.get[xx][yy].object=(Object*)1;
+              }
+           }
+        }
+      }
+        // now there should be only one position which works
+        // query player type
+        
+        server_find_empty_home_cell_and_lock(&maze,team, &test, 0, 0);
+        assertion = (cell->pos.x == test->pos.x && cell->pos.y == test->pos.y && (pthread_mutex_trylock(&cell->lock)!=0) );
+        should("correctly find an empty home cell to place a player in team",assertion,tc);
+        cell_unlock(cell); 
+        
+        // query for object type
+        server_find_empty_home_cell_and_lock(&maze,team, &test, 0, 1);
+        assertion = (cell->pos.x == test->pos.x && cell->pos.y == test->pos.y && (pthread_mutex_trylock(&cell->lock)!=0) );
+        should("correctly find an empty home cell to place an object",assertion,tc);
+        cell_unlock(cell); 
+    }
+    /*server_hash_id(&maze,key,&cell,);*/
+
+    maze_destroy(&maze);
+}
+
+void test_server_locks(TestContext * tc)
+{
+    Maze maze;
+    maze_build_from_file(&maze,"test.map");
+    
+    if (tc->verbose) fprintf(stderr,"Starting recursive jail lock test\n");
+    int ii, times;
+    times = 20;
+    for (ii=0; ii<times ;ii++)
+    {
+        server_jail_lock(&maze.jail[TEAM_RED]);
+        server_jail_lock(&maze.jail[TEAM_BLUE]);
+    }
+    if (tc->verbose) fprintf(stderr,"We are %d jail locks deep\n",times);
+
+    for (ii=0; ii<times ;ii++)
+    {
+        server_jail_unlock(&maze.jail[TEAM_BLUE]);
+        server_jail_unlock(&maze.jail[TEAM_RED]);
+    }
+    if (tc->verbose) fprintf(stderr,"Exited reentrant locks\n");
+    should("allow of re-entry and exit of locks",1,tc); 
+    
+    maze_destroy(&maze);
+}
 
 int main(int argc, char ** argv )
 {
     TestContext tc;
     test_init(argc, argv, &tc);
-      
+    
     // ADD TESTS HERE
-    /*run(&test_maze_load,"Maze Load",&tc); */
-
+    run(&test_server_locks,"Server Locks",&tc);
+    run(&test_home,"Home",&tc);
     
     // TEST END HERE
     
