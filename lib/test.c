@@ -74,6 +74,7 @@ extern void run( void (*func)(TestContext*), char * test_name , TestContext *tc)
     }
 }
 
+// print a pretty sumamry from the given test context object
 extern void test_summary(TestContext *tc)
 {
     fprintf(stderr, COLOR_OKBLUE "%d" COLOR_END " test run\n", tc->num);
@@ -83,7 +84,8 @@ extern void test_summary(TestContext *tc)
 }
 
 // test_init is used to configure TestContext variables given a set of command line arguments
-//  -v  = verbose
+//  -v, --verbose : enable verbose test output (show all assertions etc)
+//  -d, --debug   : enable debug spew to stderr (potentially tonnes of crap)
 extern void test_init(int argc, char** argv, TestContext *tc)
 {
   bzero(tc,sizeof(TestContext));
@@ -94,8 +96,8 @@ extern void test_init(int argc, char** argv, TestContext *tc)
     {
       if (strncmp(argv[argument],"-v",sizeof("-v")-1) == 0) tc->verbose = 1 ;
       if (strncmp(argv[argument],"--verbose",sizeof("--verbose")-1) == 0) tc->verbose = 1 ;
-      if (strncmp(argv[argument],"-d",sizeof("-d")-1) == 0) proto_debug_on() ;
-      if (strncmp(argv[argument],"--debug",sizeof("--debug")-1) == 0) proto_debug_on() ;
+      if (strncmp(argv[argument],"-d",sizeof("-d")-1) == 0) { proto_debug_on() ; tc->verbose=1; }
+      if (strncmp(argv[argument],"--debug",sizeof("--debug")-1) == 0){ proto_debug_on() ; tc->verbose=1;}
     }
   }
   
