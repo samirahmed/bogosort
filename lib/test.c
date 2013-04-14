@@ -10,6 +10,10 @@
 #include "test.h"
 #include "protocol_utils.h"
 
+// Should is syntatic sugar for an assertion.  
+// Should stores test results in the test context
+// Should pretty prints assertion results with ticks and cross
+// Should is not thread safe.
 extern void should(const char* message, int valid, TestContext *tc)
 {
     if (!valid) 
@@ -20,10 +24,15 @@ extern void should(const char* message, int valid, TestContext *tc)
       pthread_exit( (void*)-1 );
     }
     if (valid && tc->verbose) 
+    {
       fprintf(stderr,"  "COLOR_OKGREEN SYMBOL_TICK COLOR_END " %s should %s\n", tc->current, message );
-
+    }
 }
 
+// Threaded tests take as input a pointer to a TestContext
+// The function then casts some c magic to exec the associated test function, passing itself as an argument
+// All paths lead to pthread_exit. current_status = 1 if successful
+// Only one threaded_test should be run per context
 void* threaded_test( void* arg)
 {
   TestContext* tc = (TestContext*) arg;
@@ -35,6 +44,8 @@ void* threaded_test( void* arg)
   pthread_exit( (void*) 0); 
 }
 
+// Run takes as input a test, a test name and a test context and executes the test in a new thread
+// Main thread execution suspends until the test thread completes
 extern void run( void (*func)(TestContext*), char * test_name , TestContext *tc)
 {
     int rc;
@@ -75,6 +86,7 @@ extern void run( void (*func)(TestContext*), char * test_name , TestContext *tc)
 }
 
 // print a pretty sumamry from the given test context object
+// includes the total failed / passed tests
 extern void test_summary(TestContext *tc)
 {
     fprintf(stderr, COLOR_OKBLUE "%d" COLOR_END " test run\n", tc->num);
