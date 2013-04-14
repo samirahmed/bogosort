@@ -8,6 +8,7 @@
 #include <errno.h>
 #include "types.h"
 #include "test.h"
+#include "protocol_utils.h"
 
 extern void should(const char* message, int valid, TestContext *tc)
 {
@@ -81,12 +82,21 @@ extern void test_summary(TestContext *tc)
     else fprintf(stderr, "no failed tests\n");
 }
 
+// test_init is used to configure TestContext variables given a set of command line arguments
+//  -v  = verbose
 extern void test_init(int argc, char** argv, TestContext *tc)
 {
   bzero(tc,sizeof(TestContext));
   if (argc > 1)
   {
-     if (strncmp(argv[1],"-v",sizeof("-v")-1) == 0) tc->verbose = 1 ;
+    int argument;
+    for (argument = 1; argument<argc; argument++)
+    {
+      if (strncmp(argv[argument],"-v",sizeof("-v")-1) == 0) tc->verbose = 1 ;
+      if (strncmp(argv[argument],"--verbose",sizeof("--verbose")-1) == 0) tc->verbose = 1 ;
+      if (strncmp(argv[argument],"-d",sizeof("-d")-1) == 0) proto_debug_on() ;
+      if (strncmp(argv[argument],"--debug",sizeof("--debug")-1) == 0) proto_debug_on() ;
+    }
   }
   
   tc->pass=0;
