@@ -8,15 +8,18 @@
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/net.h"
+#include "../lib/game_commons.h"
+#include "../lib/game_server.h"
 #include "../lib/test.h"
+
+
 
 int main(int argc, char ** argv )
 {
     TestContext tc;
     test_init(argc, argv, &tc);
-      
-    // ADD TESTS BELOW (like the example)
-    // run(&test_client_object,"Client Object",&tc); 
+    
+    // ADD TESTS HERE
     
     // TEST END HERE
     
