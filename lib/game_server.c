@@ -148,29 +148,29 @@ extern int server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell** 
 extern int server_home_count_read(Home* home)
 {
   int count;
-  pthread_rwlock_rdlock(&home->count_wrlock);
+  pthread_rwlock_rdlock(&(home->count_wrlock));
   count = home->count;
-  pthread_rwlock_unlock(&home->count_wrlock);
+  pthread_rwlock_unlock(&(home->count_wrlock));
   return count;
 }
 
 extern int server_home_count_increment(Home* home)
 {
   int count;
-  pthread_rwlock_wrlock(&home->count_wrlock);
-  home->count--;
+  pthread_rwlock_wrlock(&(home->count_wrlock));
+  home->count++;
   count = home->count;
-  pthread_rwlock_unlock(&home->count_wrlock);
+  pthread_rwlock_unlock(&(home->count_wrlock));
   return count;
 }
 
 extern int server_home_count_decrement(Home* home)
 {
   int count;
-  pthread_rwlock_wrlock(&home->count_wrlock);
+  pthread_rwlock_wrlock(&(home->count_wrlock));
   home->count--;
   count = home->count;
-  pthread_rwlock_unlock(&home->count_wrlock);
+  pthread_rwlock_unlock(&(home->count_wrlock));
   return count;
 }
 

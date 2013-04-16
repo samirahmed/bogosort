@@ -77,12 +77,30 @@ void test_home(TestContext * tc)
     maze_destroy(&maze);
 }
 
+
+/*********************/
+/* SERVER LOCKS TEST */
+/*********************/
+
+void st_increment_home(Task*task)
+{
+  server_home_count_increment((Home*)(task->arg0)); 
+}
+
+void st_decrement_home(Task*task)
+{
+  server_home_count_decrement((Home*)(task->arg0)); 
+}
+
 void test_server_locks(TestContext * tc)
 {
     Maze maze;
     maze_build_from_file(&maze,"test.map");
-    
-    if (tc->verbose) fprintf(stderr,"Starting recursive jail lock test\n");
+   
+    /////////////////
+    //  JAIL LOCKS
+    /////////////////
+    if (test_debug()) fprintf(stderr,"Starting recursive jail lock test\n");
     int ii, times;
     times = 20;
     for (ii=0; ii<times ;ii++)
@@ -90,16 +108,35 @@ void test_server_locks(TestContext * tc)
         server_jail_lock(&maze.jail[TEAM_RED]);
         server_jail_lock(&maze.jail[TEAM_BLUE]);
     }
-    if (tc->verbose) fprintf(stderr,"We are %d jail locks deep\n",times);
+    if (test_debug()) fprintf(stderr,"We are %d jail locks deep\n",times);
 
     for (ii=0; ii<times ;ii++)
     {
         server_jail_unlock(&maze.jail[TEAM_BLUE]);
         server_jail_unlock(&maze.jail[TEAM_RED]);
     }
-    if (tc->verbose) fprintf(stderr,"Exited reentrant locks\n");
+    if (test_debug()) fprintf(stderr,"Exited reentrant locks\n");
     should("allow of re-entry and exit of locks",1,tc); 
+  
+    ////////////////
+    // HOME COUNTER
+    ////////////////
+    int team, assertion,thread_per_task;
+    thread_per_task = 500;
+    team = randint()%NUM_TEAMS;
+    // Assign a team at random 
+
+    // create tasks
+    Task tasks[2];
+    bzero(&tasks, sizeof(Task)*2 );
     
+    test_task_init(&tasks[0],(Proc)&st_increment_home,50,&maze.home[team],NULL,NULL,NULL,NULL,NULL);
+    test_task_init(&tasks[1],(Proc)&st_decrement_home,48,&maze.home[team],NULL,NULL,NULL,NULL,NULL);
+    parallelize(tasks,2,thread_per_task);
+    
+    assertion = server_home_count_read(&maze.home[team]) == ((tasks[0].reps-tasks[1].reps)*thread_per_task);
+    should("atomically increment and decrement home counter",assertion,tc);
+   
     maze_destroy(&maze);
 }
 
