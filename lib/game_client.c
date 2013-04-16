@@ -10,6 +10,7 @@
 #include "protocol_session.h"
 #include "game_client.h"
 
+
 extern void blocking_helper_init(Blocking_Helper *bh)
 {
     pthread_mutex_init(&bh->maze_lock,NULL);
