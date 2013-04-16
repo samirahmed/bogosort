@@ -156,6 +156,16 @@ void st_increment_plist(Task*task)
   server_plist_player_count_increment(&m->players[*team]); 
 }
 
+void test_plist(TestContext*tc)
+{
+    Maze maze;
+    maze_build_from_file(&maze,"test.map");
+  
+     
+
+    maze_destroy(&maze);
+}
+
 void test_server_locks(TestContext * tc)
 {
     Maze maze;
@@ -175,7 +185,7 @@ void test_server_locks(TestContext * tc)
 
     // create tasks
     Task tasks[2];
-    bzero(&tasks, sizeof(Task)*2 );
+    bzero(tasks, sizeof(Task)*2 );
     
     test_task_init(&tasks[0],(Proc)&st_increment_home,50,&maze.home[team],NULL,NULL,NULL,NULL,NULL);
     test_task_init(&tasks[1],(Proc)&st_decrement_home,48,&maze.home[team],NULL,NULL,NULL,NULL,NULL);
@@ -184,8 +194,6 @@ void test_server_locks(TestContext * tc)
     assertion = server_home_count_read(&maze.home[team]) == ((tasks[0].reps-tasks[1].reps)*thread_per_task);
     should("atomically increment and decrement home counter",assertion,tc);
    
-    maze_destroy(&maze);
-
     ////////////////
     // PLIST COUNTER
     ////////////////
@@ -195,10 +203,10 @@ void test_server_locks(TestContext * tc)
     // Assign a team at random 
 
     // create tasks
-    bzero(&tasks, sizeof(Task)*2 );
+    bzero(tasks, sizeof(Task)*2 );
     
-    test_task_init(&tasks[0],(Proc)&st_increment_plist,20,&maze,&team,NULL,NULL,NULL,NULL);
-    test_task_init(&tasks[1],(Proc)&st_decrement_plist,18,&maze,&team,NULL,NULL,NULL,NULL);
+    test_task_init(&tasks[0],(Proc)&st_increment_plist,50,&maze,&team,NULL,NULL,NULL,NULL);
+    test_task_init(&tasks[1],(Proc)&st_decrement_plist,48,&maze,&team,NULL,NULL,NULL,NULL);
     parallelize(tasks,2,thread_per_task);
     
     assertion = server_plist_player_count(&maze.players[team]) == ((tasks[0].reps-tasks[1].reps)*thread_per_task);
@@ -214,6 +222,7 @@ int main(int argc, char ** argv )
     
     // ADD TESTS HERE
     run(&test_server_locks,"Server Locks",&tc);
+    run(&test_plist,"PLists",&tc);
     run(&test_find_and_lock,"Find and Lock Empty Routine",&tc);
     
     // TEST END HERE
