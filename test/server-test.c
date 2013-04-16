@@ -142,6 +142,20 @@ void st_decrement_home(Task*task)
   server_home_count_decrement((Home*)(task->arg0)); 
 }
 
+void st_decrement_plist(Task*task)
+{
+  Maze*m = (Maze*)task->arg0;
+  int* team= ((int*) task->arg1);
+  server_plist_player_count_decrement(&m->players[*team]); 
+}
+
+void st_increment_plist(Task*task)
+{
+  Maze*m = (Maze*)task->arg0;
+  int* team= ((int*) task->arg1);
+  server_plist_player_count_increment(&m->players[*team]); 
+}
+
 void test_server_locks(TestContext * tc)
 {
     Maze maze;
@@ -169,6 +183,26 @@ void test_server_locks(TestContext * tc)
     
     assertion = server_home_count_read(&maze.home[team]) == ((tasks[0].reps-tasks[1].reps)*thread_per_task);
     should("atomically increment and decrement home counter",assertion,tc);
+   
+    maze_destroy(&maze);
+
+    ////////////////
+    // PLIST COUNTER
+    ////////////////
+    
+    thread_per_task = 500;
+    team = randint()%NUM_TEAMS;
+    // Assign a team at random 
+
+    // create tasks
+    bzero(&tasks, sizeof(Task)*2 );
+    
+    test_task_init(&tasks[0],(Proc)&st_increment_plist,20,&maze,&team,NULL,NULL,NULL,NULL);
+    test_task_init(&tasks[1],(Proc)&st_decrement_plist,18,&maze,&team,NULL,NULL,NULL,NULL);
+    parallelize(tasks,2,thread_per_task);
+    
+    assertion = server_plist_player_count(&maze.players[team]) == ((tasks[0].reps-tasks[1].reps)*thread_per_task);
+    should("atomically increment and decrement player counter",assertion,tc);
    
     maze_destroy(&maze);
 }
