@@ -86,7 +86,7 @@ extern int _server_action_update_cell(Maze*m, Object* object, Cell* newcell );
 extern int _server_action_update_cell_and_player(Maze*m, Object* object, Cell* newcell, Player* player);
 extern int _server_action_update_player(Maze*m, Player*player, Cell*newcell);
 extern int _server_action_move_player(Maze*m, Cell* currentcell , Cell* nextcell );
-extern int _server_action_jailbreak( Maze*m, Team_Types team );
+extern int _server_action_jailbreak( Maze*m, Team_Types team, Cell*current, Cell*next );
 extern int _server_action_jail_player(Maze*m, Cell* currentcell);
 
 #endif

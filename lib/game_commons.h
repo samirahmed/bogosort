@@ -141,11 +141,6 @@ extern void maze_set_state(Maze*m,Game_State_Types state);
 extern Game_State_Types  maze_get_state(Maze*m);
 
 // PLAYER METHODS
-extern void player_init(Player * player);
-extern void player_unlock(Player*player);
-extern void player_unlock(Player*player);
-extern int player_has_shovel(Player * player);
-extern int player_has_flag(Player * player);
 extern int player_get_position(Player * player, Pos*pos);
 
 // CELL METHODS

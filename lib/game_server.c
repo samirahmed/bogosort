@@ -115,16 +115,39 @@ extern void server_maze_unlock(Maze*m, Pos current, Pos next)
   cell_unlock(&N);
 }
 
+extern void object_lock(Object*object)
+{
+  pthread_mutex_lock(&(object->lock));
+}
+
+extern void object_unlock(Object*object)
+{
+  pthread_mutex_lock(&(object->lock));
+}
+
+extern void player_lock(Player*player)
+{
+  pthread_mutex_lock(&(player->lock));
+}
+
+extern void player_unlock(Player*player)
+{
+  pthread_mutex_lock(&(player->lock));
+}
+
+// DELETE LATER
 extern void server_object_write_lock(Maze*m)
 {
   pthread_rwlock_wrlock(&(m->object_wrlock));
 }
 
+// DELETE LATER
 extern void server_object_read_lock(Maze*m)
 {
   pthread_rwlock_rdlock(&(m->object_wrlock));
 }
 
+// DELETE LATER
 extern void server_object_unlock(Maze*m)
 {
   pthread_rwlock_unlock(&(m->object_wrlock));
@@ -209,32 +232,8 @@ extern int server_home_count_decrement(Home* home)
 }
 
 /******************/
-/* OBJECT METHODS */
-/******************/
-
-extern void object_lock(Object*object)
-{
-  pthread_mutex_lock(&(object->lock));
-}
-
-extern void object_unlock(Object*object)
-{
-  pthread_mutex_lock(&(object->lock));
-}
-
-/******************/
 /* PLAYER METHODS */
 /******************/
-
-extern void player_lock(Player*player)
-{
-  pthread_mutex_lock(&(player->lock));
-}
-
-extern void player_unlock(Player*player)
-{
-  pthread_mutex_lock(&(player->lock));
-}
 
 extern int player_get_position(Player * player, Pos * pos)
 {
@@ -321,7 +320,7 @@ extern int server_find_empty_jail_cell_and_lock(Maze*m, Team_Types team, Cell** 
 extern int _server_action_drop_flag(Maze*m , Player* player)
 {
     if (!player) return -1;
-    if (player->cell->object) return -2; // FIXME can't drop flag,, take flag to jail with you
+    if (player->cell->object) return -2; // FIXME can't drop flag, take flag to jail with you
     if (!player->flag) return 1;         // no need to drop
     
     Object*object = player->flag; 
@@ -347,9 +346,9 @@ extern int _server_action_player_reset_shovel(Maze*m, Player*player)
   // find next cell and set its object
   rc = server_find_empty_home_cell_and_lock(m, object->team, &next, 0, 1); // 0=seed, 1=not-holding query
   if (rc < 0) return -1;
-  _server_action_update_cell_and_player(m,object,next,0);
-  next->object = object;
-  cell_unlock(next);
+  _server_action_update_cell_and_player(m,object,next,0);  // move object and kill player link
+  next->object = object;  // link object to cell
+  cell_unlock(next); // unlock this new cell
 
   // drop my shovel
   cell->object=0;
@@ -377,19 +376,17 @@ extern int _server_action_drop_shovel(Maze*m , Player*player)
 extern int _server_action_pickup_object(Maze*m, Player* player)
 {
     if (!player) return -1;
-    if (!player->cell->object) return -2;  // nothing to pickup
-    if (!player->flag) return 1;  // no need to drop
-    
-    Object * object = player->cell->object;
     Cell* cell = player->cell;
     
-    // no need to lock for reading immutable properties
+    if (!player->cell->object) return -2;  // nothing to pickup
+    Object * object = player->cell->object;
+    
+    
     if (player->flag && object->type == OBJECT_FLAG ) return -3;  // already has a flag
     if (player->shovel && object->type == OBJECT_SHOVEL ) return -4; // already has a shovel
    
     _server_action_update_cell_and_player(m,object,cell,player);
-    // kill cell->object link
-    cell->object = 0;
+    cell->object = 0; // kill cell->object link
     
     // pickup object
     if (object->type == OBJECT_SHOVEL)
@@ -407,21 +404,15 @@ extern int _server_action_pickup_object(Maze*m, Player* player)
 extern int _server_action_update_cell(Maze*m, Object* object, Cell* newcell )
 {
   if (!object) return -1;
-  
-  server_object_write_lock(m);
   object->cell = newcell;
-  server_object_unlock(m); 
   return 0;
 }
 
 extern int _server_action_update_cell_and_player(Maze*m, Object* object, Cell* newcell, Player* player)
 {
   if (!object) return -1;
-  
-  server_object_write_lock(m);
   object->cell = newcell;
   object->player = player;
-  server_object_unlock(m); 
   return 0;
 }
 
@@ -444,48 +435,25 @@ extern int _server_action_move_player(Maze*m, Cell* currentcell , Cell* nextcell
    return 0;
 }
 
-extern int _server_find_empty_jail_cell(Maze*m, Team_Types team, Pos*pos)
-{
-  int xx,yy;
-  Jail * jail = &(m->jail[team]);
-  Cell cell;
-   for (xx = jail->min.x; xx< jail->max.y ; xx++ )
-   {
-      for( yy = jail->min.y; yy < jail->max.y ; yy++ )
-      {
-        cell = m->get[xx][yy];
-        if ( cell_is_unoccupied(&cell) )
-        {
-          pos->x = cell.pos.x;
-          pos->y = cell.pos.y;
-          return 0;
-        }
-      }
-   }
-
-  return -1;
-}
-
 extern int _server_action_jail_player(Maze*m, Cell* currentcell)
 {
   if (!currentcell->player) return -1;
   Player * player = currentcell->player;
-  if (currentcell->player->state == PLAYER_JAILED) return 1; // no need to jail
+  if (player->state == PLAYER_JAILED) return 1; // no need to jail
   
-  Pos pos;
+  Cell * nextcell;
   int rc;
 
   // find the next jail cell
-  rc = _server_find_empty_jail_cell(m, opposite_team(player->team), &pos );
+  rc = server_find_empty_jail_cell_and_lock(m,opposite_team(player->team),&nextcell,player->id,0);
   if (rc < 0) return -3;
-  Cell * nextcell = &(m->get[pos.x][pos.y]);
 
   // drop shovel and flag if any
   _server_action_player_reset_shovel(m,player);
   _server_action_drop_flag(m,player);
   
   // update the player state
-  currentcell->player->state = PLAYER_JAILED;
+  player->state = PLAYER_JAILED;
   if (currentcell != nextcell )
   {
     _server_action_move_player(m,currentcell, nextcell);
@@ -493,7 +461,7 @@ extern int _server_action_jail_player(Maze*m, Cell* currentcell)
   return 0;
 }
 
-extern int _server_action_jailbreak( Maze*m, Team_Types team )
+extern int _server_action_jailbreak( Maze*m, Team_Types team, Cell*current, Cell*next )
 {
    int startx, starty, stopx, stopy, xx, yy;
    Player* prisoner;
@@ -503,11 +471,18 @@ extern int _server_action_jailbreak( Maze*m, Team_Types team )
    stopx  = jail->max.x;
    stopy  = jail->max.y;
 
+   // Lock all the cells except current and next
    for (xx = startx; xx< stopx ; xx++ )
    {
       for( yy = starty; yy < stopy ; yy++ )
       {
-        prisoner = m->get[xx][yy].player;
+        
+        Cell cell = m->get[xx][yy];
+        
+        if (cell.pos.x == current->pos.x && cell.pos.y == current->pos.y ) continue;
+        if (cell.pos.x == next->pos.x && cell.pos.y == next->pos.y ) continue;
+        server_maze_lock(m, cell.pos, cell.pos); // Lock down cell 
+        prisoner = cell.player;
         if ( prisoner )
         {
           if (prisoner->state == PLAYER_JAILED)
@@ -515,6 +490,19 @@ extern int _server_action_jailbreak( Maze*m, Team_Types team )
              prisoner->state = PLAYER_FREE;
           }
         }
+      }
+   }
+
+   // Unlock All the cells except current and next
+   for (xx = startx; xx< stopx ; xx++ )
+   {
+      for( yy = starty; yy < stopy ; yy++ )
+      {
+        Cell cell = m->get[xx][yy];
+        
+        if (cell.pos.x == current->pos.x && cell.pos.y == current->pos.y ) continue;
+        if (cell.pos.x == next->pos.x && cell.pos.y == next->pos.y ) continue;
+        server_maze_unlock(m, cell.pos, cell.pos); // Lock down cell 
       }
    }
 
