@@ -9,7 +9,6 @@
 #include "../lib/protocol.h"
 #include "../lib/net.h"
 #include "../lib/game_commons.h"
-<<<<<<< HEAD
 #include "../lib/game_client.h"
 #include "../lib/test.h"
 
@@ -43,17 +42,12 @@ void* wait_function(void *tc)
 }
 
 
->>>>>>> Initial commit client branch
 
 
 int main(int argc, char ** argv )
 {
     TestContext tc;
     test_init(argc, argv, &tc);
-<<<<<<< HEAD
-    
-    // ADD TESTS HERE
->>>>>>> Initial commit client branch
     
     //Init Blocking Data Structure
     blocking_helper_init(&bh);
