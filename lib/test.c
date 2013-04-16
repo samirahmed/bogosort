@@ -241,3 +241,47 @@ extern void test_init(int argc, char** argv, TestContext *tc)
   tc->start_time = time(NULL);  
   fprintf(stderr,"\n" COLOR_HEADER "%s---------------------\n" COLOR_END "\n",argv[0]);
 }
+
+extern void run_two_thread( void* (*func_one)(void*), void* (*func_two)(void*),char * test_name , TestContext *tc)
+{
+    int rc;
+    void* status;
+    pthread_t threads[2];
+    pthread_attr_t attr;
+
+    tc->current = test_name;
+    tc->test_function = (void(*)(void*)) func_one;
+
+    fprintf(stderr, COLOR_OKBLUE "%d. %s" COLOR_END "\n" , tc->num++ , test_name ); 
+    
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
+    pthread_attr_setstacksize(&attr,PTHREAD_STACK_SIZE*100 );//~1.6mb max stack size per thread 1.6*400 < 500mb RAM
+    pthread_create(&threads[0], &attr, func_one, (void*) tc );
+    pthread_create(&threads[1], &attr, func_two, (void*) tc );
+
+    /* Wait for all threads to complete */
+    int i;
+    for (i=0; i<2; i++) 
+      rc = pthread_join(threads[i], &status);
+   
+    if (rc == EINVAL || rc == EDEADLK )
+    {
+      fprintf(stderr,COLOR_FAIL "Test Exception in %s line %d - pthread_join returned %d \n" COLOR_END , 
+        __FILE__, __LINE__,rc );
+    }
+    else
+    {
+        if (tc->current_test_status < 0)
+        {
+          fprintf(stderr,COLOR_FAIL "%s failed \n" COLOR_END "\n" , test_name ); 
+          tc->fail++;
+        }
+        else
+        {
+          fprintf(stderr, COLOR_OKGREEN "%s passed \n" COLOR_END "\n" , test_name ); 
+          tc->pass++;
+        }
+    }
+    pthread_attr_destroy(&attr);
+}
