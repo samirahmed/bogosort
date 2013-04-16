@@ -132,6 +132,7 @@ extern void jail_init(Jail*jail, Pos min, Pos max, Team_Types team);
 
 // HOME METHODS
 extern void home_init(Home * home, Pos min, Pos max, Team_Types team );
+extern int  home_contains(Pos* query, Home*home);
 
 // PLIST METHODS
 extern void plist_init(Plist * plist, Team_Types team, int max_player_size);

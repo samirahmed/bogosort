@@ -37,6 +37,7 @@ extern int object_get_index(Team_Types team , Object_Types object)
 extern void player_init(Player* player)
 {
   bzero(player,sizeof(Player));
+  player->fd=-1;
   pthread_mutex_init(&player->lock,NULL);
 }
 
@@ -70,12 +71,29 @@ extern void home_init(Home* home, Pos min, Pos max, Team_Types team)
 
 extern void plist_init(Plist* plist, Team_Types team, int max_players )
 {
+   int ii;
    bzero(plist,sizeof(Plist));
    plist->count = 0;
    plist->next  = 0;
    plist->team  = team;
    plist->max   = max_players;
    pthread_rwlock_init(&(plist->plist_wrlock),NULL);
+   for (ii=0;ii<plist->max;ii++)
+   {
+     plist->at[ii].fd = -1;
+   }
+}
+
+/*********************/
+/* HOME BOUNDS CHECK */
+/*********************/
+
+extern int home_contains(Pos* query, Home*home)
+{
+  return ( (query->x < home->max.x) && 
+           (query->y < home->max.y) && 
+           (query->x >= home->min.x) && 
+           (query->y >= home->min.y) );
 }
 
 /*********************/

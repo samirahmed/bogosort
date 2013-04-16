@@ -71,10 +71,13 @@ extern int  server_home_count_decrement(Home * home);
 extern int  server_home_count_read(Home * home);
 
 // PLIST METHODS
-extern void server_plist_player_count( Plist * plist );
-extern void server_plist_add_player(Plist* plist, Player * player);
-extern void server_plist_drop_player_using_fd(Plist* plist, int fd );
-extern void server_plist_drop_player_using_id(Plist* plist, int id );
+extern int  server_plist_player_count( Plist * plist );
+extern int  server_plist_player_count_increment( Plist * plist );
+extern int  server_plist_player_count_decrement( Plist * plist );
+extern int  server_plist_add_player(Plist* plist, int fd);
+extern int  server_plist_find_player_by_fd(Plist*plist, int fd);
+extern int  server_plist_drop_player_by_fd(Maze*m, Plist*plist, int fd);
+extern void server_plist_drop_player_by_id(Maze*m, Plist* plist, int id );
 
 // ACTION METHODS
 

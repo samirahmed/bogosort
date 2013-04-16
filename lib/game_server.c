@@ -235,6 +235,7 @@ extern int server_home_count_decrement(Home* home)
 /* PLAYER METHODS */
 /******************/
 
+// Copy the players position into the Position given
 extern int player_get_position(Player * player, Pos * pos)
 {
   int rc = -1;
@@ -247,17 +248,34 @@ extern int player_get_position(Player * player, Pos * pos)
   return rc;
 }
 
+// Convenience methdos, true if a player has a shovel, false otherwise
 extern int player_has_shovel(Player * player)
 {
-  int rc;
-  rc = (player->shovel) ? 1 : 0;
-  return rc;
+  return ((player->shovel) ? 1 : 0);
 }
 
+// Convenience methods, true of player has a flag, false otherwise
 extern int player_has_flag(Player * player)
 {
-  int rc;
-  rc = (player->flag) ? 1 : 0;
+  return ( (player->flag) ? 1 : 0 );
+}
+
+// Find a position for a player. Ensure that player doesn't have an object or shovel
+// Returns -1 if unable to find a home cell
+// Returns -2 if player is holding an object, they can't be spawned
+extern int player_spawn(Maze* m, Player* player)
+{
+  int rc = 0;
+  Cell* homecell;
+  rc = server_find_empty_home_cell_and_lock(m, player->team, &homecell, player->id, 0); // 0=player query
+  if (rc < 0) return -1;
+  if (player_has_flag(player) || player_has_shovel(player)) return -2;
+   
+  // add player to cell.  
+  player->cell = homecell;
+  homecell->player = player;
+  server_home_count_increment(&m->home[player->team]);
+  cell_unlock(homecell);
   return rc;
 }
 
@@ -312,6 +330,113 @@ extern int server_find_empty_jail_cell_and_lock(Maze*m, Team_Types team, Cell** 
 /*****************/
 /* PLIST METHODS */
 /*****************/
+
+// Thread safe player_count read
+extern int server_plist_player_count( Plist * plist )
+{
+   int result;
+   pthread_rwlock_rdlock(&plist->plist_wrlock);
+   result = plist->count;
+   pthread_rwlock_unlock(&plist->plist_wrlock);
+   return result;
+}
+
+// Thread safe increment count
+extern int server_plist_player_count_increment( Plist * plist )
+{
+   int result;
+   pthread_rwlock_wrlock(&plist->plist_wrlock);
+   plist->count++;
+   result = plist->count;
+   pthread_rwlock_unlock(&plist->plist_wrlock);
+   return result;
+}
+
+// Thread safe decrement count
+extern int server_plist_player_count_decrement( Plist * plist )
+{
+   int result;
+   pthread_rwlock_wrlock(&plist->plist_wrlock);
+   plist->count--;
+   result = plist->count;
+   pthread_rwlock_unlock(&plist->plist_wrlock);
+   return result;
+}
+
+// Add player to plist. returns the players id if successful
+// Returns -1 if player already exists
+// Returns -2 if it can't find an empty slot
+extern int server_plist_add_player(Plist* plist, int fd)
+{
+  int rc,empty;
+  // ensure that no players have fd that is similar if so return -1
+  rc = server_plist_find_player_by_fd(plist,fd);
+  if (rc!=-1) return -1;
+  
+  // find and empty location for a player 
+  empty = server_plist_find_player_by_fd(plist,-1);
+  if ( empty == -1 ) return -2;
+
+  // create a new player object and then init
+  pthread_rwlock_wrlock(&plist->plist_wrlock);
+  Player * player = &plist->at[empty];
+  player_init(player);
+  player->team = plist->team;
+  player->id = empty;
+  pthread_rwlock_unlock(&plist->plist_wrlock);
+  
+  server_plist_player_count_increment(plist);
+
+  return player->id;
+}
+
+extern int server_plist_find_player_by_fd(Plist* plist, int fd )
+{
+   int result, ii ;
+   result = -1;
+   pthread_rwlock_rdlock(&plist->plist_wrlock);
+   for (ii=0; ii< plist->max ; ii++ )
+   {
+      if (plist->at[ii].fd == fd )
+      {
+        result = ii;
+        break;
+      }
+   }
+   pthread_rwlock_unlock(&plist->plist_wrlock);
+   return result;
+}
+
+extern int server_plist_drop_player_by_fd(Maze*m, Plist*plist, int fd)
+{
+   int id;
+   id = server_plist_find_player_by_fd(plist,fd);
+   if (id == -1) return -1;
+   
+   server_plist_drop_player_by_id(m,plist,id);
+   return id;
+}
+
+extern void server_plist_drop_player_by_id(Maze*m, Plist* plist, int id )
+{
+  Player *player;
+  player = &plist->at[id];
+  
+  // since we are changing the fds, get a write lock on the plist
+  pthread_rwlock_wrlock(&plist->plist_wrlock);
+  
+  if (player->fd != -1 )  
+  { 
+    player->fd = -1;
+    if (home_contains(&player->cell->pos,&m->home[plist->team]))
+    {
+      server_home_count_decrement(&m->home[plist->team]); 
+    }
+  }
+  pthread_rwlock_unlock(&plist->plist_wrlock);
+
+  server_plist_player_count_decrement(plist);
+}
 
 /******************/
 /* ACTION METHODS */
