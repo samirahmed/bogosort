@@ -24,31 +24,25 @@
 *****************************************************************************/
 #include "./types.h" 
 #include "./game_commons.h" 
-<<<<<<< HEAD
 #include <pthread.h>
 
 typedef struct ClientBlockingStruct{
     Maze *maze;    
->>>>>>> Added funtion headers to blocking logic
     pthread_mutex_t maze_lock;
     pthread_cond_t maze_updated;
 } Blocking_Helper;
 
 // Init Methods
-<<<<<<< HEAD
 extern void blocking_helper_init(Blocking_Helper *bh);
 
 // Destroy Methods
 extern void blocking_helper_destroy(Blocking_Helper *bh);
->>>>>>> Added funtion headers to blocking logic
 
 // Blocking Methods
 extern void client_maze_lock(Blocking_Helper *bh);
 extern void client_maze_unlock(Blocking_Helper *bh);
-<<<<<<< HEAD
 extern void client_maze_signal(Blocking_Helper *bh);
 extern void client_maze_cond_wait(Blocking_Helper *bh);
->>>>>>> Added funtion headers to blocking logic
 
 
 
