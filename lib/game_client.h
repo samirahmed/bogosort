@@ -24,15 +24,19 @@
 *****************************************************************************/
 #include "./types.h" 
 #include "./game_commons.h" 
-#include <pthread.h>;
+#include <pthread.h>
 
 typedef struct ClientBlockingStruct{
+    Maze *maze;    
     pthread_mutex_t maze_lock;
     pthread_cond_t maze_updated;
 } Blocking_Helper;
 
 // Init Methods
-extern int blocking_helper_init(Blocking_Helper *bh);
+extern void blocking_helper_init(Blocking_Helper *bh);
+
+// Destroy Methods
+extern void blocking_helper_destroy(Blocking_Helper *bh);
 
 // Blocking Methods
 extern void client_maze_lock(Blocking_Helper *bh);
