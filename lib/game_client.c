@@ -29,7 +29,7 @@ extern void client_maze_lock(Blocking_Helper *bh)
 
 extern void client_maze_unlock(Blocking_Helper *bh)
 {
-    pthread_mutex_lock(&bh->maze_lock);
+    pthread_mutex_unlock(&bh->maze_lock);
 }
 
 extern void client_maze_signal(Blocking_Helper *bh)
