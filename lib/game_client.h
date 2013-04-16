@@ -37,7 +37,8 @@ extern int blocking_helper_init(Blocking_Helper *bh);
 // Blocking Methods
 extern void client_maze_lock(Blocking_Helper *bh);
 extern void client_maze_unlock(Blocking_Helper *bh);
-
+extern void client_maze_signal(Blocking_Helper *bh);
+extern void client_maze_cond_wait(Blocking_Helper *bh);
 
 
 
