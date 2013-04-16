@@ -241,3 +241,4 @@ extern void test_init(int argc, char** argv, TestContext *tc)
   tc->start_time = time(NULL);  
   fprintf(stderr,"\n" COLOR_HEADER "%s---------------------\n" COLOR_END "\n",argv[0]);
 }
+
