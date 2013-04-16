@@ -369,6 +369,8 @@ extern int server_plist_player_count_decrement( Plist * plist )
 extern int server_plist_add_player(Plist* plist, int fd)
 {
   int rc,empty;
+  if (server_plist_player_count(plist) >= plist->max) return -2;
+
   // ensure that no players have fd that is similar if so return -1
   rc = server_plist_find_player_by_fd(plist,fd);
   if (rc!=-1) return -1;
@@ -383,6 +385,7 @@ extern int server_plist_add_player(Plist* plist, int fd)
   player_init(player);
   player->team = plist->team;
   player->id = empty;
+  player->fd = fd;
   pthread_rwlock_unlock(&plist->plist_wrlock);
   
   server_plist_player_count_increment(plist);

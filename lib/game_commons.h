@@ -24,8 +24,8 @@
 *****************************************************************************/
 #include "types.h"
 
-#define MAX_TEAM_SIZE 175
-#define MAX_PLAYERS   350
+#define MAX_TEAM_SIZE 200
+#define MAX_PLAYERS   400
 #define MAX_COL_MAZE  1000
 #define MAX_ROW_MAZE  1000
 #define MAX_COLUMNS   200

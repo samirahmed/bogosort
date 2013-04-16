@@ -160,8 +160,47 @@ void test_plist(TestContext*tc)
 {
     Maze maze;
     maze_build_from_file(&maze,"test.map");
+   
+    ////////////////////////////////
+    //  PLIST ADDING AND DROPPING
+    ////////////////////////////////
+    
+    int start, stop, ii, team, rc, assertion,fd;
+    team = randint()%2;
+    start = 1000;
+    stop = 2000;
+    Plist*players = &maze.players[team];
+
+    rc = server_plist_find_player_by_fd(players,123);
+    assertion = (rc < 0) && (server_plist_player_count(players) == 0);
+    should("not have any players when initialized",rc,tc);
+
+    for (ii=0; ii< players->max; ii++ )
+    {
+      fd = start + ii;
+      rc = server_plist_add_player(players,fd);
+      assertion = assertion && (rc >=0 );
+    }
+
+    assertion = assertion && (server_plist_player_count(players) == players->max );
+    should("successfully add players until filled to the brim",assertion,tc);
+
+    rc = server_plist_add_player(players,123);
+    assertion = (rc < 0 );
+    should("not allow addition of a new player when full",assertion,tc);
   
-     
+    assertion = 1;
+    for (ii=0;ii<players->max; ii++)
+    {
+      fd = ii+start;
+      rc = server_plist_find_player_by_fd(players,fd);
+      assertion = assertion && (rc>=0);
+    }
+    should("be able to find any player by valid fd",assertion,tc);
+
+    rc = server_plist_find_player_by_fd(players,123);
+    assertion = (rc < 0);
+    should("indicate failure when searching for fd that doesn't exist",assertion,tc);
 
     maze_destroy(&maze);
 }
