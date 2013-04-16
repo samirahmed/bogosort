@@ -6,9 +6,99 @@
 #include <pthread.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 #include "types.h"
 #include "test.h"
 #include "protocol_utils.h"
+
+// Create a task from a bunch of arguments
+extern void test_task_init(Task *task, Proc func, int reps, void* a0,void*a1, void*a2, void*a3,void*a4,void*a5)
+{
+  task->func = func;
+  task->reps = reps;
+  task->arg0 = a0;
+  task->arg1 = a1;
+  task->arg2 = a2;
+  task->arg3 = a3;
+  task->arg4 = a4;
+  task->arg5 = a5;
+}
+
+// this is the function that is run in a thread
+// we repeat the task n times and then exit 
+void * threaded_task(void* task_ptr)
+{
+  int reps,ii;
+  struct timespec desired, diff;
+  bzero(&desired,sizeof(struct timespec));
+  
+  // extract task* and reps (min resp = 1) 
+  Task* task = (Task*) task_ptr;
+  reps = task->reps < 1 ?  1 : task->reps;
+  
+  for (ii = 0; ii<reps; ii++)
+  {
+    desired.tv_sec = 0;
+    desired.tv_nsec = (randint() % 10);
+    
+    TaskFunction function = (TaskFunction) task->func;
+    (*function)(task);
+
+    nanosleep(&desired,&diff);
+  }
+  
+  pthread_exit( (void*) 0); 
+}
+
+// Runs an array of "num_task" tasks called "tasks" accross "num_threads"
+// Simulates concurrent threads
+// Create task with the test_task_init method
+// These are probablistic test
+extern void parallelize(Task tasks[], int num_tasks, int threads_per_task)
+{
+  int ii, thread_count;
+
+  // create joinable attr
+  pthread_attr_t attr; 
+  pthread_attr_init(&attr);
+  pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
+  pthread_attr_setstacksize(&attr,PTHREAD_STACK_SIZE);
+  struct sched_param param;
+  bzero(&param,sizeof(struct sched_param));
+
+  // create new array of n threads
+  thread_count = (threads_per_task < 1 ? 1 : threads_per_task*num_tasks);
+  pthread_t * threads;
+  threads = (pthread_t *) malloc(sizeof(pthread_t)*thread_count);
+
+  int min = sched_get_priority_min(SCHED_OTHER); 
+  int max = sched_get_priority_max(SCHED_OTHER);
+  for (ii=0;ii < thread_count ;ii++)
+  {
+    // Randomized Priority
+    param.sched_priority = (randint()%max)+min;
+    pthread_attr_setschedparam(&attr, &param);
+
+    // Spawn thread
+    int rc;
+    rc = pthread_create(&threads[ii], &attr, threaded_task, (void*) &tasks[ii%num_tasks] );
+    if (test_debug() && rc!=0 ) 
+      fprintf(stderr,"%s_%d pthread_create failed %d\n",__FILE__,__LINE__,rc);
+  }
+  
+  if (proto_debug() ) fprintf(stderr,"%s_%d main thread suspending\n", __FILE__, __LINE__ );
+ 
+  for (ii=0;ii < thread_count ;ii++)
+  {
+    pthread_join(threads[ii],NULL);  // Honeybadger the exit status
+  }
+  
+  if (proto_debug() ) fprintf(stderr,"%s_%d main thread resuming\n", __FILE__, __LINE__ );
+
+  // clean up
+  free(threads);
+  pthread_attr_destroy(&attr);
+}
 
 // Should is syntatic sugar for an assertion.  
 // Should stores test results in the test context
@@ -84,6 +174,27 @@ extern void run( void (*func)(TestContext*), char * test_name , TestContext *tc)
         }
     }
 }
+
+/************/
+/* HELPERS  */
+/************/
+
+// easy seeded random
+extern int randint()
+{
+   srand (time(NULL));
+   return rand();
+}
+
+// debug alias
+extern int test_debug()
+{
+  return proto_debug();
+}
+
+/*****************/
+/* TEST CONTEXT  */
+/*****************/
 
 // print a pretty sumamry from the given test context object
 // includes the total failed / passed tests
