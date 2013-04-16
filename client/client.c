@@ -26,7 +26,6 @@
 #include <unistd.h>
 #include "../lib/types.h"
 #include "../lib/protocol.h"
-#include "../lib/maze.h"
 #include "../lib/protocol_client.h"
 #include "../lib/protocol_utils.h"
 
