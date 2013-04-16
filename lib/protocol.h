@@ -22,22 +22,18 @@ typedef enum  {
 
   // Requests
   PROTO_MT_REQ_BASE_RESERVED_FIRST, 
-<<<<<<< HEAD
   PROTO_MT_REQ_HELLO,
   PROTO_MT_REQ_GOODBYE,
   PROTO_MT_REQ_ACTION,
   PROTO_MT_REQ_SYNC,
->>>>>>> Proto_Msg_Hdrs to the those specificed in google doc
   PROTO_MT_REQ_BASE_RESERVED_LAST,
   
   // Replys
   PROTO_MT_REP_BASE_RESERVED_FIRST,
-<<<<<<< HEAD
   PROTO_MT_REP_HELLO,
   PROTO_MT_REP_GOODBYE,
   PROTO_MT_REP_ACTION,
   PROTO_MT_REP_SYNC,
->>>>>>> Proto_Msg_Hdrs to the those specificed in google doc
   PROTO_MT_REP_BASE_RESERVED_LAST,
 
   // Events  
