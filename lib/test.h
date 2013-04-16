@@ -32,4 +32,6 @@ extern void should(const char* message, int valid, TestContext *tc);
 extern void test_summary(TestContext *tc);
 extern void test_init(int argc, char** argv, TestContext *tc);
 extern void run( void (*func)(TestContext*), char * test_name , TestContext *tc);
+extern void run_two_thread( void* (*func_one)(void*), void* (*func_two)(void*),char *test_name, TestContext *tc);
+
 
