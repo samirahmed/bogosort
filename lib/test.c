@@ -200,10 +200,21 @@ extern int test_debug()
 // includes the total failed / passed tests
 extern void test_summary(TestContext *tc)
 {
-    fprintf(stderr, COLOR_OKBLUE "%d" COLOR_END " test run\n", tc->num);
+    // calc diff
+    int seconds;
+    tc->stop_time = time(NULL);
+    seconds = tc->stop_time - tc->start_time; 
+
+    // report time
+    fprintf(stderr, COLOR_OKBLUE "%d" COLOR_END " test run", tc->num);
+    if (seconds>0) fprintf(stderr, " in %d seconds", seconds);
+    fprintf(stderr,"\n");
+    
+    // print report
     if (tc->pass > 0) fprintf(stderr, COLOR_OKGREEN "%d" COLOR_END " passed, ", tc->pass ); 
     if (tc->fail > 0) fprintf(stderr, COLOR_FAIL "%d" COLOR_END " failed.", tc->fail ); 
     else fprintf(stderr, "no failed tests\n");
+    
 }
 
 // test_init is used to configure TestContext variables given a set of command line arguments
@@ -227,6 +238,6 @@ extern void test_init(int argc, char** argv, TestContext *tc)
   tc->pass=0;
   tc->fail=0;
   tc->num =0;
-  
+  tc->start_time = time(NULL);  
   fprintf(stderr,"\n" COLOR_HEADER "%s---------------------\n" COLOR_END "\n",argv[0]);
 }

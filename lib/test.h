@@ -38,6 +38,8 @@ typedef struct {
     int blocking;
     void (*test_function)(void *);
     pthread_mutex_t lock;
+    time_t start_time;
+    time_t stop_time;
 } TestContext;
 
 typedef void(*TestFunction)(TestContext*);
