@@ -14,7 +14,7 @@
 
 /*Maze maze;  // global maze*/
 
-void test_home(TestContext * tc)
+void test_find_and_lock(TestContext * tc)
 {
     int assertion, key, team , xx,yy;
     Maze maze;
@@ -27,17 +27,29 @@ void test_home(TestContext * tc)
     {
         for ( key = -1000 ; key<1000000 && assertion ;key++ )
         { 
-          server_hash_id(&maze, key, &cell, team); 
+          server_home_hash(&maze, key, &cell, team); 
           assertion = ( cell->pos.x < maze.max.x && cell->pos.x >= maze.min.x &&
                         cell->pos.y < maze.max.y && cell->pos.y >= maze.min.y && assertion);
         }
     }
     should("hash any integer to a valid home position",assertion,tc);
     
+    assertion = 1;
+    for ( team =0; team<NUM_TEAMS ; team++)
+    {
+        for ( key = -1000 ; key<1000000 && assertion ;key++ )
+        { 
+          server_jail_hash(&maze, key, &cell, team); 
+          assertion = ( cell->pos.x < maze.max.x && cell->pos.x >= maze.min.x &&
+                        cell->pos.y < maze.max.y && cell->pos.y >= maze.min.y && assertion);
+        }
+    }
+    should("hash any integer to a valid jail position",assertion,tc);
+    
     for ( team=0; team<NUM_TEAMS; team++)
     {
       key = 173;
-      server_hash_id(&maze,key,&cell,team);
+      server_home_hash(&maze,key,&cell,team);
       /*fprintf(stderr,"Target is  %d, %d" , cell->pos.x,cell->pos.y );*/
       Home *home = &(maze.home[team]);
       for ( xx = home->min.x ; xx < home->max.x ; xx++)
@@ -72,7 +84,45 @@ void test_home(TestContext * tc)
         should("correctly find an empty home cell to place an object",assertion,tc);
         cell_unlock(cell); 
     }
-    /*server_hash_id(&maze,key,&cell,);*/
+    
+    for ( team=0; team<NUM_TEAMS; team++)
+    {
+      key = 99;
+      server_jail_hash(&maze,key,&cell,team);
+      /*fprintf(stderr,"Target is  %d, %d" , cell->pos.x,cell->pos.y );*/
+      Jail *jail = &(maze.jail[team]);
+      for ( xx = jail->min.x ; xx < jail->max.x ; xx++)
+      { 
+        for ( yy = jail->min.y ; yy < jail->max.y ;yy++)
+        {
+           if (!(xx == cell->pos.x && yy==cell->pos.y))
+           {
+              if ( (xx+yy)%3 == 0 )
+              { 
+                cell_lock(&(maze.get[xx][yy]));
+              }
+              else 
+              {
+                maze.get[xx][yy].player=(Player*)1;
+                maze.get[xx][yy].object=(Object*)1;
+              }
+           }
+        }
+      }
+        // now there should be only one position which works
+        // query player type
+        
+        server_find_empty_jail_cell_and_lock(&maze,team, &test, 0, 0);
+        assertion = (cell->pos.x == test->pos.x && cell->pos.y == test->pos.y && (pthread_mutex_trylock(&cell->lock)!=0) );
+        should("correctly find an empty jail cell to place a player in team",assertion,tc);
+        cell_unlock(cell); 
+        
+        // query for object type
+        server_find_empty_jail_cell_and_lock(&maze,team, &test, 0, 1);
+        assertion = (cell->pos.x == test->pos.x && cell->pos.y == test->pos.y && (pthread_mutex_trylock(&cell->lock)!=0) );
+        should("correctly find an empty jail cell to place an object",assertion,tc);
+        cell_unlock(cell); 
+    }
 
     maze_destroy(&maze);
 }
@@ -100,23 +150,6 @@ void test_server_locks(TestContext * tc)
     /////////////////
     //  JAIL LOCKS
     /////////////////
-    if (test_debug()) fprintf(stderr,"Starting recursive jail lock test\n");
-    int ii, times;
-    times = 20;
-    for (ii=0; ii<times ;ii++)
-    {
-        server_jail_lock(&maze.jail[TEAM_RED]);
-        server_jail_lock(&maze.jail[TEAM_BLUE]);
-    }
-    if (test_debug()) fprintf(stderr,"We are %d jail locks deep\n",times);
-
-    for (ii=0; ii<times ;ii++)
-    {
-        server_jail_unlock(&maze.jail[TEAM_BLUE]);
-        server_jail_unlock(&maze.jail[TEAM_RED]);
-    }
-    if (test_debug()) fprintf(stderr,"Exited reentrant locks\n");
-    should("allow of re-entry and exit of locks",1,tc); 
   
     ////////////////
     // HOME COUNTER
@@ -147,7 +180,7 @@ int main(int argc, char ** argv )
     
     // ADD TESTS HERE
     run(&test_server_locks,"Server Locks",&tc);
-    run(&test_home,"Home",&tc);
+    run(&test_find_and_lock,"Find and Lock Empty Routine",&tc);
     
     // TEST END HERE
     

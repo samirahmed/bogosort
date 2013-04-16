@@ -34,26 +34,12 @@ extern int object_get_index(Team_Types team , Object_Types object)
 /* PLAYER METHODS */
 /******************/
 
-extern int player_get_position(Player * player, Pos * pos)
+extern void player_init(Player* player)
 {
-  if (player->cell)
-  {
-    pos->x = (player->cell)->pos.x;
-    pos->y = (player->cell)->pos.y;
-    return 0;
-  }
-  return -1;
+  bzero(player,sizeof(Player));
+  pthread_mutex_init(&player->lock,NULL);
 }
 
-extern int player_has_shovel(Player * player)
-{
-  return (player->shovel) ? 1 : 0;
-}
-
-extern int player_has_flag(Player * player)
-{
-  return (player->flag) ? 1 : 0;
-}
 
 extern void jail_init(Jail* jail, Pos min, Pos max, Team_Types team)
 {

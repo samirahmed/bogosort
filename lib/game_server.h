@@ -28,11 +28,13 @@
 // Locking Methods
 extern void server_maze_lock(Maze*m, Pos current, Pos next);
 extern void server_maze_unlock(Maze*m, Pos current, Pos next);
-extern void server_jail_lock(Jail * jail );
-extern void server_jail_unlock(Jail * jail);
 extern void server_object_unlock(Maze*m);
 extern void server_object_read_lock(Maze*m);
 extern void server_object_write_lock(Maze*m);
+
+// Object Methods
+extern void object_lock(Object*object);
+extern void object_unlock(Object*object);
 
 //extern void jail_lock(Maze*m, Team_Types team);
 
@@ -47,14 +49,22 @@ extern void maze_spawn_player(Maze* m, Player* p);
 extern void maze_reset_shovel(Maze* m, Object* object);
 
 // JAIL METHODS
+extern void server_jail_hash( Maze* m, int key, Cell** cell, Team_Types team);
+extern int  server_find_empty_jail_cell_and_lock(Maze*m, Team_Types team, Cell** cell ,int id, int query);
 extern void server_jail_player( Maze*m, Cell* current, Cell* next);
+extern void server_jail( Maze* m, int key, Cell** cell, Team_Types team);
 
 // PLAYER METHODS
 extern void player_drop(Player * player);
+extern void player_init(Player * player);
+extern void player_lock(Player*player);
+extern void player_unlock(Player*player);
+extern int  player_has_shovel(Player * player);
+extern int  player_has_flag(Player * player);
 
 
 // HOME METHODS
-extern void server_hash_id( Maze* m, int key, Cell** cell, Team_Types team);
+extern void server_home_hash( Maze* m, int key, Cell** cell, Team_Types team);
 extern int  server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell** cell ,int id, int query);
 extern int  server_home_count_increment(Home * home);
 extern int  server_home_count_decrement(Home * home);

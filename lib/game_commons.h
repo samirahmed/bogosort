@@ -56,6 +56,7 @@ typedef struct{
     int             client_player_id;
     Team_Types      client_player_team;
     int             client_has_player;
+    pthread_mutex_t lock;
 } Object;
 
 typedef struct PlayerStruct{
@@ -67,6 +68,7 @@ typedef struct PlayerStruct{
     unsigned short int  id;
     int                 fd;
     Pos                 client_position;
+    pthread_mutex_t     lock;
 } Player;
 
 typedef struct CellStruct{
@@ -140,6 +142,8 @@ extern Game_State_Types  maze_get_state(Maze*m);
 
 // PLAYER METHODS
 extern void player_init(Player * player);
+extern void player_unlock(Player*player);
+extern void player_unlock(Player*player);
 extern int player_has_shovel(Player * player);
 extern int player_has_flag(Player * player);
 extern int player_get_position(Player * player, Pos*pos);

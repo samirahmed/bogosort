@@ -13,15 +13,17 @@
 /*****************/
 /* LOCKING FUNCS */
 /*****************/
+
+// This will lock down the current cell and next cell
+// If you only want to lock down one current = next
 extern void server_maze_lock(Maze*m , Pos current, Pos next)
 {
   Cell C = m->get[current.x][current.y];
   Cell N = m->get[next.x][next.y];
   
-  if (C.type == CELL_JAIL || N.type == CELL_JAIL ) server_jail_lock( &(m->jail[C.turf]) );
-
   Cell first;
   Cell second;
+  int lock_second=0;
   
   // first is lower x value if x equal then lower y value.
   if ( C.pos.x < N.pos.x )
@@ -49,36 +51,68 @@ extern void server_maze_lock(Maze*m , Pos current, Pos next)
     first = C;
     second = N;
   }
-
+ 
+  // First Lock Cells
   cell_lock(&first);
   if (!(current.x == next.x && current.y == next.y ))
   {
     // if current != next;
     cell_lock(&second);
+    lock_second=1;
+  }
+
+  // Now Lock First Cell's object/players and player's objects
+  if (first.object){ object_lock(first.object); }
+  if (first.player)
+  { 
+    player_lock(first.player); 
+    if (first.player->shovel){ object_lock(first.player->shovel); }
+    if (first.player->flag){ object_lock(first.player->flag); }
+  }
+
+  // if second cell is not the same repeat
+  if (lock_second)
+  {
+      if (second.object){ object_lock(second.object); }
+      if (second.player)
+      { 
+        player_lock(second.player); 
+        if (second.player->shovel){ object_lock(second.player->shovel); }
+        if (second.player->flag){ object_lock(second.player->flag); }
+      }
   }
 
 }
 
+
+// This will unlock 2 cells current and next,
+// doesn't matter if they are the same or different
 extern void server_maze_unlock(Maze*m, Pos current, Pos next)
 {
   Cell C = m->get[current.x][current.y];
   Cell N = m->get[current.x][current.y];
+ 
+  // Unlock in reverse order Unlock N
+  if (N.object) object_unlock(N.object);
+  if (N.player)
+  {
+    if (N.player->shovel) object_unlock(N.player->shovel);
+    if (N.player->flag) object_unlock(N.player->flag);
+    player_unlock(N.player);
+  }
+  
+  // Unlock C
+  if (C.object) object_unlock(C.object);
+  if (C.player)
+  {
+    if (C.player->shovel) object_unlock(C.player->shovel);
+    if (C.player->flag) object_unlock(C.player->flag);
+    player_unlock(C.player);
+  }
   
   // Order of cell unlock doesn't matter so long as jail is last unlocked
   cell_unlock(&C);
   cell_unlock(&N);
-
-  if (C.type == CELL_JAIL || N.type == CELL_JAIL ) server_jail_unlock( &(m->jail[C.turf]) );
-}
-
-extern void server_jail_lock(Jail * jail)
-{
-  pthread_mutex_lock(&(jail->jail_recursive_lock));
-}
-
-extern void server_jail_unlock(Jail * jail)
-{
-  pthread_mutex_unlock(&(jail->jail_recursive_lock));
 }
 
 extern void server_object_write_lock(Maze*m)
@@ -99,7 +133,7 @@ extern void server_object_unlock(Maze*m)
 /****************/
 /* HOME METHODS */
 /****************/
-extern void server_hash_id( Maze* m, int key, Cell** cell, Team_Types team)
+extern void server_home_hash( Maze* m, int key, Cell** cell, Team_Types team)
 {
   Home*home = &m->home[team];
   unsigned int yy,xx, xlen, ylen;
@@ -128,7 +162,7 @@ extern int server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell** 
    home_size = (home->max.x-home->min.x)*(home->max.y-home->min.y);
    while ( (try < home_size*2) && (found!=0) )
    {
-      server_hash_id( m, id+try, cell, team);
+      server_home_hash( m, id+try, cell, team);
       c = *cell;
       try++;
       found = pthread_mutex_trylock(&(c->lock));
@@ -174,9 +208,107 @@ extern int server_home_count_decrement(Home* home)
   return count;
 }
 
+/******************/
+/* OBJECT METHODS */
+/******************/
+
+extern void object_lock(Object*object)
+{
+  pthread_mutex_lock(&(object->lock));
+}
+
+extern void object_unlock(Object*object)
+{
+  pthread_mutex_lock(&(object->lock));
+}
+
+/******************/
+/* PLAYER METHODS */
+/******************/
+
+extern void player_lock(Player*player)
+{
+  pthread_mutex_lock(&(player->lock));
+}
+
+extern void player_unlock(Player*player)
+{
+  pthread_mutex_lock(&(player->lock));
+}
+
+extern int player_get_position(Player * player, Pos * pos)
+{
+  int rc = -1;
+  if (player->cell)
+  {
+    pos->x = (player->cell)->pos.x;
+    pos->y = (player->cell)->pos.y;
+    rc =0;
+  }
+  return rc;
+}
+
+extern int player_has_shovel(Player * player)
+{
+  int rc;
+  rc = (player->shovel) ? 1 : 0;
+  return rc;
+}
+
+extern int player_has_flag(Player * player)
+{
+  int rc;
+  rc = (player->flag) ? 1 : 0;
+  return rc;
+}
+
 /*****************/
 /* JAIL  METHODS */
 /*****************/
+extern void server_jail_hash( Maze* m, int key, Cell** cell, Team_Types team)
+{
+  Jail*jail = &m->jail[team];
+  unsigned int yy,xx, xlen, ylen;
+  xlen = (jail->max.x-jail->min.x);
+  ylen = (jail->max.y-jail->min.y);
+  
+  yy = (unsigned) ( key / xlen )%( ylen );
+  yy += jail->min.y;
+  xx = (unsigned) key % xlen;
+  xx += jail->min.x;
+  *cell = &(m->get[xx][yy]);
+}
+
+// try many jail cells for a lock
+// query 0 = unoccupied
+// query 1 = not holding object
+extern int server_find_empty_jail_cell_and_lock(Maze*m, Team_Types team, Cell** cell ,int id, int query)
+{
+   int try, found, jail_size;
+   
+   try = 0;
+   found = -1;
+   Cell * c;
+   Jail *jail = &(m->jail[team]);
+   jail_size = (jail->max.x-jail->min.x)*(jail->max.y-jail->min.y);
+   while ( (try < jail_size*2) && (found!=0) )
+   {
+      server_jail_hash( m, id+try, cell, team);
+      c = *cell;
+      try++;
+      found = pthread_mutex_trylock(&(c->lock));
+     
+      if (found != 0) { continue;}
+      else if ((query==0 && !cell_is_unoccupied(c)) || (query!=0 && cell_is_holding(c))) 
+      {
+        found = -1;
+        cell_unlock(c);
+      }
+   }
+   
+   if (found != 0) return -1;
+   return 0;
+}
 
 /*****************/
 /* PLIST METHODS */
