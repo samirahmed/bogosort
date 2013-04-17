@@ -40,6 +40,7 @@ typedef struct {
     pthread_mutex_t lock;
     time_t start_time;
     time_t stop_time;
+    int single_test;
 } TestContext;
 
 typedef void(*TestFunction)(TestContext*);

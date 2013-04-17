@@ -153,10 +153,12 @@ extern void run( void (*func)(TestContext*), char * test_name , TestContext *tc)
     pthread_t thread;
     pthread_attr_t attr;
 
+    tc->num++;
+    if (tc->single_test > 0 && tc->single_test != tc->num ) return;
     tc->current = test_name;
     tc->test_function = (void(*)(void*)) func;
-
-    fprintf(stderr, COLOR_OKBLUE "%d. %s" COLOR_END "\n" , tc->num++ , test_name ); 
+    
+    fprintf(stderr, COLOR_OKBLUE "%d. %s" COLOR_END "\n" , tc->num , test_name ); 
     
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
@@ -216,7 +218,7 @@ extern void test_summary(TestContext *tc)
     seconds = tc->stop_time - tc->start_time; 
 
     // report time
-    fprintf(stderr, COLOR_OKBLUE "%d" COLOR_END " test run", tc->num);
+    fprintf(stderr, COLOR_OKBLUE "%d" COLOR_END " test run", tc->pass+tc->fail);
     if (seconds>0) fprintf(stderr, " in %d seconds", seconds);
     fprintf(stderr,"\n");
     
@@ -242,6 +244,17 @@ extern void test_init(int argc, char** argv, TestContext *tc)
       if (strncmp(argv[argument],"--verbose",sizeof("--verbose")-1) == 0) tc->verbose = 1 ;
       if (strncmp(argv[argument],"-d",sizeof("-d")-1) == 0) { proto_debug_on() ; tc->verbose=1; }
       if (strncmp(argv[argument],"--debug",sizeof("--debug")-1) == 0){ proto_debug_on() ; tc->verbose=1;}
+      if (strncmp(argv[argument],"--only",sizeof("--only")-1) == 0)
+      {
+        if (argument+1<argc)
+        {
+          int only;
+          if ( (only = atoi(argv[argument+1]) ) >0 )
+          {
+            tc->single_test = only;
+          }
+        }
+      }
     }
   }
   

@@ -162,16 +162,19 @@ void st_add_drop_player(void*task_ptr)
   Maze* m    = (Maze*) task->arg0;
   int*  team = (int*)  task->arg1;
   int*  fd   = (int*)  task->arg2;
-  int rc;
+  int rc, ii;
   
-  test_nanosleep();
-  rc = server_plist_add_player( &m->players[*team] ,*fd );
-  if (test_debug()) fprintf(stderr,"%d add       %d)\n",rc,*fd);
-  
-  test_nanosleep();
-  rc = server_plist_drop_player_by_fd( m , &m->players[*team] , *fd );
-  if (test_debug()) fprintf(stderr,"%d drop      %d)\n",rc,*fd);
-  
+  for (ii = 0; ii<10;ii++)
+  {
+      test_nanosleep();
+      rc = server_plist_add_player( &m->players[*team] ,*fd );
+      if (test_debug()) fprintf(stderr,"%d add       %d)\n",rc,*fd);
+      
+      test_nanosleep();
+      rc = server_plist_drop_player_by_fd( m , &m->players[*team] , *fd );
+      if (test_debug()) fprintf(stderr,"%d drop      %d)\n",rc,*fd);
+  }
+
   test_nanosleep();
   rc = server_plist_add_player( &m->players[*team] ,*fd );
   if (test_debug()) fprintf(stderr,"%d add again %d)\n",rc,*fd);
