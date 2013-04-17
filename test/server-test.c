@@ -271,6 +271,81 @@ void test_plist(TestContext*tc)
     maze_destroy(&maze);
 }
 
+
+
+void st_game_add_drop(void*task_ptr)
+{
+  Task* task = (Task*) task_ptr;
+  Maze* m    = (Maze*) task->arg0;
+  int*  fd   = (int*)  task->arg1;
+  int rc, ii;
+  Player*player;
+
+  for (ii = 0; ii<10;ii++)
+  {
+      test_nanosleep();
+      rc = server_game_add_player( m ,*fd, &player );
+      if (test_debug()) fprintf(stderr,"%d add       %d, id=%d ,team=%d \n",rc,*fd,player->id, player->team);
+      
+      if (rc >=0) 
+      {
+        test_nanosleep();
+        server_game_drop_player( m , player->team , player->id );
+        if (test_debug()) fprintf(stderr,"%d drop      %d, id=%d ,team=%d \n",rc,*fd,player->id, player->team);
+      }
+  }
+
+  test_nanosleep();
+  rc =  server_game_add_player( m ,*fd , &player);
+  if (test_debug()) fprintf(stderr,"%d finally add  %d, id=%d ,team=%d\n",rc,*fd,player->id,player->team);
+
+}
+
+void test_game_add_drop(TestContext * tc)
+{
+    Maze maze;
+    maze_build_from_file(&maze,"test.map");
+    
+    int team, assertion, num_tasks, start,ii;
+    start = 7000;
+    num_tasks = 180;
+
+    Task* tasks = malloc(sizeof(Task)*num_tasks);
+    int*  fds = malloc(sizeof(int)*num_tasks);
+    bzero(tasks,sizeof(Task)*num_tasks);
+    bzero(fds,sizeof(int)*num_tasks);
+    
+    for (ii=0; ii< num_tasks; ii++)
+    {
+      fds[ii] = ii + start;
+      test_task_init(&tasks[ii],(Proc)&st_game_add_drop,1,&maze,&fds[ii],NULL,NULL,NULL,NULL);
+    }
+    parallelize(tasks,num_tasks,1); // run each task one 1 thread only
+   
+    assertion =1;
+    // Check referential integrety of cells and player
+    for (team=0;team<NUM_TEAMS;team++)
+    {
+      Plist*players = &maze.players[team];
+      for( ii=0; ii<players->max ; ii++ )
+      {
+        Player*player = &players->at[ii];
+        if (player->fd != -1)
+        {
+           Cell*cell = player->cell;
+           assertion = assertion && (cell) &&(cell->player = player);
+        }
+      }
+      should("maintain reference integrity",assertion,tc);
+    }
+    
+    assertion = (server_plist_player_count(&maze.players[TEAM_RED]) + 
+                server_plist_player_count(&maze.players[TEAM_BLUE])  == num_tasks );
+    should("maintain player count correctly",assertion,tc);
+    
+    maze_destroy(&maze);
+}
+
 void test_server_locks(TestContext * tc)
 {
     Maze maze;
@@ -326,6 +401,7 @@ int main(int argc, char ** argv )
     test_init(argc, argv, &tc);
     
     // ADD TESTS HERE
+    run(&test_game_add_drop,"Game Add/Drop",&tc);
     run(&test_server_locks,"Server Locks",&tc);
     run(&test_plist,"PLists",&tc);
     run(&test_find_and_lock,"Find and Lock Empty Routine",&tc);

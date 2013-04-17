@@ -7,8 +7,72 @@
 #include <strings.h>
 #include "net.h"
 #include "protocol.h"
+#include "protocol_utils.h"
 #include "protocol_session.h"
 #include "game_server.h"
+
+/******************/
+/* SERVER METHODS */
+/******************/
+
+
+// Returns the player id if it is successfully added to the game
+// Returns -1 if player exists
+// Returns -2 if player cannot be added to plist for some reason
+// Returns -3 if player spawn in home cell failed
+extern int server_game_add_player(Maze*maze,int fd, Player**player)
+{
+  int rc,team,id;
+  
+  // get team
+  server_maze_property_lock(maze);
+  maze->last_team = opposite_team(maze->last_team);
+  team = maze->last_team;
+  server_maze_property_unlock(maze);
+ 
+  *player = &maze->players[team].at[0]; // return first player if so that player pointer is at least set
+
+  rc = server_plist_find_player_by_fd(&maze->players[team],fd);
+  if (proto_debug() && rc>=0) fprintf(stderr,"player with fd %d already exists: find rc=%d\n",fd, rc);
+  if (rc >= 0 ) return -1;
+  
+  rc = server_plist_add_player(&maze->players[team],fd);
+  if (proto_debug() && rc<0) fprintf(stderr,"player with fd %d could not be added: rc=%d\n",fd, rc);
+  if (rc < 0 ) return -2;
+  id = rc;
+
+  rc = server_player_spawn(maze,&(maze->players[team].at[id]) );
+  if (proto_debug() && rc<0) fprintf(stderr,"player with fd %d could not be spawned: rc=%d\n",fd,rc); 
+  if (rc < 0) return -3;
+  
+  *player = &(maze->players[team].at[id]);
+
+  return id;
+}
+
+// Removes player from plist, servers connection with players/flags/shovels
+extern void server_game_drop_player(Maze*maze,int team, int id)
+{
+  Player*player = &maze->players[team].at[id];
+  Cell*current = player->cell;
+  server_plist_drop_player_by_id(maze, &maze->players[team] , id);
+
+  if (current)
+  {
+    server_maze_lock(maze,current->pos,current->pos);
+        
+    // drop shovel and flag if any
+    _server_action_player_reset_shovel(maze,player);
+    _server_action_drop_flag(maze,player);
+
+    // kill player cell connection
+    player->cell    = 0;
+  
+    // unlock everybody including the cell....
+    fprintf(stderr,"dropping!");
+    server_maze_unlock(maze,current->pos,current->pos,1);
+  }
+}
 
 /*****************/
 /* LOCKING FUNCS */
@@ -84,13 +148,12 @@ extern void server_maze_lock(Maze*m , Pos current, Pos next)
 
 }
 
-
 // This will unlock 2 cells current and next,
 // doesn't matter if they are the same or different
-extern void server_maze_unlock(Maze*m, Pos current, Pos next)
+extern void server_maze_unlock(Maze*m, Pos current, Pos next, int sever_player)
 {
   Cell C = m->get[current.x][current.y];
-  Cell N = m->get[current.x][current.y];
+  Cell N = m->get[next.x][next.y];
  
   // Unlock in reverse order Unlock N
   if (N.object) object_unlock(N.object);
@@ -99,6 +162,7 @@ extern void server_maze_unlock(Maze*m, Pos current, Pos next)
     if (N.player->shovel) object_unlock(N.player->shovel);
     if (N.player->flag) object_unlock(N.player->flag);
     player_unlock(N.player);
+    if (sever_player) N.player=0;  /// necessary for dropping a player... other times player is relocated
   }
   
   // Unlock C
@@ -113,6 +177,16 @@ extern void server_maze_unlock(Maze*m, Pos current, Pos next)
   // Order of cell unlock doesn't matter so long as jail is last unlocked
   cell_unlock(&C);
   cell_unlock(&N);
+}
+
+extern void server_maze_property_lock(Maze*m)
+{
+    pthread_mutex_lock(&m->state_lock);
+}
+
+extern void server_maze_property_unlock(Maze*m)
+{
+    pthread_mutex_unlock(&m->state_lock);
 }
 
 extern void object_lock(Object*object)
@@ -190,15 +264,24 @@ extern int server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell** 
       try++;
       found = pthread_mutex_trylock(&(c->lock));
      
-      if (found != 0) { continue;}
+      if (found != 0) { 
+      continue;
+      }
+
       else if ((query==0 && !cell_is_unoccupied(c)) || (query!=0 && cell_is_holding(c))) 
       {
         found = -1;
         cell_unlock(c);
       }
+      else { 
+        break;
+      }
    }
    
-   if (found != 0) return -1;
+   if (found != 0) 
+   {
+    return -1;
+   }
    return 0;
 }
 
@@ -263,11 +346,12 @@ extern int player_has_flag(Player * player)
 // Find a position for a player. Ensure that player doesn't have an object or shovel
 // Returns -1 if unable to find a home cell
 // Returns -2 if player is holding an object, they can't be spawned
-extern int player_spawn(Maze* m, Player* player)
+extern int server_player_spawn(Maze* m, Player* player)
 {
   int rc = 0;
   Cell* homecell;
   rc = server_find_empty_home_cell_and_lock(m, player->team, &homecell, player->id, 0); // 0=player query
+  if (proto_debug() && rc<0) fprintf(stderr,"home size: %d\n",server_home_count_read(&m->home[player->team])); 
   if (rc < 0) return -1;
   if (player_has_flag(player) || player_has_shovel(player)) return -2;
    
@@ -459,9 +543,9 @@ extern void server_plist_drop_player_by_id(Maze*m, Plist* plist, int id )
       }
     }
   }
+  plist->count--;
   pthread_rwlock_unlock(&plist->plist_wrlock);
 
-  server_plist_player_count_decrement(plist);
 }
 
 /******************/
@@ -471,7 +555,7 @@ extern void server_plist_drop_player_by_id(Maze*m, Plist* plist, int id )
 extern int _server_action_drop_flag(Maze*m , Player* player)
 {
     if (!player) return -1;
-    if (player->cell->object) return -2; // FIXME can't drop flag, take flag to jail with you
+    if (player->cell && player->cell->object) return -2; // FIXME can't drop flag, take flag to jail with you
     if (!player->flag) return 1;         // no need to drop
     
     Object*object = player->flag; 
@@ -653,7 +737,7 @@ extern int _server_action_jailbreak( Maze*m, Team_Types team, Cell*current, Cell
         
         if (cell.pos.x == current->pos.x && cell.pos.y == current->pos.y ) continue;
         if (cell.pos.x == next->pos.x && cell.pos.y == next->pos.y ) continue;
-        server_maze_unlock(m, cell.pos, cell.pos); // Lock down cell 
+        server_maze_unlock(m, cell.pos, cell.pos,0); // unlock cell ... don't severe player ties
       }
    }
 

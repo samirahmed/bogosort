@@ -25,9 +25,15 @@
 #include "./types.h" 
 #include "./game_commons.h" 
 
+// Game Methods
+extern int server_game_add_player(Maze*maze,int fd, Player**player);
+extern void server_game_drop_player(Maze*maze,int team, int id);
+
 // Locking Methods
+extern void server_maze_property_unlock(Maze*m);
+extern void server_maze_property_lock(Maze*m);
 extern void server_maze_lock(Maze*m, Pos current, Pos next);
-extern void server_maze_unlock(Maze*m, Pos current, Pos next);
+extern void server_maze_unlock(Maze*m, Pos current, Pos next, int severe_player);
 extern void server_object_unlock(Maze*m);
 extern void server_object_read_lock(Maze*m);
 extern void server_object_write_lock(Maze*m);
@@ -61,7 +67,7 @@ extern void player_lock(Player*player);
 extern void player_unlock(Player*player);
 extern int  player_has_shovel(Player * player);
 extern int  player_has_flag(Player * player);
-
+extern int  server_player_spawn(Maze*m, Player * player);
 
 // HOME METHODS
 extern void server_home_hash( Maze* m, int key, Cell** cell, Team_Types team);

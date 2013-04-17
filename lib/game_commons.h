@@ -119,6 +119,7 @@ typedef struct{
     pthread_rwlock_t object_wrlock;
     Game_State_Types current_game_state;
     pthread_mutex_t  state_lock;
+    int              last_team;
 } Maze;
 
 // UTIL METHODS

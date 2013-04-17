@@ -17,7 +17,7 @@
 
 extern Team_Types opposite_team(Team_Types team)
 {
-  return (team == TEAM_RED ? TEAM_RED: TEAM_BLUE);
+  return (team == TEAM_RED ? TEAM_BLUE: TEAM_RED);
 }
 
 /******************/
