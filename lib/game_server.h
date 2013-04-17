@@ -33,10 +33,15 @@ extern void server_game_drop_player(Maze*maze,int team, int id);
 extern void server_maze_property_unlock(Maze*m);
 extern void server_maze_property_lock(Maze*m);
 extern void server_maze_lock(Maze*m, Pos current, Pos next);
-extern void server_maze_unlock(Maze*m, Pos current, Pos next, int severe_player);
+extern void server_maze_unlock(Maze*m, Pos current, Pos next);
 extern void server_object_unlock(Maze*m);
 extern void server_object_read_lock(Maze*m);
 extern void server_object_write_lock(Maze*m);
+extern void server_plist_read_lock(Plist*plist);
+extern void server_plist_write_lock(Plist*plist);
+extern void server_plist_unlock(Plist*plist);
+extern void server_root_lock(Maze*m, Cell*c);
+extern void server_root_unlock(Maze*m, Cell*c);
 
 // Object Methods
 extern void object_lock(Object*object);
@@ -85,6 +90,10 @@ extern int  server_plist_find_player_by_fd(Plist*plist, int fd);
 extern int  server_plist_drop_player_by_fd(Maze*m, Plist*plist, int fd);
 extern void server_plist_drop_player_by_id(Maze*m, Plist* plist, int id );
 
+////////////////////
+// UNSAFE METHODS //
+////////////////////
+
 // ACTION METHODS
 
 extern int _server_action_drop_flag(Maze*m , Player* player);
@@ -97,5 +106,9 @@ extern int _server_action_update_player(Maze*m, Player*player, Cell*newcell);
 extern int _server_action_move_player(Maze*m, Cell* currentcell , Cell* nextcell );
 extern int _server_action_jailbreak( Maze*m, Team_Types team, Cell*current, Cell*next );
 extern int _server_action_jail_player(Maze*m, Cell* currentcell);
+
+// OTHERS 
+extern void _server_drop_handler(Maze*m, Player*player);
+extern void _server_validate_request(Maze*m, Player*player);
 
 #endif

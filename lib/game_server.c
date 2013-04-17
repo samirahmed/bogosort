@@ -54,24 +54,8 @@ extern int server_game_add_player(Maze*maze,int fd, Player**player)
 extern void server_game_drop_player(Maze*maze,int team, int id)
 {
   Player*player = &maze->players[team].at[id];
-  Cell*current = player->cell;
   server_plist_drop_player_by_id(maze, &maze->players[team] , id);
-
-  if (current)
-  {
-    server_maze_lock(maze,current->pos,current->pos);
-        
-    // drop shovel and flag if any
-    _server_action_player_reset_shovel(maze,player);
-    _server_action_drop_flag(maze,player);
-
-    // kill player cell connection
-    player->cell    = 0;
-  
-    // unlock everybody including the cell....
-    fprintf(stderr,"dropping!");
-    server_maze_unlock(maze,current->pos,current->pos,1);
-  }
+  if (proto_debug()) fprintf(stderr,"Dropping Connection for Team:%d Player:%d",team,id);
 }
 
 /*****************/
@@ -126,31 +110,19 @@ extern void server_maze_lock(Maze*m , Pos current, Pos next)
   }
 
   // Now Lock First Cell's object/players and player's objects
-  if (first.object){ object_lock(first.object); }
-  if (first.player)
-  { 
-    player_lock(first.player); 
-    if (first.player->shovel){ object_lock(first.player->shovel); }
-    if (first.player->flag){ object_lock(first.player->flag); }
-  }
+  server_root_lock(m,&first);
 
   // if second cell is not the same repeat
   if (lock_second)
   {
-      if (second.object){ object_lock(second.object); }
-      if (second.player)
-      { 
-        player_lock(second.player); 
-        if (second.player->shovel){ object_lock(second.player->shovel); }
-        if (second.player->flag){ object_lock(second.player->flag); }
-      }
+    server_root_lock(m,&second);
   }
 
 }
 
 // This will unlock 2 cells current and next,
 // doesn't matter if they are the same or different
-extern void server_maze_unlock(Maze*m, Pos current, Pos next, int sever_player)
+extern void server_maze_unlock(Maze*m, Pos current, Pos next)
 {
   Cell C = m->get[current.x][current.y];
   Cell N = m->get[next.x][next.y];
@@ -162,7 +134,6 @@ extern void server_maze_unlock(Maze*m, Pos current, Pos next, int sever_player)
     if (N.player->shovel) object_unlock(N.player->shovel);
     if (N.player->flag) object_unlock(N.player->flag);
     player_unlock(N.player);
-    if (sever_player) N.player=0;  /// necessary for dropping a player... other times player is relocated
   }
   
   // Unlock C
@@ -177,6 +148,28 @@ extern void server_maze_unlock(Maze*m, Pos current, Pos next, int sever_player)
   // Order of cell unlock doesn't matter so long as jail is last unlocked
   cell_unlock(&C);
   cell_unlock(&N);
+}
+
+// The cell is the root of all the objects. A cell root lock, will
+extern void _server_root_lock(Maze*m, Cell* cell)
+{
+  if (cell->object){ object_lock(cell->object); }
+  if (cell->player)
+  { 
+    player_lock(cell->player); 
+    if (cell->player->shovel){ object_lock(cell->player->shovel); }
+    if (cell->player->flag){ object_lock(cell->player->flag); }
+    
+    // Locked the player BUT he/she could be dropped
+    // Cleanup references if dropped
+    server_plist_read_lock(&m->players[cell->player->team]);    
+    if (cell->player->fd = -1)
+    {
+      _server_drop_handler(m,cell->player); 
+      player_unlock(cell->player);
+    }
+    server_plist_unlock(&m->players[cell->player->team]);    
+  }
 }
 
 extern void server_maze_property_lock(Maze*m)
@@ -225,6 +218,21 @@ extern void server_object_read_lock(Maze*m)
 extern void server_object_unlock(Maze*m)
 {
   pthread_rwlock_unlock(&(m->object_wrlock));
+}
+
+extern void server_plist_read_lock(Plist*plist)
+{
+  pthread_rwlock_rdlock(&plist->plist_wrlock);
+}
+
+extern void server_plist_write_lock(Plist*plist)
+{
+  pthread_rwlock_wrlock(&plist->plist_wrlock);
+}
+
+extern void server_plist_unlock(Plist*plist)
+{
+  pthread_rwlock_unlock(&plist->plist_wrlock);
 }
 
 /****************/
@@ -555,7 +563,7 @@ extern void server_plist_drop_player_by_id(Maze*m, Plist* plist, int id )
 extern int _server_action_drop_flag(Maze*m , Player* player)
 {
     if (!player) return -1;
-    if (player->cell && player->cell->object) return -2; // FIXME can't drop flag, take flag to jail with you
+    if (player->cell && player->cell->object) return -2; //FIXME can't drop flag,take flag with you(jail/heaven)
     if (!player->flag) return 1;         // no need to drop
     
     Object*object = player->flag; 
@@ -583,6 +591,8 @@ extern int _server_action_player_reset_shovel(Maze*m, Player*player)
   if (rc < 0) return -1;
   _server_action_update_cell_and_player(m,object,next,0);  // move object and kill player link
   next->object = object;  // link object to cell
+
+  object_unlock(object); // unlock object
   cell_unlock(next); // unlock this new cell
 
   // drop my shovel
@@ -737,9 +747,21 @@ extern int _server_action_jailbreak( Maze*m, Team_Types team, Cell*current, Cell
         
         if (cell.pos.x == current->pos.x && cell.pos.y == current->pos.y ) continue;
         if (cell.pos.x == next->pos.x && cell.pos.y == next->pos.y ) continue;
-        server_maze_unlock(m, cell.pos, cell.pos,0); // unlock cell ... don't severe player ties
+        server_maze_unlock(m, cell.pos, cell.pos); // unlock cell ... 
       }
    }
 
    return 1;
+}
+
+extern void _server_drop_handler(Maze*m, Player*player)
+{
+  // drop shovel and flag if any
+  _server_action_player_reset_shovel(m,player);
+  _server_action_drop_flag(m,player);
+
+  // kill player-cell references
+  Cell* cell = player->cell;
+  if (cell) cell->player = 0;
+  player->cell = 0;
 }
