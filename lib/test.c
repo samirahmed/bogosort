@@ -24,6 +24,16 @@ extern void test_task_init(Task *task, Proc func, int reps, void* a0,void*a1, vo
   task->arg5 = a5;
 }
 
+// just performs a nanosleep and returns
+void test_nanosleep(void)
+{
+  struct timespec desired, diff;
+  bzero(&desired,sizeof(struct timespec));
+  desired.tv_sec = 0;
+  desired.tv_nsec = (randint() % 5);
+  nanosleep(&desired,&diff);
+}
+
 // this is the function that is run in a thread
 // we repeat the task n times and then exit 
 void * threaded_task(void* task_ptr)

@@ -156,6 +156,28 @@ void st_increment_plist(Task*task)
   server_plist_player_count_increment(&m->players[*team]); 
 }
 
+void st_add_drop_player(void*task_ptr)
+{
+  Task* task = (Task*) task_ptr;
+  Maze* m    = (Maze*) task->arg0;
+  int*  team = (int*)  task->arg1;
+  int*  fd   = (int*)  task->arg2;
+  int rc;
+  
+  test_nanosleep();
+  rc = server_plist_add_player( &m->players[*team] ,*fd );
+  if (test_debug()) fprintf(stderr,"%d add       %d)\n",rc,*fd);
+  
+  test_nanosleep();
+  rc = server_plist_drop_player_by_fd( m , &m->players[*team] , *fd );
+  if (test_debug()) fprintf(stderr,"%d drop      %d)\n",rc,*fd);
+  
+  test_nanosleep();
+  rc = server_plist_add_player( &m->players[*team] ,*fd );
+  if (test_debug()) fprintf(stderr,"%d add again %d)\n",rc,*fd);
+
+}
+
 void test_plist(TestContext*tc)
 {
     Maze maze;
@@ -201,6 +223,47 @@ void test_plist(TestContext*tc)
     rc = server_plist_find_player_by_fd(players,123);
     assertion = (rc < 0);
     should("indicate failure when searching for fd that doesn't exist",assertion,tc);
+    
+    rc = server_plist_drop_player_by_fd(&maze, players,123);
+    assertion = (rc < 0);
+    should("indicate failure when dropping fd that doesn't exist",assertion,tc);
+
+    assertion = 1;
+    for (ii=0; ii<players->max; ii++)
+    {
+      rc = server_plist_drop_player_by_fd(&maze, players,ii+start);
+      assertion = assertion && (rc >=0 );
+    }
+    for (ii=0; ii<players->max; ii++)
+    {
+      assertion = assertion && (players->at[ii].fd == -1);
+    }
+    assertion = assertion && (server_plist_player_count(players) == 0);
+    should("successfully drop all the players",assertion,tc);
+
+    maze_destroy(&maze);
+    maze_build_from_file(&maze,"test.map");
+    
+    int num_tasks = players->max;
+    Task* tasks = malloc(sizeof(Task)*num_tasks);
+    int*  fds = malloc(sizeof(int)*num_tasks);
+    bzero(tasks,sizeof(Task)*num_tasks);
+    bzero(fds,sizeof(int)*num_tasks);
+    for (ii=0; ii< num_tasks; ii++)
+    {
+      fds[ii] = ii + start;
+      test_task_init(&tasks[ii],(Proc)&st_add_drop_player,1,&maze,&players->team,&fds[ii],NULL,NULL,NULL);
+    }
+    parallelize(tasks,num_tasks,1); // run each task one 1 thread only
+   
+    assertion = 1;
+    for (ii=0; ii<players->max; ii++)
+    {
+      rc = server_plist_find_player_by_fd(players,fds[ii]);
+      assertion = assertion && (rc>=0);
+    }
+    assertion = assertion && ( server_plist_player_count(players) == players->max);
+    should("support concurrent add and drops",assertion,tc);
 
     maze_destroy(&maze);
 }

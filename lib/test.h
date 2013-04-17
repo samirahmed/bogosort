@@ -44,6 +44,7 @@ typedef struct {
 
 typedef void(*TestFunction)(TestContext*);
 
+extern void test_nanosleep(void);
 extern void should(const char* message, int valid, TestContext *tc);
 extern void test_summary(TestContext *tc);
 extern void test_init(int argc, char** argv, TestContext *tc);

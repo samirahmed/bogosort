@@ -368,29 +368,59 @@ extern int server_plist_player_count_decrement( Plist * plist )
 // Returns -2 if it can't find an empty slot
 extern int server_plist_add_player(Plist* plist, int fd)
 {
-  int rc,empty;
-  if (server_plist_player_count(plist) >= plist->max) return -2;
-
-  // ensure that no players have fd that is similar if so return -1
-  rc = server_plist_find_player_by_fd(plist,fd);
-  if (rc!=-1) return -1;
+  int rc,empty, ii ;
+  rc = 0;
+  empty = -1;
   
-  // find and empty location for a player 
-  empty = server_plist_find_player_by_fd(plist,-1);
-  if ( empty == -1 ) return -2;
-
-  // create a new player object and then init
+  // lock for write access
   pthread_rwlock_wrlock(&plist->plist_wrlock);
-  Player * player = &plist->at[empty];
-  player_init(player);
-  player->team = plist->team;
-  player->id = empty;
-  player->fd = fd;
+  
+  // first check if we are at our max, if so unlock and return rc
+  if (plist->count == plist->max) rc = -2;
+  else 
+  {
+    for (ii=0;ii<plist->max;ii++)
+    {
+      if ( plist->at[ii].fd == fd ) { rc = -1; break; }
+      if ( plist->at[ii].fd == -1 && empty == -1) empty = ii;
+    }
+    
+    if (empty == -1) rc = -2;
+    if (rc >= 0)
+    {
+       Player * player = &plist->at[empty];
+       player_init(player);
+       player->team = plist->team;
+       player->id = empty;
+       player->fd = fd;
+       plist->count++;
+       rc = player->id;
+    }
+  }
   pthread_rwlock_unlock(&plist->plist_wrlock);
   
-  server_plist_player_count_increment(plist);
+  return rc;
 
-  return player->id;
+  /*if (server_plist_player_count(plist) >= plist->max) return -2;*/
+
+  // ensure that no players have fd that is similar if so return -1
+  /*rc = server_plist_find_player_by_fd(plist,fd);*/
+  /*if (rc!=-1) return -1;*/
+  
+  // find and empty location for a player 
+  /*empty = server_plist_find_player_by_fd(plist,-1);*/
+  /*if ( empty == -1 ) return -2;*/
+
+  // create a new player object and then init
+  /*pthread_rwlock_wrlock(&plist->plist_wrlock);*/
+  /*Player * player = &plist->at[empty];*/
+  /*player_init(player);*/
+  /*player->team = plist->team;*/
+  /*player->id = empty;*/
+  /*player->fd = fd;*/
+  
+  /*server_plist_player_count_increment(plist);*/
+
 }
 
 extern int server_plist_find_player_by_fd(Plist* plist, int fd )
@@ -431,9 +461,12 @@ extern void server_plist_drop_player_by_id(Maze*m, Plist* plist, int id )
   if (player->fd != -1 )  
   { 
     player->fd = -1;
-    if (home_contains(&player->cell->pos,&m->home[plist->team]))
+    if (player->cell)
     {
-      server_home_count_decrement(&m->home[plist->team]); 
+      if (home_contains(&(player->cell->pos),&(m->home[plist->team])))
+      {
+         server_home_count_decrement(&m->home[plist->team]); 
+      }
     }
   }
   pthread_rwlock_unlock(&plist->plist_wrlock);

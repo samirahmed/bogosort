@@ -29,18 +29,18 @@ extern int object_get_index(Team_Types team , Object_Types object)
     return object+(team*2);
 }
 
-
 /******************/
 /* PLAYER METHODS */
 /******************/
 
+// initialize player bits
+// sets the fd = -1 until it is assigned
 extern void player_init(Player* player)
 {
   bzero(player,sizeof(Player));
   player->fd=-1;
   pthread_mutex_init(&player->lock,NULL);
 }
-
 
 extern void jail_init(Jail* jail, Pos min, Pos max, Team_Types team)
 {
