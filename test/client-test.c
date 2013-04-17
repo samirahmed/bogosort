@@ -12,36 +12,33 @@
 #include "../lib/game_client.h"
 #include "../lib/test.h"
 
-// Global Variables shared by threads
-Blocking_Helper bh;
-Maze map;
-
-void* signal_function(void *tc) 
+void test_blocking_threads(TestContext *tc)
 {
-    printf("Thread signal_function lock\n");
-    client_maze_lock(&bh);
-    printf("Thread signal_function change game state\n");
-    bh.maze->current_game_state = GAME_STATE_ACTIVE;
-    printf("Thread signal_function signal to other thread that state has changed\n");
-    client_maze_signal(&bh);
-    printf("Thread signal_function unlock\n");
-    client_maze_unlock(&bh);
-    pthread_exit(NULL);
+    // Task Related Values 
+    int thread_per_task;
+    thread_per_task = 1;
+   
+    // Data Structures
+    Maze *maze = (Maze*)malloc(sizeof(Maze));
+    Blocking_Helper *bh = (Blocking_Helper*)malloc(sizeof(Blocking_Helper));
+    
+    //Init Methods
+    maze_build_from_file(maze,"test.map");
+    blocking_helper_init(bh);
+    blocking_helper_set_maze(bh,maze);
+    
+    // Create Tasks
+    Task tasks[2];
+    bzero(tasks, sizeof(Task)*2 );
+    
+    test_task_init(&tasks[0],(Proc)&client_wait_for_event,1,bh,NULL,NULL,NULL,NULL,NULL);
+    test_task_init(&tasks[1],(Proc)&client_signal_update,1,bh,NULL,NULL,NULL,NULL,NULL);
+    parallelize(tasks,2,thread_per_task);
+
+    free(maze);
+    free(bh);
+    
 }
-
-void* wait_function(void *tc) 
-{
-    printf("Thread wait_function lock\n");
-    client_maze_lock(&bh);
-    printf("Thread wait_function waiting for condition variable\n");
-    while (bh.maze->current_game_state !=GAME_STATE_ACTIVE) 
-        client_maze_cond_wait(&bh);
-    printf("Thread wait_function unlocks\n");
-    client_maze_unlock(&bh);
-    pthread_exit(NULL);
-}
-
-
 
 
 int main(int argc, char ** argv )
@@ -49,16 +46,11 @@ int main(int argc, char ** argv )
     TestContext tc;
     test_init(argc, argv, &tc);
     
-    //Init Blocking Data Structure
-    blocking_helper_init(&bh);
-    bh.maze = &map;
     
     // ADD TESTS HERE
-    run_two_thread(&signal_function,&wait_function,"Blocking Thread",&tc);
+    run(&test_blocking_threads,"Blocking Threads",&tc);
     // TEST END HERE
 
-    //Destroy Blocking Data Structure
-    blocking_helper_destroy(&bh);
     test_summary(&tc);
     return 0;    
 }
