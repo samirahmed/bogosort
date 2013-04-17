@@ -400,29 +400,13 @@ extern int server_plist_add_player(Plist* plist, int fd)
   pthread_rwlock_unlock(&plist->plist_wrlock);
   
   return rc;
-
-  /*if (server_plist_player_count(plist) >= plist->max) return -2;*/
-
-  // ensure that no players have fd that is similar if so return -1
-  /*rc = server_plist_find_player_by_fd(plist,fd);*/
-  /*if (rc!=-1) return -1;*/
-  
-  // find and empty location for a player 
-  /*empty = server_plist_find_player_by_fd(plist,-1);*/
-  /*if ( empty == -1 ) return -2;*/
-
-  // create a new player object and then init
-  /*pthread_rwlock_wrlock(&plist->plist_wrlock);*/
-  /*Player * player = &plist->at[empty];*/
-  /*player_init(player);*/
-  /*player->team = plist->team;*/
-  /*player->id = empty;*/
-  /*player->fd = fd;*/
-  
-  /*server_plist_player_count_increment(plist);*/
-
 }
 
+// Only to be used by threads when they don't hold a write lock on
+// the plist... i.e can't be used by add or drop
+// (otherwise it will cause deadlock)
+// Returns -1 if nothing is found
+// Returns the id if found
 extern int server_plist_find_player_by_fd(Plist* plist, int fd )
 {
    int result, ii ;
@@ -440,6 +424,8 @@ extern int server_plist_find_player_by_fd(Plist* plist, int fd )
    return result;
 }
 
+// Drop a player by fd
+// Returns -1 if the corresponding fd is not found
 extern int server_plist_drop_player_by_fd(Maze*m, Plist*plist, int fd)
 {
    int id;
@@ -450,6 +436,10 @@ extern int server_plist_drop_player_by_fd(Maze*m, Plist*plist, int fd)
    return id;
 }
 
+// Drop player by id (rather than the drop player by fd)
+// Will always the drop the player in that position. if that player is dropped
+// it will have no effect. This doesn't actually unset the player's cell and flags
+// but just drops it from the the plist.  That has to be done by the drop handler
 extern void server_plist_drop_player_by_id(Maze*m, Plist* plist, int id )
 {
   Player *player;
