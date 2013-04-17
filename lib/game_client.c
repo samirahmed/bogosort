@@ -63,12 +63,10 @@ extern void client_wait_for_event(Blocking_Helper *bh)
 extern void client_signal_update(Blocking_Helper *bh)
 {
     //TODO: Not fully implemented, at this point only has test functionality
-    sleep(10);
     printf("Thread signal_function lock\n");
     client_maze_lock(bh);
     printf("Thread signal_function change game state\n");
-    Maze* m = bh->maze;
-    m->current_game_state = GAME_STATE_ACTIVE;
+    bh->maze->current_game_state = GAME_STATE_ACTIVE;
     printf("Thread signal_function signal to other thread that state has changed\n");
     client_maze_signal(bh);
     printf("Thread signal_function unlock\n");

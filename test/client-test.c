@@ -12,31 +12,37 @@
 #include "../lib/game_client.h"
 #include "../lib/test.h"
 
+void st_client_wait_for_event(Task* task)
+{
+    client_wait_for_event((Blocking_Helper*)(task->arg0));
+}
+
+void st_client_signal_update(Task *task)
+{
+    sleep(3);
+    client_signal_update((Blocking_Helper*)(task->arg0));
+}
+
 void test_blocking_threads(TestContext *tc)
 {
+    Maze maze;
+    Blocking_Helper bh;
     // Task Related Values 
     int thread_per_task;
     thread_per_task = 1;
    
-    // Data Structures
-    Maze *maze = (Maze*)malloc(sizeof(Maze));
-    Blocking_Helper *bh = (Blocking_Helper*)malloc(sizeof(Blocking_Helper));
-    
     //Init Methods
-    maze_build_from_file(maze,"test.map");
-    blocking_helper_init(bh);
-    blocking_helper_set_maze(bh,maze);
+    maze_build_from_file(&maze,"test.map");
+    blocking_helper_init(&bh);
+    blocking_helper_set_maze(&bh,&maze);
     
     // Create Tasks
     Task tasks[2];
     bzero(tasks, sizeof(Task)*2 );
     
-    test_task_init(&tasks[0],(Proc)&client_wait_for_event,1,bh,NULL,NULL,NULL,NULL,NULL);
-    test_task_init(&tasks[1],(Proc)&client_signal_update,1,bh,NULL,NULL,NULL,NULL,NULL);
+    test_task_init(&tasks[0],(Proc)&st_client_wait_for_event,1,&bh,NULL,NULL,NULL,NULL,NULL);
+    test_task_init(&tasks[1],(Proc)&st_client_signal_update,1,&bh,NULL,NULL,NULL,NULL,NULL);
     parallelize(tasks,2,thread_per_task);
-
-    free(maze);
-    free(bh);
     
 }
 
