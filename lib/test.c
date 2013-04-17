@@ -75,10 +75,11 @@ extern void parallelize(Task tasks[], int num_tasks, int threads_per_task)
   int max = sched_get_priority_max(SCHED_OTHER);
   for (ii=0;ii < thread_count ;ii++)
   {
+#ifdef __APPLE__
     // Randomized Priority
     param.sched_priority = (randint()%max)+min;
     pthread_attr_setschedparam(&attr, &param);
-
+#endif
     // Spawn thread
     int rc;
     rc = pthread_create(&threads[ii], &attr, threaded_task, (void*) &tasks[ii%num_tasks] );
