@@ -58,7 +58,11 @@ extern void server_game_drop_player(Maze*maze,int team, int id)
   
   // Acquire Lock
   rc = server_maze_lock_by_player(maze, player, 0);
-  if (proto_debug() && rc <0) fprintf(stderr,"FATAL: Optimistic Lock Fail" );
+  if (proto_debug() && rc <0) 
+  {
+    fprintf(stderr,"FATAL: Optimistic Lock Fail\n" ); 
+    return; 
+  }
   
   // Get Cell Handle
   cell = player->cell;
@@ -72,7 +76,7 @@ extern void server_game_drop_player(Maze*maze,int team, int id)
   // Open cell again
   server_maze_unlock(maze, cell->pos, cell->pos);
   
-  if (proto_debug()) fprintf(stderr,"Dropping Connection for Team:%d Player:%d",team,id);
+  if (proto_debug()) fprintf(stderr,"Dropped Team:%d Player:%d\n",team,id);
 }
 
 /*****************/
@@ -255,7 +259,7 @@ extern void object_lock(Object*object)
 
 extern void object_unlock(Object*object)
 {
-  pthread_mutex_lock(&(object->lock));
+  pthread_mutex_unlock(&(object->lock));
 }
 
 extern void player_lock(Player*player)
@@ -265,7 +269,7 @@ extern void player_lock(Player*player)
 
 extern void player_unlock(Player*player)
 {
-  pthread_mutex_lock(&(player->lock));
+  pthread_mutex_unlock(&(player->lock));
 }
 
 // DELETE LATER
