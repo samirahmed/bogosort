@@ -34,14 +34,15 @@ extern void server_maze_property_unlock(Maze*m);
 extern void server_maze_property_lock(Maze*m);
 extern void server_maze_lock(Maze*m, Pos current, Pos next);
 extern void server_maze_unlock(Maze*m, Pos current, Pos next);
+extern int  server_maze_lock_by_player(Maze*m, Player*player , Pos * next );
 extern void server_object_unlock(Maze*m);
 extern void server_object_read_lock(Maze*m);
 extern void server_object_write_lock(Maze*m);
 extern void server_plist_read_lock(Plist*plist);
 extern void server_plist_write_lock(Plist*plist);
 extern void server_plist_unlock(Plist*plist);
-extern void server_root_lock(Maze*m, Cell*c);
-extern void server_root_unlock(Maze*m, Cell*c);
+extern void _server_root_lock(Maze*m, Cell*c);
+extern void _server_root_unlock(Maze*m, Cell*c);
 
 // Object Methods
 extern void object_lock(Object*object);

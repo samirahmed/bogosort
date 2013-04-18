@@ -15,7 +15,6 @@
 /* SERVER METHODS */
 /******************/
 
-
 // Returns the player id if it is successfully added to the game
 // Returns -1 if player exists
 // Returns -2 if player cannot be added to plist for some reason
@@ -53,14 +52,63 @@ extern int server_game_add_player(Maze*maze,int fd, Player**player)
 // Removes player from plist, servers connection with players/flags/shovels
 extern void server_game_drop_player(Maze*maze,int team, int id)
 {
+  Cell* cell;
+  int rc;
   Player*player = &maze->players[team].at[id];
+  
+  // Acquire Lock
+  rc = server_maze_lock_by_player(maze, player, 0);
+  if (proto_debug() && rc <0) fprintf(stderr,"FATAL: Optimistic Lock Fail" );
+  
+  // Get Cell Handle
+  cell = player->cell;
+
+  // drop player, unlock player and player's objects
+  _server_drop_handler(maze,player);
+  
+  // Kill FD
   server_plist_drop_player_by_id(maze, &maze->players[team] , id);
+
+  // Open cell again
+  server_maze_unlock(maze, cell->pos, cell->pos);
+  
   if (proto_debug()) fprintf(stderr,"Dropping Connection for Team:%d Player:%d",team,id);
 }
 
 /*****************/
 /* LOCKING FUNCS */
 /*****************/
+
+// Returns -1 if cannot lock.  SHOULD NEVER RETURN -1.
+extern int server_maze_lock_by_player(Maze*m, Player*player , Pos * next )
+{
+  Cell*cell;
+  player_lock(player);
+  cell = player->cell;
+  player_unlock(player);
+  int found = 0;
+  int try = 10;
+  int rc = -1;
+
+  // optimistic locking, logically shouldn't take more than 2 tries
+  while(try-->0 && !found )
+  {
+    // if next is null or zero, lock just the one cell
+    next ? server_maze_lock(m,cell->pos,*next) : server_maze_lock(m,cell->pos,cell->pos);
+
+    if ( player->cell == cell && cell->player == player)
+    {
+      found = 1;
+      rc = 0;
+    }
+    else
+    {
+      // unlock the cells/ cell depending on if next is null or zero
+      next? server_maze_unlock(m,cell->pos,*next): server_maze_lock(m,cell->pos,cell->pos);
+    }
+  }
+  return rc;
+}
 
 // This will lock down the current cell and next cell
 // If you only want to lock down one current = next
@@ -109,13 +157,13 @@ extern void server_maze_lock(Maze*m , Pos current, Pos next)
     lock_second=1;
   }
 
-  // Now Lock First Cell's object/players and player's objects
-  server_root_lock(m,&first);
+  // Now Lock the cell heirarhcy
+  _server_root_lock(m,&first);
 
   // if second cell is not the same repeat
   if (lock_second)
   {
-    server_root_lock(m,&second);
+    _server_root_lock(m,&second);
   }
 
 }
@@ -126,31 +174,37 @@ extern void server_maze_unlock(Maze*m, Pos current, Pos next)
 {
   Cell C = m->get[current.x][current.y];
   Cell N = m->get[next.x][next.y];
- 
-  // Unlock in reverse order Unlock N
-  if (N.object) object_unlock(N.object);
-  if (N.player)
-  {
-    if (N.player->shovel) object_unlock(N.player->shovel);
-    if (N.player->flag) object_unlock(N.player->flag);
-    player_unlock(N.player);
-  }
-  
-  // Unlock C
-  if (C.object) object_unlock(C.object);
-  if (C.player)
-  {
-    if (C.player->shovel) object_unlock(C.player->shovel);
-    if (C.player->flag) object_unlock(C.player->flag);
-    player_unlock(C.player);
-  }
+
+  _server_root_unlock(m,&C);
+  _server_root_unlock(m,&N);
   
   // Order of cell unlock doesn't matter so long as jail is last unlocked
   cell_unlock(&C);
   cell_unlock(&N);
+
+   /*Unlock in reverse order Unlock N*/
+  /*if (N.object) object_unlock(N.object);*/
+  /*if (N.player)*/
+  /*{*/
+    /*if (N.player->shovel) object_unlock(N.player->shovel);*/
+    /*if (N.player->flag) object_unlock(N.player->flag);*/
+    /*player_unlock(N.player);*/
+  /*}*/
+  
+   /*Unlock C*/
+  /*if (C.object) object_unlock(C.object);*/
+  /*if (C.player)*/
+  /*{*/
+    /*if (C.player->shovel) object_unlock(C.player->shovel);*/
+    /*if (C.player->flag) object_unlock(C.player->flag);*/
+    /*player_unlock(C.player);*/
+  /*}*/
+  
 }
 
-// The cell is the root of all the objects. A cell root lock, will
+// The cell is the root of all the objects. A cell root lock
+// will lock all the players and objects nested in the cell.
+// It will check if a player has dropped and if so, drop all change all the references.
 extern void _server_root_lock(Maze*m, Cell* cell)
 {
   if (cell->object){ object_lock(cell->object); }
@@ -162,13 +216,25 @@ extern void _server_root_lock(Maze*m, Cell* cell)
     
     // Locked the player BUT he/she could be dropped
     // Cleanup references if dropped
-    server_plist_read_lock(&m->players[cell->player->team]);    
-    if (cell->player->fd = -1)
-    {
-      _server_drop_handler(m,cell->player); 
-      player_unlock(cell->player);
-    }
-    server_plist_unlock(&m->players[cell->player->team]);    
+    /*server_plist_read_lock(&m->players[cell->player->team]);    */
+    /*if (cell->player->fd = -1)*/
+    /*{*/
+      /*_server_drop_handler(m,cell->player); */
+      /*player_unlock(cell->player);*/
+    /*}*/
+    /*server_plist_unlock(&m->players[cell->player->team]);    */
+  }
+}
+
+extern void _server_root_unlock(Maze*m, Cell*cell)
+{
+  // Unlock in reverse order Unlock cell
+  if (cell->object) object_unlock(cell->object);
+  if (cell->player)
+  {
+    if (cell->player->shovel) object_unlock(cell->player->shovel);
+    if (cell->player->flag) object_unlock(cell->player->flag);
+    player_unlock(cell->player);
   }
 }
 
@@ -764,4 +830,6 @@ extern void _server_drop_handler(Maze*m, Player*player)
   Cell* cell = player->cell;
   if (cell) cell->player = 0;
   player->cell = 0;
+
+  player_unlock(player);
 }
