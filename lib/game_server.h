@@ -25,9 +25,35 @@
 #include "./types.h" 
 #include "./game_commons.h" 
 
+typedef struct{
+  Player player_a;
+  Player player_b;
+  int    compress_player_a;
+  int    compress_player_b;
+  Pos    broken_wall;
+  int    wall_break;
+} EventUpdate;
+
+typedef struct{
+  Pos          current;
+  Pos          next; 
+  Team_Types   team; 
+  int          id; 
+  int          fd; 
+  Action_Types action;
+  int          test_mode;
+  EventUpdate  update;
+} GameRequest;
+
 // Game Methods
 extern int server_game_add_player(Maze*maze,int fd, Player**player);
 extern void server_game_drop_player(Maze*maze,int team, int id);
+extern int server_game_action(Maze*maze , GameRequest* request);
+extern int  server_validate_player( Maze*m, Team_Types team, int id , int fd );
+extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next);
+extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next);
+extern int _server_game_state_update(Maze*m, Player*player, Cell*current, Cell*next);
+extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next);
 
 // Locking Methods
 extern void server_maze_property_unlock(Maze*m);

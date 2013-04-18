@@ -152,6 +152,7 @@ extern int  cell_is_holding(Cell* cell);
 extern int  cell_is_walkable_type(Cell * cell);
 extern void cell_lock(Cell*);
 extern void cell_unlock(Cell*);
+extern int cell_is_near(Cell* current, Cell* next);
 
 // Maze Construction
 extern void maze_init(Maze * m,int max_x, int max_y);

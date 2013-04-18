@@ -34,6 +34,20 @@ typedef unsigned long uval;
 typedef long sval;
 
 typedef enum{
+    ERR_NOOP            = -20,
+    ERR_NO_PLAYER       = -21,
+    ERR_NO_OBJECT       = -22,
+    ERR_CELL_HOLDING    = -40,
+    ERR_CELL_OCCUPIED   = -41,
+    ERR_BAD_PLAYER_ID   = -60,
+    ERR_BAD_CURRENT_CEL = -61,
+    ERR_BAD_NEXT_CELL   = -62,
+    ERR_BAD_ACTION      = -63,
+    ERR_JAIL_FULL       = -80
+}
+Game_Error_Types;
+
+typedef enum{
     GAME_STATE_UNCHANGED =  0,
     GAME_STATE_WAITING   =  1,
     GAME_STATE_ACTIVE    =  2,

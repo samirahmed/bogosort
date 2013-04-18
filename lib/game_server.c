@@ -6,6 +6,7 @@
 #include <pthread.h>
 #include <strings.h>
 #include "net.h"
+#include "types.h"
 #include "protocol.h"
 #include "protocol_utils.h"
 #include "protocol_session.h"
@@ -77,6 +78,185 @@ extern void server_game_drop_player(Maze*maze,int team, int id)
   server_maze_unlock(maze, cell->pos, cell->pos);
   
   if (proto_debug()) fprintf(stderr,"Dropped Team:%d Player:%d\n",team,id);
+}
+
+// Processes move from cell to next cell.
+// Return -1 = Unauthenticated Request
+// Return -2 = Bad Current Position
+// Return -3 = Bad Next Position
+//
+extern int server_game_action(Maze*maze , GameRequest* request)
+{
+  int team    = request->team;
+  int id      = request->id;
+  Pos current = request->current;
+  Pos next    = request->next;
+  int fd      = request->fd;
+  Action_Types action  = request->action;
+  
+  // Get the player 
+  Player*player = &(maze->players[team].at[id]);
+  Cell *cell, *currentcell, *nextcell;
+  if ( server_validate_player(maze,team, id, fd) ) return -1;
+  
+  int once = 1;
+  int rc = 0;
+
+  // Lock the cell
+  server_maze_lock_by_player(maze, player, &next);
+  cell = player->cell;
+
+  while(once--)
+  {
+    // Check the player is where he thinks he is
+    if ( player->cell->pos.x != current.x && player->cell->pos.y != current.y)
+    {
+      rc = ERR_BAD_CURRENT_CEL; 
+      break;
+    }
+
+    currentcell = &(maze->get[current.x][current.y]);
+    nextcell    = &maze->get[next.x][next.y];
+    
+    // Check that the next cell is near the current cell
+    // jump allows us to move player to anywhere
+    if (!cell_is_near(currentcell, nextcell) && !request->test_mode) {rc= ERR_BAD_NEXT_CELL; break;}
+    
+    // Delegate the Action Accordingly
+    switch(action)
+    {
+      case ACTION_NOOP: 
+        rc = 0;
+      break;
+      
+      case ACTION_MOVE: 
+        rc = _server_game_move(maze,player,currentcell,nextcell);
+      break;
+      
+      case ACTION_DROP_FLAG: 
+        rc =_server_action_drop_flag(maze,player); 
+      break;
+      
+      case ACTION_DROP_SHOVEL: 
+        rc = _server_action_drop_shovel(maze,player); 
+      break;
+      
+      case ACTION_PICKUP_FLAG: 
+        rc = _server_action_pickup_object(maze,player);
+      break;
+
+      case ACTION_PICKUP_SHOVEL: 
+        rc = _server_action_pickup_object(maze,player);
+      break;
+
+      default:
+        fprintf(stderr,"Bad Action Type %d",action);
+        rc = ERR_BAD_ACTION;
+      break;
+    }
+  }
+  server_maze_unlock(maze ,cell->pos, next);
+  return rc;
+}
+
+extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next)
+{
+  int rc = 0;
+
+  // Check if player is jailed if so go to jail move handler
+  if (player->state == PLAYER_JAILED) 
+  { 
+    if (next->type!=CELL_JAIL && cell_is_unoccupied(next))
+    rc = _server_action_move_player(m,current,next);
+  }
+  else if ( next->type == CELL_WALL )
+  {
+    rc = _server_game_floor_move(m,player,current,next);
+  }
+  else
+  {
+    rc = _server_game_floor_move(m,player,current,next);
+  }
+  
+  if (rc>=0) rc = _server_game_state_update(m,player,current,next);
+  
+  return rc;
+}
+
+extern int _server_game_state_update(Maze*m, Player*player, Cell*current, Cell*next)
+{
+  int rc=0;
+  if (current->type!=CELL_HOME && next->type==CELL_HOME && player->team == next->turf )
+  {
+    rc =server_home_count_increment(&m->home[player->team]);
+  }
+  if (current->type==CELL_HOME && next->type!=CELL_HOME && player->team == next->turf )
+  {
+    rc =server_home_count_decrement(&m->home[player->team]);
+  }
+
+  return rc;
+}
+
+extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next)
+{
+  if (!player->shovel) return ERR_BAD_NEXT_CELL;
+  
+  int rc = ERR_NOOP;
+  // LOCK THE broken walls for writing
+  // BREAK THE WALL
+  // RESET THE SHOVEL
+  rc = _server_action_player_reset_shovel(m,player);
+  // MOVE THE PLAYER
+  rc = _server_action_move_player(m,current,next);
+  // UNLOCK the broken walls
+  //
+  return rc;
+}
+
+extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next)
+{
+  int rc = ERR_NOOP;
+  if ( cell_is_unoccupied(next) )
+  {
+    // check if this qualifies for a free
+    if (next->type==CELL_JAIL && current->type!=CELL_JAIL && next->turf!=player->team )
+    {
+      _server_action_jailbreak(m, player->team, current, next );
+    }
+    
+    rc = _server_action_move_player(m, current, next);
+  }
+  if ( !cell_is_unoccupied(next) )
+  {
+    // if same team in next cell or already jailed
+    if ( next->player->team == player->team) return ERR_CELL_OCCUPIED;
+    if ( next->player->state==PLAYER_JAILED ) return ERR_CELL_OCCUPIED;
+    if ( next->player->team != player->team && next->turf != player->team )
+    {
+      rc = _server_action_jail_player(m,current);
+    }
+    if ( next->player->team != player->team && next->turf == player->team )
+    {
+      _server_action_jail_player(m,next);
+      if(cell_is_unoccupied(next)) rc = _server_action_move_player(m, current, next);
+    }
+  }
+
+  return rc;
+}
+
+extern int server_validate_player( Maze*m, Team_Types team, int id , int fd )
+{
+  int rc;
+  rc = 1;
+  Plist*plist = &m->players[team];
+  server_plist_read_lock(plist);
+  Player*player = &plist->at[id];
+  if (player->fd != fd ) rc = 0; 
+  server_plist_unlock(plist);
+  
+  return rc;
 }
 
 /*****************/
@@ -632,9 +812,10 @@ extern void server_plist_drop_player_by_id(Maze*m, Plist* plist, int id )
 /******************/ 
 extern int _server_action_drop_flag(Maze*m , Player* player)
 {
-    if (!player) return -1;
-    if (player->cell && player->cell->object) return -2; //FIXME can't drop flag,take flag with you(jail/heaven)
-    if (!player->flag) return 1;         // no need to drop
+    if (!player)                              return ERR_NO_PLAYER;
+    //FIXME can't drop flag,take flag with you(jail/heaven)
+    if (player->cell && player->cell->object) return ERR_NO_OBJECT; 
+    if (!player->flag)                        return 1;  // no need to drop
     
     Object*object = player->flag; 
     Cell* cell = player->cell;
@@ -648,8 +829,8 @@ extern int _server_action_drop_flag(Maze*m , Player* player)
 
 extern int _server_action_player_reset_shovel(Maze*m, Player*player)
 {
-  if (!player) return -1;
-  if (!player->shovel) return -2;
+  if (!player)         return ERR_NO_PLAYER;
+  if (!player->shovel) return ERR_NO_OBJECT;
   
   int rc;
   Object * object = player->shovel;
@@ -674,9 +855,9 @@ extern int _server_action_player_reset_shovel(Maze*m, Player*player)
 
 extern int _server_action_drop_shovel(Maze*m , Player*player)
 {
-   if (!player) return -1;
-   if (player->cell->object) return -2; // CAN'T DROP HERE
-   if (!player->shovel) return 1;       // no need to do more, shovel dropped
+   if (!player)              return ERR_NO_PLAYER;
+   if (player->cell->object) return ERR_CELL_OCCUPIED; // CAN'T DROP HERE
+   if (!player->shovel)      return 1;       // no need to do more, shovel dropped
 
    Object* object= player->shovel ;
    Cell* cell = player->cell ;
@@ -690,10 +871,10 @@ extern int _server_action_drop_shovel(Maze*m , Player*player)
 
 extern int _server_action_pickup_object(Maze*m, Player* player)
 {
-    if (!player) return -1;
+    if (!player) return ERR_NO_PLAYER;
     Cell* cell = player->cell;
     
-    if (!player->cell->object) return -2;  // nothing to pickup
+    if (!player->cell->object) return ERR_NO_OBJECT;  // nothing to pickup
     Object * object = player->cell->object;
     
     
@@ -718,14 +899,14 @@ extern int _server_action_pickup_object(Maze*m, Player* player)
 
 extern int _server_action_update_cell(Maze*m, Object* object, Cell* newcell )
 {
-  if (!object) return -1;
+  if (!object) return ERR_NO_OBJECT;
   object->cell = newcell;
   return 0;
 }
 
 extern int _server_action_update_cell_and_player(Maze*m, Object* object, Cell* newcell, Player* player)
 {
-  if (!object) return -1;
+  if (!object) return ERR_NO_OBJECT;
   object->cell = newcell;
   object->player = player;
   return 0;
@@ -733,7 +914,7 @@ extern int _server_action_update_cell_and_player(Maze*m, Object* object, Cell* n
 
 extern int _server_action_update_player(Maze*m, Player*player, Cell*newcell)
 {
-  if (!player) return -1;
+  if (!player) return ERR_NO_PLAYER;
   player->cell = newcell;
   _server_action_update_cell(m, player->shovel, newcell );
   _server_action_update_cell(m, player->shovel, newcell );
@@ -752,7 +933,7 @@ extern int _server_action_move_player(Maze*m, Cell* currentcell , Cell* nextcell
 
 extern int _server_action_jail_player(Maze*m, Cell* currentcell)
 {
-  if (!currentcell->player) return -1;
+  if (!currentcell->player) return ERR_NO_PLAYER;
   Player * player = currentcell->player;
   if (player->state == PLAYER_JAILED) return 1; // no need to jail
   
@@ -761,7 +942,7 @@ extern int _server_action_jail_player(Maze*m, Cell* currentcell)
 
   // find the next jail cell
   rc = server_find_empty_jail_cell_and_lock(m,opposite_team(player->team),&nextcell,player->id,0);
-  if (rc < 0) return -3;
+  if (rc < 0) return ERR_JAIL_FULL;
 
   // drop shovel and flag if any
   _server_action_player_reset_shovel(m,player);
