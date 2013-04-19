@@ -77,7 +77,7 @@ clientInit(Client *C)
   }
  
   // Specify the event channel handlers
-  proto_client_set_event_handler(C->ph, PROTO_MT_EVENT_BASE_UPDATE, update_handler );
+  proto_client_set_event_handler(C->ph, PROTO_MT_EVENT_UPDATE, update_handler );
   return 1;
 }
 
@@ -145,7 +145,7 @@ doRPCCmd()
   C = request.client;
 
   switch (request.type) {
-  case PROTO_MT_REQ_BASE_HELLO:  
+  case PROTO_MT_REQ_HELLO:  
     {
      fprintf(stderr,"HELLO COMMAND ISSUED");
      hdr.type = request.type;
@@ -155,68 +155,17 @@ doRPCCmd()
      /*if (rc < 0) fprintf(stderr, "Unable to connect");*/
     }
     break;
-  case PROTO_MT_REQ_BASE_CINFO:
-      fprintf(stderr,"CINFO command issued x = %d, y= %d",request.x,request.y);
-      hdr.type= request.type;
-      hdr.gstate.v0.raw = request.x;
-      hdr.gstate.v1.raw = request.y;
-      rc = do_void_rpc(C->ph,&hdr);
-      if (rc > 0)
-      {
-        int is_valid;
-        get_int(C->ph,0,&is_valid);
-        if (is_valid <= 0)
-        {
-          fprintf(stderr,"Invalid cell address x = %d, y= %d\n", 
-            request.x,request.y);
-          fprintf(stderr,"Please use the 'dim' command to find dimensions");
-          rc = -1;
-        }
-        else
-        {
-          Cell cell;
-          Proto_Msg_Hdr rhdr;
-          bzero(&cell, sizeof(Cell));
-          bzero(&rhdr, sizeof(Proto_Msg_Hdr));
-          
-          get_hdr(C->ph,&rhdr);
-          cell_unmarshall_from_header(&cell,&rhdr);
-          cell_dump(&cell);
-        }
-      }
+  case PROTO_MT_REQ_ACTION:
+    fprintf(stderr,"Action COMMAND ISSUED");
+    hdr.type = request.type;
+    rc = do_void_rpc(C->ph,&hdr);
     break;
-  case PROTO_MT_REQ_BASE_DIM:
-     fprintf(stderr,"Dimension COMMAND ISSUED");
-     hdr.type= request.type;
-     rc = do_void_rpc(C->ph,&hdr);
-     if (rc > 0)
-     {
-        int col,row;
-        get_int(C->ph,0,&col);
-        get_int(C->ph,sizeof(int),&row);
-        fprintf(stderr,"%d columns(x) by %d rows(y)",col,row);
-     }
+  case PROTO_MT_REQ_SYNC:
+    fprintf(stderr,"Request COMMAND ISSUED");
+    hdr.type = request.type;
+    rc = do_void_rpc(C->ph,&hdr);
     break;
-  case PROTO_MT_REQ_BASE_NUM:
-     fprintf(stderr,"Number request for team %d\n",request.turf+1);
-     Cell cell;
-     cell_init(&cell,0,0,request.turf,request.cell_type,0);
-     cell_marshall_into_header(&cell,&hdr);
-     hdr.type=request.type;
-     rc = do_void_rpc(C->ph,&hdr);
-     if (rc > 0)
-     {
-        int num;
-        get_int(C->ph,0,&num);
-        fprintf(stderr,"%d total\n",num);
-     }
-    break;
-  case PROTO_MT_REQ_BASE_DUMP:
-     fprintf(stderr,"Dump server map issued");
-     hdr.type = request.type;
-     rc = do_void_rpc(C->ph,&hdr);
-    break;
-  case PROTO_MT_REQ_BASE_GOODBYE:
+  case PROTO_MT_REQ_GOODBYE:
      fprintf(stderr,"Goodbye COMMAND ISSUED");
      hdr.type = request.type;
      rc = do_void_rpc(C->ph,&hdr);
@@ -277,7 +226,7 @@ int doConnect(Client *C, char* cmd)
   }
 
   // configure request parameters
-  request.type = PROTO_MT_REQ_BASE_HELLO;
+  request.type = PROTO_MT_REQ_HELLO;
   rc = doRPCCmd();
 
   return rc;
@@ -305,107 +254,10 @@ int docmd(Client *C, char* cmd)
     if( strncmp(cmd,"disconnect",sizeof("disconnect")-1)==0)
     {  
     
-    request.type = PROTO_MT_REQ_BASE_GOODBYE;
+    request.type = PROTO_MT_REQ_GOODBYE;
     rc=doRPCCmd();
     
     disconnect(C);
-    }
-    else if( strncmp(cmd,"numhome",sizeof("numhome")-1)==0)
-    {
-      int team;
-      char* token;
-      
-      token = strtok(cmd+(sizeof("numhome")-1),":i \n\0");
-      if (token == NULL )
-      {
-        fprintf(stderr,"Please specify team number 1 or 2 e.g '>numhome 2'"); 
-        return rc=-1;
-      }
-      
-      team = atoi(token);
-      if ( team!=1 && team!=2 )
-      {
-        fprintf(stderr, "Please specify team number 1 or 2 e.g '>numhome 2'");
-        return -1;
-      }
-
-      request.type = PROTO_MT_REQ_BASE_NUM;
-      request.cell_type = CELL_HOME;
-      request.turf = (Team_Types)(team-1);
-      rc=doRPCCmd();
-    }
-    else if( strncmp(cmd,"numjail",sizeof("numjail")-1)==0)
-    {
-      int team;
-      char* token;
-      
-      token = strtok(cmd+(sizeof("numjail")-1),":i \n\0");
-      if (token == NULL )
-      {
-        fprintf(stderr,"Please specify team number 1 or 2 e.g '>numhome 2'"); 
-        return rc=-1;
-      }
-      
-      team = atoi(token);
-      if ( team!=1 && team!=2 )
-      {
-        fprintf(stderr, "Please specify team number 1 or 2 e.g '>numhome 2'");
-        return -1;
-      }
-
-      request.type = PROTO_MT_REQ_BASE_NUM;
-      request.cell_type = CELL_JAIL;
-      request.turf = (Team_Types)(team-1);
-      rc=doRPCCmd(); 
-    }
-    else if( strncmp(cmd,"numwall",sizeof("numwall")-1)==0)
-    {
-      request.type = PROTO_MT_REQ_BASE_NUM;
-      request.cell_type = CELL_WALL;
-      rc=doRPCCmd(); 
-    }
-    else if( strncmp(cmd,"numfloor",sizeof("numfloor")-1)==0)
-    {
-      request.type = PROTO_MT_REQ_BASE_NUM;
-      request.cell_type = CELL_FLOOR;
-      rc=doRPCCmd();  
-    }
-    else if( strncmp(cmd,"dim",sizeof("dim")-1)==0)
-    {
-      request.type = PROTO_MT_REQ_BASE_DIM;
-      rc=doRPCCmd(); 
-    }
-    else if( strncmp(cmd,"cinfo",sizeof("cinfo")-1)==0)
-    {
-      int x;
-      int y;
-      char * token;
-      
-      token = strtok(cmd+(sizeof("cinfo")-1), ":i, \n\0");
-      if (token == NULL )
-      {
-        fprintf(stderr, "Please specify cell x and y e.g '>cinfo 25,125'");
-        return -1;
-      }
-     
-      x = atoi(token);
-      token = strtok(NULL, ":i, \n\0");
-      if (token == NULL)
-      {
-        fprintf(stderr, "Please specify cell x and y e.g '>cinfo 25,125'");
-        return -1;
-      }
-      y = atoi(token);
-
-      request.type = PROTO_MT_REQ_BASE_CINFO;
-      request.x = x;
-      request.y = y;
-      rc=doRPCCmd();
-    }
-    else if( strncmp(cmd,"dump",sizeof("dump")-1)==0)
-    {
-      request.type = PROTO_MT_REQ_BASE_DUMP;
-      rc=doRPCCmd();
     }
   }
   else
