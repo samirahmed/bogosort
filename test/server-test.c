@@ -482,8 +482,47 @@ void test_game_move(TestContext*tc)
     assertion = (server_home_count_read(&maze.home[player->team]) == 0);
     should("should home count when players walk out of cell",assertion,tc);
 
-    /*rc = server_game_action(&)*/
+    /////////////////
+    // Make New Player
+    /////////////////
+    int fd_red = fd+1;
+    Player*other ;
+    rc = server_game_add_player(&maze,fd_red,&other);
+    
+    current = other->cell; // This is test Safe Only
+    next.x = 149;
+    next.y = 99;
+    server_request_init(&maze,&request,fd_red);
+    request.action  = ACTION_MOVE;
+    request.current = current->pos;
+    request.next    = next;
+    request.test_mode = 1;
+    rc = server_game_action(&maze,&request); // move 
+    assertion = (rc >= 0) && 
+                (other->cell->pos.x == next.x && other->cell->pos.y == next.y) &&
+                (server_home_count_read(&maze.home[other->team]) == 0 );
+    should("spawn and move player correctly on TEAM_RED",assertion,tc);
 
+    /////////////////
+    // Tag Player
+    /////////////////
+    
+    current = other->cell; // This is test Safe Only
+    next.x = 150;
+    next.y = 99;
+    server_request_init(&maze,&request,fd_red);
+    request.action  = ACTION_MOVE;
+    request.current = current->pos;
+    request.next    = next;
+
+    rc = server_game_action(&maze,&request);
+    assertion = (rc >= 0) && 
+                (other->cell->type == CELL_JAIL) &&
+                (other->cell->player == other )  &&
+                (other->state == PLAYER_JAILED ) &&
+                (player->cell->pos.x == next.x && player->cell->pos.y == next.y);
+    should("correct jail player walking into other on enemy turf",assertion,tc);
+    
     maze_destroy(&maze);
 }
 
