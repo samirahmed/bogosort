@@ -33,7 +33,6 @@
 
 //Global Variables
 Player* my_player;      //Pointer to client's player struct
-Request request;        //Request Data Stucture
 Globals globals;         //Host string and port
 static int connected;
 static char MenuString[] = "\n?> ";
@@ -136,13 +135,13 @@ int doRPCCmd(Request* request)
   Proto_Msg_Hdr hdr;
   bzero(&hdr,sizeof(Proto_Msg_Hdr));
 
-  C = request.client;
+  C = request->client;
 
-  switch (request.type) {
+  switch (request->type) {
   case PROTO_MT_REQ_HELLO:  
     {
      fprintf(stderr,"HELLO COMMAND ISSUED");
-     hdr.type = request.type;
+     hdr.type = request->type;
      rc = do_void_rpc(C->ph,&hdr);
      /*rc = proto_client_hello(C->ph);*/
      /*if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);*/
@@ -151,23 +150,23 @@ int doRPCCmd(Request* request)
     break;
   case PROTO_MT_REQ_ACTION:
     fprintf(stderr,"Action COMMAND ISSUED");
-    hdr.type = request.type;
+    hdr.type = request->type;
     rc = do_void_rpc(C->ph,&hdr);
     break;
   case PROTO_MT_REQ_SYNC:
     fprintf(stderr,"Request COMMAND ISSUED");
-    hdr.type = request.type;
+    hdr.type = request->type;
     rc = do_void_rpc(C->ph,&hdr);
     break;
   case PROTO_MT_REQ_GOODBYE:
      fprintf(stderr,"Goodbye COMMAND ISSUED");
-     hdr.type = request.type;
+     hdr.type = request->type;
      rc = do_void_rpc(C->ph,&hdr);
     /*rc = proto_client_goodbye(C->ph);*/
     /*printf("Game Over - You Quit");*/
     break;
   default:
-    printf("%s: unknown command %d\n", __func__, request.type);
+    printf("%s: unknown command %d\n", __func__, request->type);
   }
   // NULL MT OVERRIDE ;-)
   if(proto_debug()) fprintf(stderr,"%s: rc=0x%x\n", __func__, rc);
@@ -185,7 +184,7 @@ void disconnect (Client *C)
   close(rpc->fd);
 }
 
-int doConnect(Client *C, char* cmd)
+int doConnect(Client *C, char* cmd,Request* request)
 {
   int rc;
 
@@ -208,7 +207,7 @@ int doConnect(Client *C, char* cmd)
   }
   strcpy(address[1],token);   //put port number into address
 
-  initGlobals(2,address);
+  globals_init(2,address);
 
   // ok startup our connection to the server
   connected = 1;      //Change connected state to true
@@ -220,23 +219,23 @@ int doConnect(Client *C, char* cmd)
   }
 
   // configure request parameters
-  request.type = PROTO_MT_REQ_HELLO;
-  rc = doRPCCmd();
+  request->type = PROTO_MT_REQ_HELLO;
+  rc = doRPCCmd(request);
 
   return rc;
 }
 
-int docmd(Client *C, char* cmd)
+int docmd(Client *C, char* cmd,Request* request)
 {
   int rc = 1;                      // Set up return code var
   bzero(&request,sizeof(request)); // Set up request
-  request.client = C;
+  request->client = C;
 
   if(strncmp(cmd,"quit",sizeof("quit")-1)==0) return -2;
 
   if(!connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
   {
-    rc = doConnect(C, cmd);
+    rc = doConnect(C, cmd, request);
   }
   else if(strncmp(cmd,"where",sizeof("where")-1)==0)
   {
@@ -248,8 +247,8 @@ int docmd(Client *C, char* cmd)
     if( strncmp(cmd,"disconnect",sizeof("disconnect")-1)==0)
     {  
     
-    request.type = PROTO_MT_REQ_GOODBYE;
-    rc=doRPCCmd();
+    request->type = PROTO_MT_REQ_GOODBYE;
+    rc=doRPCCmd(request);
     
     disconnect(C);
     }
@@ -268,9 +267,10 @@ void* shell(void *arg)
   char *c;
   int rc;
   int menu=1;
+  Request request;
 
   while (1) {
-    if ((c = prompt(menu))!=0) rc=docmd(C, c);
+    if ((c = prompt(menu))!=0) rc=docmd(C, c,&request);
     if (rc == -2) break; //only terminate when client issues 'q'
   
   //If this variable was allocated in prompt(menu) please free memory
@@ -321,7 +321,7 @@ int main(int argc, char **argv)
 {
   Client c;
   
-  if (clientInit(&c) < 0) {
+  if (client_init(&c) < 0) {
     fprintf(stderr, "ERROR: clientInit failed\n");
     return -1;
   }    
