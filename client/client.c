@@ -24,41 +24,34 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "client.h"
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/protocol_client.h"
 #include "../lib/protocol_utils.h"
+#include "../lib/game_client.h"
 
 #define STRLEN 81
-
-//Function Headers
-void initGlobals(int argc, char argv[][STRLEN]);//Had to Change function header to make this work
-
-struct Globals {
-  char host[STRLEN];
-  PortType port;
-} globals;
-
-typedef struct ClientState  {
-  int data;
-  Proto_Client_Handle ph;
-} Client;
-
-struct Request{
-  Client * client;
-  Proto_Msg_Types type;
-  int x;
-  int y;
-  Team_Types turf;
-  Cell_Types cell_type;
-} request;
-
-static int connected;
-static char MenuString[] = "\n?> ";
 
 static int update_handler(Proto_Session *s )
 {
     return 0;
+}
+
+int init_client_map(Client *C,char* filename)
+{
+    //Build maze from file
+    if(maze_build_from_file(&C->maze,filename)==-1)
+        return -1;
+
+    //Initialize the Blocking Data Structure
+    if(blocking_helper_init(&C->bh)==-1)
+        return -1;
+
+    //Set the maze pointer in the blocking helper
+    if(blocking_helper_set_maze(&C->bh,&C->maze)==-1)
+        return -1;
+    return 1;
 }
 
 static int
