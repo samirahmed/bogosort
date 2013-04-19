@@ -31,7 +31,6 @@
 #include "../lib/protocol_utils.h"
 #include "../lib/game_client.h"
 
-#define STRLEN 81
 
 static int update_handler(Proto_Session *s )
 {
@@ -49,8 +48,7 @@ int init_client_map(Client *C,char* filename)
         return -1;
 
     //Set the maze pointer in the blocking helper
-    if(blocking_helper_set_maze(&C->bh,&C->maze)==-1)
-        return -1;
+    blocking_helper_set_maze(&C->bh,&C->maze);
     return 1;
 }
 
