@@ -12,8 +12,6 @@
 #include "../lib/game_server.h"
 #include "../lib/test.h"
 
-/*Maze maze;  // global maze*/
-
 void test_find_and_lock(TestContext * tc)
 {
     int assertion, key, team , xx,yy;
@@ -395,12 +393,107 @@ void test_server_locks(TestContext * tc)
     maze_destroy(&maze);
 }
 
+void test_game_move(TestContext*tc)
+{
+    Maze maze;
+    maze_build_from_file(&maze,"test.map");
+
+    //////////////////
+    // Move a player
+    //////////////////
+    GameRequest request;
+    int assertion,rc,fd,id,team;
+    fd   = randint()%9000 + 999;
+    team = randint()%2;
+    Player*player;
+    server_game_add_player(&maze, fd, &player );
+    assertion = (server_home_count_read(&maze.home[player->team]) == 1) ;
+    should("increment home count on spawn",assertion,tc);
+
+
+    //////////////////
+    // Move a player
+    //////////////////
+    Cell* current = player->cell; // This is test Safe Only
+    Pos  next;
+    next.x = current->pos.x+1;
+    next.y = current->pos.y;
+    id = server_request_init(&maze,&request,fd);
+    
+    assertion = (player->id == 0 && id == 0 && player->team == 1);
+    should("successfully find the player id and team from the fd",assertion,tc);
+
+    request.action  = ACTION_MOVE;
+    request.current = current->pos;
+    request.next    = next; 
+    
+    rc = server_game_action(&maze, &request);
+    assertion = rc >= 0;
+    if (test_debug() && rc<0 ) fprintf(stderr,"Error Code: %d\n",rc);
+    should("not error on action request",assertion,tc);
+      
+    assertion =  (player->cell->pos.x == next.x && player->cell->pos.y == next.y);
+    should("successfully move the player's cell reference",assertion,tc);
+    
+    assertion = (maze.get[next.x][next.y].player == player && current->player != player);
+    should("successfully update the cell's player reference", assertion,tc);
+    
+    //////////////////
+    // Move into a Wall
+    //////////////////
+    current = player->cell; // This is test Safe Only
+    next.x = next.x;
+    next.y = next.y-1;
+    server_request_init(&maze,&request,fd);
+    request.action  = ACTION_MOVE;
+    request.current = current->pos;
+    request.next    = next; 
+    
+    rc = server_game_action(&maze,&request);
+    assertion = rc == ERR_BAD_NEXT_CELL;
+    should("prevent walking into wall cells",assertion,tc);
+
+    assertion = (player->cell == current && current->player == player);
+    should("maintain cell and player references",assertion,tc);
+    
+    //////////////////
+    // Try illegal move
+    //////////////////
+    
+    current = player->cell; // This is test Safe Only
+    next.x = 150;
+    next.y = 99;
+    server_request_init(&maze,&request,fd);
+    request.action  = ACTION_MOVE;
+    request.current = current->pos;
+    request.next    = next; 
+    
+    rc = server_game_action(&maze,&request);
+    assertion = rc == ERR_BAD_NEXT_CELL;
+    should("should prevent moving to cells that are not adjacent",assertion,tc);
+    
+    //////////////////
+    // Test Home Counter
+    //////////////////
+
+    request.test_mode = 1; // Enable supernatural jumping
+    rc = server_game_action(&maze,&request);
+    assertion = rc >= 0;
+    assertion = (server_home_count_read(&maze.home[player->team]) == 0);
+    should("should home count when players walk out of cell",assertion,tc);
+
+    /*rc = server_game_action(&)*/
+
+    maze_destroy(&maze);
+}
+
 int main(int argc, char ** argv )
 {
     TestContext tc;
     test_init(argc, argv, &tc);
     
     // ADD TESTS HERE
+    run(&test_game_move,"Basic Movement",&tc);
     run(&test_game_add_drop,"Game Add/Drop",&tc);
     run(&test_server_locks,"Server Locks",&tc);
     run(&test_plist,"PLists",&tc);

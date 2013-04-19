@@ -12,6 +12,42 @@
 #include "protocol_session.h"
 #include "game_server.h"
 
+/*******************/
+/* REQUEST METHODS */
+/*******************/
+
+extern int server_request_init(Maze*m,GameRequest*request,int fd)
+{
+  int team;
+  int id;
+  
+  server_fd_to_id_and_team(m, fd, &team, &id);
+  bzero(request,sizeof(request));
+  request->team = team;
+  request->fd   = fd;
+  request->id   = id;
+  
+  return 0;
+}
+
+extern int server_fd_to_id_and_team(Maze*m,int fd, int *team_ptr, int*id_ptr)
+{
+  int id, team;
+  team = TEAM_RED;
+  Plist* team_red = &m->players[TEAM_RED];
+  id = server_plist_find_player_by_fd(team_red,fd);
+  if (id == -1) 
+  {
+    team = TEAM_BLUE;
+    Plist* team_blue = &m->players[TEAM_BLUE];
+    id = server_plist_find_player_by_fd(team_blue,fd);
+    if (id ==-1) return ERR_NO_PLAYER;
+  }
+  *team_ptr = team;
+  *id_ptr   = id;
+  return 0; 
+}
+
 /******************/
 /* SERVER METHODS */
 /******************/
@@ -97,7 +133,7 @@ extern int server_game_action(Maze*maze , GameRequest* request)
   // Get the player 
   Player*player = &(maze->players[team].at[id]);
   Cell *cell, *currentcell, *nextcell;
-  if ( server_validate_player(maze,team, id, fd) ) return -1;
+  if ( !server_validate_player(maze,team, id, fd) ) return ERR_BAD_PLAYER_ID;
   
   int once = 1;
   int rc = 0;
@@ -131,6 +167,11 @@ extern int server_game_action(Maze*maze , GameRequest* request)
       
       case ACTION_MOVE: 
         rc = _server_game_move(maze,player,currentcell,nextcell);
+        if (rc>=0 && proto_debug())
+        {
+          fprintf(stderr,"team:%d,id:%d from %d,%d to %d,%d\n",
+            team,id,currentcell->pos.x,currentcell->pos.y,player->cell->pos.x,player->cell->pos.y);
+        }
       break;
       
       case ACTION_DROP_FLAG: 
@@ -155,6 +196,7 @@ extern int server_game_action(Maze*maze , GameRequest* request)
       break;
     }
   }
+  if (proto_debug() && rc<0) fprintf(stderr,"Error: %d for Action:%d | Id:%d | Team%d\n",rc,action,id,team);
   server_maze_unlock(maze ,cell->pos, next);
   return rc;
 }
@@ -164,14 +206,14 @@ extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next)
   int rc = 0;
 
   // Check if player is jailed if so go to jail move handler
-  if (player->state == PLAYER_JAILED) 
+  if (player->state == PLAYER_JAILED && next->type != CELL_WALL) 
   { 
     if (next->type!=CELL_JAIL && cell_is_unoccupied(next))
     rc = _server_action_move_player(m,current,next);
   }
   else if ( next->type == CELL_WALL )
   {
-    rc = _server_game_floor_move(m,player,current,next);
+    rc = _server_game_wall_move(m,player,current,next);
   }
   else
   {
@@ -188,11 +230,11 @@ extern int _server_game_state_update(Maze*m, Player*player, Cell*current, Cell*n
   int rc=0;
   if (current->type!=CELL_HOME && next->type==CELL_HOME && player->team == next->turf )
   {
-    rc =server_home_count_increment(&m->home[player->team]);
+    server_home_count_increment(&m->home[player->team]);
   }
-  if (current->type==CELL_HOME && next->type!=CELL_HOME && player->team == next->turf )
+  if (current->type==CELL_HOME && next->type!=CELL_HOME && player->team == current->turf )
   {
-    rc =server_home_count_decrement(&m->home[player->team]);
+    server_home_count_decrement(&m->home[player->team]);
   }
 
   return rc;
@@ -227,7 +269,7 @@ extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*nex
     
     rc = _server_action_move_player(m, current, next);
   }
-  if ( !cell_is_unoccupied(next) )
+  else
   {
     // if same team in next cell or already jailed
     if ( next->player->team == player->team) return ERR_CELL_OCCUPIED;
@@ -744,6 +786,7 @@ extern int server_plist_add_player(Plist* plist, int fd)
   return rc;
 }
 
+// Returns the id of the player with corresponding fd
 // Only to be used by threads when they don't hold a write lock on
 // the plist... i.e can't be used by add or drop
 // (otherwise it will cause deadlock)

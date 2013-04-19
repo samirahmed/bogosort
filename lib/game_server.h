@@ -45,10 +45,14 @@ typedef struct{
   EventUpdate  update;
 } GameRequest;
 
+// Request Methods
+extern int  server_request_init(Maze*m,GameRequest*request,int fd);
+extern int  server_fd_to_id_and_team(Maze*m,int fd, int *team_ptr, int*id_ptr);
+
 // Game Methods
-extern int server_game_add_player(Maze*maze,int fd, Player**player);
+extern int  server_game_add_player(Maze*maze,int fd, Player**player);
 extern void server_game_drop_player(Maze*maze,int team, int id);
-extern int server_game_action(Maze*maze , GameRequest* request);
+extern int  server_game_action(Maze*maze , GameRequest* request);
 extern int  server_validate_player( Maze*m, Team_Types team, int id , int fd );
 extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next);
 extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next);
@@ -67,8 +71,8 @@ extern void server_object_write_lock(Maze*m);
 extern void server_plist_read_lock(Plist*plist);
 extern void server_plist_write_lock(Plist*plist);
 extern void server_plist_unlock(Plist*plist);
-extern void _server_root_lock(Maze*m, Cell*c);
-extern void _server_root_unlock(Maze*m, Cell*c);
+extern void _server_root_lock(Maze*m, Cell*c);    // requires cell to be locked before calling
+extern void _server_root_unlock(Maze*m, Cell*c);  // requires cell to be locked before calling
 
 // Object Methods
 extern void object_lock(Object*object);
