@@ -55,10 +55,10 @@ int send_goodbye_rpc(Request* request);
 //Connection and Disconnection
 int startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h);
 void disconnect (Client *C);
-int doConnect(Client *C, char* cmd);
+int doConnect(Client *C, char* cmd,Request* request);
 
 // Command Line Interface
-int docmd(Client *C, char* cmd);
+int docmd(Client *C, char* cmd,Request* request);
 void * shell(void *arg);
 void usage(char *pgm);
 char* prompt(int menu); 
