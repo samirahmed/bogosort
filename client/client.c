@@ -31,29 +31,20 @@
 #include "../lib/protocol_utils.h"
 #include "../lib/game_client.h"
 
+//Global Variables
+Player* my_player;      //Pointer to client's player struct
+Request request;        //Request Data Stucture
+Globals globals;         //Host string and port
+static int connected;
+static char MenuString[] = "\n?> ";
+
 
 static int update_handler(Proto_Session *s )
 {
     return 0;
 }
 
-int init_client_map(Client *C,char* filename)
-{
-    //Build maze from file
-    if(maze_build_from_file(&C->maze,filename)==-1)
-        return -1;
-
-    //Initialize the Blocking Data Structure
-    if(blocking_helper_init(&C->bh)==-1)
-        return -1;
-
-    //Set the maze pointer in the blocking helper
-    blocking_helper_set_maze(&C->bh,&C->maze);
-    return 1;
-}
-
-static int
-clientInit(Client *C)
+static int client_init(Client *C)
 {
   // Zero global scope
   bzero(C, sizeof(Client));
@@ -72,9 +63,24 @@ clientInit(Client *C)
   return 1;
 }
 
+int client_map_init(Client *C,char* filename)
+{
+    //Build maze from file
+    if(maze_build_from_file(&C->maze,filename)==-1)
+        return -1;
 
-static int
-update_event_handler(Proto_Session *s)
+    //Initialize the Blocking Data Structure
+    if(blocking_helper_init(&C->bh)==-1)
+        return -1;
+
+    //Set the maze pointer in the blocking helper
+    blocking_helper_set_maze(&C->bh,&C->maze);
+    return 1;
+}
+
+
+
+static int update_event_handler(Proto_Session *s)
 {
   /*Client *C = proto_session_get_data(s);*/
 
@@ -83,8 +89,7 @@ update_event_handler(Proto_Session *s)
 }
 
 
-int 
-startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
+int startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
 {
   if (globals.host[0]!=0 && globals.port!=0) {
     int res;
@@ -104,8 +109,7 @@ startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
   return 0;
 }
 
-char*
-prompt(int menu) 
+char* prompt(int menu) 
 {
   if (menu) printf("%s", MenuString);
   fflush(stdout);
@@ -123,8 +127,7 @@ prompt(int menu)
 
 }
 
-int 
-doRPCCmd() 
+int doRPCCmd(Request* request) 
 {
   int rc=-1;
  
@@ -259,8 +262,7 @@ int docmd(Client *C, char* cmd)
   return rc;
 }
 
-void *
-shell(void *arg)
+void* shell(void *arg)
 {
   Client *C = arg;
   char *c;
@@ -280,8 +282,7 @@ shell(void *arg)
   return NULL;
 }
 
-void 
-usage(char *pgm)
+void usage(char *pgm)
 {
   fprintf(stderr, "USAGE: %s <port|<<host port> [shell] [gui]>>\n"
            "  port     : rpc port of a game server if this is only argument\n"
@@ -295,8 +296,7 @@ usage(char *pgm)
  
 }
 
-void
-initGlobals(int argc, char argv[][STRLEN])
+void globals_init(int argc, char argv[][STRLEN])
 {
   bzero(&globals, sizeof(globals));
 
@@ -317,8 +317,7 @@ initGlobals(int argc, char argv[][STRLEN])
   
 }
 
-int 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
   Client c;
   

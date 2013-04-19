@@ -14,42 +14,43 @@
 
 #define STRLEN 81
 
-// Client State typedef
 typedef struct ClientState  {
-  int data;
   Proto_Client_Handle ph;
   Maze maze;
   Blocking_Helper bh;
 } Client;
 
-//Global Variables
-static int connected;
-static char MenuString[] = "\n?> ";
-
-struct Request{
+typedef struct RequestHandler{
   Client * client;
   Proto_Msg_Types type;
   int x;
   int y;
-  Team_Types turf;
-  Cell_Types cell_type;
-} request;
+}Request;
 
-struct Globals {
+typedef struct GlobalsInfo {
   char host[STRLEN];
   PortType port;
-} globals;
+}Globals;
 
 
 
 
 //Initilization Functions
-void initGlobals(int argc, char argv[][STRLEN]);//Had to Change function header to make this work
-static int clientInit(Client *C);
-int init_client_map(Client *C,char* filename);
+void globals_init(int argc, char argv[][STRLEN]);//Had to Change function header to make this work
+static int client_init(Client *C);
+int client_map_init(Client *C,char* filename);
 
 //RPC calls
-int doRPCCmd();
+int doRPCCmd(Request* request); //Master RPC CALLER RAWR
+
+//Set Request Header and call doRPCCmd()
+int send_hello_rpc(Request* request);
+int send_action_rpc(Request* request);
+int send_sync_rpc(Request* request);
+int send_goodbye_rpc(Request* request);
+
+
+
 
 //Connection and Disconnection
 int startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h);
