@@ -10,11 +10,14 @@
 #include "protocol_session.h"
 #include "game_client.h"
 
-extern void blocking_helper_init(Blocking_Helper *bh)
+extern int blocking_helper_init(Blocking_Helper *bh)
 {
     bzero(bh,sizeof(Blocking_Helper));
-    pthread_mutex_init(&bh->maze_lock,NULL);
-    pthread_cond_init(&bh->maze_updated,NULL);
+    if(pthread_mutex_init(&bh->maze_lock,NULL)!=0)
+        return -1;
+    if(pthread_cond_init(&bh->maze_updated,NULL)!=0)
+        return -1;
+    return 1;
 }
 
 extern void blocking_helper_set_maze(Blocking_Helper *bh, Maze* m)
@@ -22,10 +25,13 @@ extern void blocking_helper_set_maze(Blocking_Helper *bh, Maze* m)
     bh->maze = m;    
 }
 
-extern void blocking_helper_destroy(Blocking_Helper *bh)
+extern int blocking_helper_destroy(Blocking_Helper *bh)
 {
-    pthread_mutex_destroy(&bh->maze_lock);
-    pthread_cond_destroy(&bh->maze_updated);    
+    if(pthread_mutex_destroy(&bh->maze_lock)!=0)
+        return -1;
+    if(pthread_cond_destroy(&bh->maze_updated)!=0)
+        return -1;
+   return 1;
 }
 
 extern void client_maze_lock(Blocking_Helper *bh)

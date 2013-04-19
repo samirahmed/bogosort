@@ -33,11 +33,11 @@ typedef struct ClientBlockingStruct{
 } Blocking_Helper;
 
 // Init Methods
-extern void blocking_helper_init(Blocking_Helper *bh);
+extern int blocking_helper_init(Blocking_Helper *bh);
 extern void blocking_helper_set_maze(Blocking_Helper *bh, Maze *maze);
 
 // Destroy Methods
-extern void blocking_helper_destroy(Blocking_Helper *bh);
+extern int blocking_helper_destroy(Blocking_Helper *bh);
 
 // Locking and Conditional Variable Helper Methods
 extern void client_maze_lock(Blocking_Helper *bh);
