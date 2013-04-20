@@ -45,7 +45,7 @@ typedef struct{
 } GameRequest;
 
 // Request Methods
-extern int  server_request_init(Maze*m,GameRequest*request,int fd,Action_Types action, Pos pos);
+extern int server_request_init(Maze*m,GameRequest*request,int fd,Action_Types action, int pos_x, int pos_y);
 extern int  server_fd_to_id_and_team(Maze*m,int fd, int *team_ptr, int*id_ptr);
 
 // Game Methods

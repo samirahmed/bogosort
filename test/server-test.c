@@ -402,6 +402,7 @@ void test_game_move(TestContext*tc)
     // Move a player
     //////////////////
     GameRequest request;
+    Pos  next;
     int assertion,rc,fd,id,team;
     fd   = randint()%9000 + 999;
     team = randint()%2;
@@ -414,19 +415,14 @@ void test_game_move(TestContext*tc)
     //////////////////
     // Move a player
     //////////////////
-    Cell* current = player->cell; // This is test Safe Only
-    Pos  next;
-    next.x = current->pos.x+1;
-    next.y = current->pos.y;
-    id = server_request_init(&maze,&request,fd);
+    Cell*current = player->cell;
+    next.x = player->cell->pos.x+1;
+    next.y = player->cell->pos.y;  
+    id = server_request_init(&maze,&request,fd,ACTION_MOVE,next.x,next.y);
     
     assertion = (player->id == 0 && id == 0 && player->team == 1);
     should("successfully find the player id and team from the fd",assertion,tc);
 
-    request.action  = ACTION_MOVE;
-    request.current = current->pos;
-    request.next    = next; 
-    
     rc = server_game_action(&maze, &request);
     assertion = rc >= 0;
     if (test_debug() && rc<0 ) fprintf(stderr,"Error Code: %d\n",rc);
@@ -442,12 +438,7 @@ void test_game_move(TestContext*tc)
     // Move into a Wall
     //////////////////
     current = player->cell; // This is test Safe Only
-    next.x = next.x;
-    next.y = next.y-1;
-    server_request_init(&maze,&request,fd);
-    request.action  = ACTION_MOVE;
-    request.current = current->pos;
-    request.next    = next; 
+    server_request_init(&maze,&request,fd,ACTION_MOVE,next.x,next.y-1);
     
     rc = server_game_action(&maze,&request);
     assertion = rc == ERR_BAD_NEXT_CELL;
@@ -459,14 +450,7 @@ void test_game_move(TestContext*tc)
     //////////////////
     // Try illegal move
     //////////////////
-    
-    current = player->cell; // This is test Safe Only
-    next.x = 150;
-    next.y = 99;
-    server_request_init(&maze,&request,fd);
-    request.action  = ACTION_MOVE;
-    request.current = current->pos;
-    request.next    = next; 
+    server_request_init(&maze,&request,fd,ACTION_MOVE,150,99);
     
     rc = server_game_action(&maze,&request);
     assertion = rc == ERR_BAD_NEXT_CELL;
@@ -489,17 +473,12 @@ void test_game_move(TestContext*tc)
     Player*other ;
     rc = server_game_add_player(&maze,fd_red,&other);
     
-    current = other->cell; // This is test Safe Only
-    next.x = 149;
-    next.y = 99;
-    server_request_init(&maze,&request,fd_red);
-    request.action  = ACTION_MOVE;
-    request.current = current->pos;
-    request.next    = next;
+    server_request_init(&maze,&request,fd_red,ACTION_MOVE,149,99);
     request.test_mode = 1;
+    
     rc = server_game_action(&maze,&request); // move 
     assertion = (rc >= 0) && 
-                (other->cell->pos.x == next.x && other->cell->pos.y == next.y) &&
+                (other->cell->pos.x == 149 && other->cell->pos.y == 99) &&
                 (server_home_count_read(&maze.home[other->team]) == 0 );
     should("spawn and move player correctly on TEAM_RED",assertion,tc);
 
@@ -507,13 +486,8 @@ void test_game_move(TestContext*tc)
     // Tag Player
     /////////////////
     
-    current = other->cell; // This is test Safe Only
-    next.x = 150;
-    next.y = 99;
-    server_request_init(&maze,&request,fd_red);
-    request.action  = ACTION_MOVE;
-    request.current = current->pos;
-    request.next    = next;
+    next.x = 150; next.y = 99;
+    server_request_init(&maze,&request,fd_red,ACTION_MOVE,next.x,next.y);
 
     rc = server_game_action(&maze,&request);
     assertion = (rc >= 0) && 

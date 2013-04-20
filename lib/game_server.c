@@ -16,18 +16,27 @@
 /* REQUEST METHODS */
 /*******************/
 
-extern int server_request_init(Maze*m,GameRequest*request,int fd,Action_Types action, Pos pos)
+extern int server_request_init(Maze*m,GameRequest*request,int fd,Action_Types action, int pos_x, int pos_y)
 {
-  int team;
-  int id;
-  
-  server_fd_to_id_and_team(m, fd, &team, &id);
+  int team,id,rc;
   bzero(request,sizeof(request));
+ 
+  rc = server_fd_to_id_and_team(m, fd, &team, &id);
+  if (rc < 0) { return rc;}
   request->team   = team;
   request->fd     = fd;
   request->id     = id;
-  request->pos.x  = pos.x;
-  request->pos.y  = pos.y;
+
+  if ( pos_x >= m->max.x || pos_x < m->min.x || pos_y >= m->max.y || pos_y < m->min.y )
+  {
+    return ERR_BAD_X_Y;
+  }
+
+  request->pos.x  = pos_x;
+  request->pos.y  = pos_y;
+
+  if ( action > ACTION_PICKUP_SHOVEL ) return ERR_BAD_ACTION;
+  
   request->action = action;
   
   return 0;
@@ -124,6 +133,7 @@ extern void server_game_drop_player(Maze*maze,int team, int id)
 // Return ERR_BAD_NEXT_CELL = Bad Next Position
 extern int server_game_action(Maze*maze , GameRequest* request)
 {
+  int rc = 0;
   int team    = request->team;
   int id      = request->id;
   Pos next    = request->pos;
@@ -135,62 +145,61 @@ extern int server_game_action(Maze*maze , GameRequest* request)
   Cell *cell, *currentcell, *nextcell;
   if ( !server_validate_player(maze,team, id, fd) ) return ERR_BAD_PLAYER_ID;
   
-  int once = 1;
-  int rc = 0;
 
   // Lock the cell
   server_maze_lock_by_player(maze, player, &next);
   cell = player->cell;
+  currentcell = cell;
+  nextcell    = &maze->get[next.x][next.y];
 
-  while(once--)
+// Delegate the Action Accordingly
+  switch(action)
   {
-
-    currentcell = cell;
-    nextcell    = &maze->get[next.x][next.y];
+    case ACTION_NOOP: 
+      rc = 0;
+    break;
     
-    // Check that the next cell is near the current cell
-    // jump allows us to move player to anywhere
-    if (!cell_is_near(currentcell, nextcell) && !request->test_mode) {rc= ERR_BAD_NEXT_CELL; break;}
-    
-    // Delegate the Action Accordingly
-    switch(action)
-    {
-      case ACTION_NOOP: 
-        rc = 0;
-      break;
+    case ACTION_MOVE: 
+       
+      // Check that the next cell is near the current cell
+      // jump allows us to move player to anywhere
+      if (!cell_is_near(currentcell, nextcell) && !request->test_mode) {rc= ERR_BAD_NEXT_CELL; break;}
       
-      case ACTION_MOVE: 
-        rc = _server_game_move(maze,player,currentcell,nextcell);
-        if (rc>=0 && proto_debug())
-        {
-          fprintf(stderr,"team:%d,id:%d from %d,%d to %d,%d\n",
-            team,id,currentcell->pos.x,currentcell->pos.y,player->cell->pos.x,player->cell->pos.y);
-        }
-      break;
+      rc = _server_game_move(maze,player,currentcell,nextcell);
       
-      case ACTION_DROP_FLAG: 
-        rc =_server_action_drop_flag(maze,player); 
-      break;
+      if (rc>=0 && proto_debug())
+      {
+        fprintf(stderr,"team:%d,id:%d from %d,%d to %d,%d\n",
+          team,id,currentcell->pos.x,currentcell->pos.y,player->cell->pos.x,player->cell->pos.y);
+      }
+    break;
       
-      case ACTION_DROP_SHOVEL: 
-        rc = _server_action_drop_shovel(maze,player); 
-      break;
+    case ACTION_DROP_FLAG: 
+      rc =_server_action_drop_flag(maze,player); 
+    break;
       
-      case ACTION_PICKUP_FLAG: 
-        rc = _server_action_pickup_object(maze,player);
-      break;
+    case ACTION_DROP_SHOVEL: 
+      rc = _server_action_drop_shovel(maze,player); 
+    break;
+      
+    case ACTION_PICKUP_FLAG: 
+      rc = _server_action_pickup_object(maze,player);
+    break;
 
-      case ACTION_PICKUP_SHOVEL: 
-        rc = _server_action_pickup_object(maze,player);
-      break;
+    case ACTION_PICKUP_SHOVEL: 
+      rc = _server_action_pickup_object(maze,player);
+    break;
 
-      default:
-        fprintf(stderr,"Bad Action Type %d",action);
-        rc = ERR_BAD_ACTION;
-      break;
-    }
+    default:
+      fprintf(stderr,"Bad Action Type %d",action);
+      rc = ERR_BAD_ACTION;
+    break;
   }
+  
+  // Print debug if error
   if (proto_debug() && rc<0) fprintf(stderr,"Error: %d for Action:%d | Id:%d | Team%d\n",rc,action,id,team);
+  
+  // unlock the maze
   server_maze_unlock(maze ,cell->pos, next);
   return rc;
 }
