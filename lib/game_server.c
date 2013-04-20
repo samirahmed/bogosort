@@ -197,7 +197,7 @@ extern int server_game_action(Maze*maze , GameRequest* request)
   }
   
   // Print debug if error
-  if (proto_debug() && rc<0) fprintf(stderr,"Error: %d for Action:%d | Id:%d | Team%d\n",rc,action,id,team);
+  if (proto_debug() && rc<0) fprintf(stderr,"Error: %d for Action:%d | Id:%d | Team:%d\n",rc,action,id,team);
   
   // unlock the maze
   server_maze_unlock(maze ,cell->pos, next);
@@ -924,8 +924,8 @@ extern int _server_action_pickup_object(Maze*m, Player* player)
     Object * object = player->cell->object;
     
     
-    if (player->flag && object->type == OBJECT_FLAG ) return -3;  // already has a flag
-    if (player->shovel && object->type == OBJECT_SHOVEL ) return -4; // already has a shovel
+    if (player->flag && object->type == OBJECT_FLAG ) return ERR_NO_FLAG_SPACE;  // already has a flag
+    if (player->shovel && object->type == OBJECT_SHOVEL ) return ERR_NO_SHOVEL_SPACE; // already has a shovel
    
     _server_action_update_cell_and_player(m,object,cell,player);
     cell->object = 0; // kill cell->object link

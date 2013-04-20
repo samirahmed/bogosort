@@ -393,13 +393,86 @@ void test_server_locks(TestContext * tc)
     maze_destroy(&maze);
 }
 
+void test_pickup_drop_logic(TestContext*tc)
+{
+   Maze maze;
+   maze_build_from_file(&maze,"test.map");
+   
+   int rc, fd_blue, assertion, fd_red, id, team;
+   GameRequest request;
+   Player *blue,*red;
+   Pos next;
+   fd_blue = randint()%1000;
+   fd_red = fd_blue+1;
+
+   /////////////////
+   // PICKUP SHOVEL
+   /////////////////
+   Object* blue_shovel = object_get(&maze, OBJECT_SHOVEL , TEAM_BLUE);
+   server_game_add_player(&maze,fd_blue,&blue);
+   server_request_init(&maze,&request,fd_blue,ACTION_MOVE,blue_shovel->cell->pos.x,blue_shovel->cell->pos.y);
+   request.test_mode = 1; //  teleport
+   server_game_action(&maze,&request);
+   server_request_init(&maze,&request,fd_blue,ACTION_PICKUP_SHOVEL,next.x,next.y);
+   rc = server_game_action(&maze,&request);
+   assertion = (rc >= 0) &&
+               (blue_shovel->cell = blue->cell) &&
+               (blue_shovel->player = blue)     &&
+               (blue->shovel == blue_shovel)    &&
+               (blue_shovel->cell->object != blue_shovel) &&
+               (player_has_shovel(blue) && !player_has_flag(blue));
+   should("be picked up by players correctly",assertion,tc);
+
+   ///////////////
+   // MOVE WITH OBJECT
+   ///////////////
+   Pos old = blue->cell->pos;
+   server_request_init(&maze,&request,fd_blue,ACTION_MOVE,blue->cell->pos.x-1,blue->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   assertion = (rc >= 0) &&
+               (blue_shovel->cell == blue->cell) && 
+               (blue_shovel->cell == blue->cell) && 
+               (blue->cell->pos.x == old.x-1)    &&
+               (blue->cell->pos.y == old.y)      &&
+               (blue->cell->object!= blue_shovel)&&
+               (player_has_shovel(blue));
+   should("correctly move with players",assertion,tc);
+   
+   ////////////////////////////////
+   // TRY TO PICKUP ANOTHER SHOVEL
+   ////////////////////////////////
+   Object*red_shovel = object_get(&maze,OBJECT_SHOVEL,TEAM_RED); 
+   server_request_init(&maze,&request,fd_blue,ACTION_MOVE,red_shovel->cell->pos.x,red_shovel->cell->pos.y);
+   request.test_mode =1;
+   server_game_action(&maze,&request);
+   server_request_init(&maze,&request,fd_blue,ACTION_PICKUP_SHOVEL,blue->cell->pos.x,blue->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   
+   assertion = (rc == ERR_NO_SHOVEL_SPACE) && 
+               (red_shovel->cell->object == red_shovel) &&
+               (red_shovel->player != blue) &&
+               (blue->shovel == blue_shovel);
+
+   should("not be picked up when a player is holding a similar type",assertion,tc);
+
+   
+   maze_destroy(&maze);
+}
+
+// Create 1 BLUE
+// Create 1 RED 
+// Passive Jail Red by walking into blue
+// Create 2 BLUE
+// Create 2 RED
+// 2RED tags 2 BLUE
+// 1BLUE Frees 2 Blue
 void test_game_move(TestContext*tc)
 {
     Maze maze;
     maze_build_from_file(&maze,"test.map");
 
     //////////////////
-    // Move a player
+    // Add a player
     //////////////////
     GameRequest request;
     Pos  next;
@@ -558,6 +631,7 @@ int main(int argc, char ** argv )
     test_init(argc, argv, &tc);
     
     // ADD TESTS HERE
+    run(test_pickup_drop_logic,"Objects",&tc);
     run(&test_game_move,"Basic Movement",&tc);
     run(&test_game_add_drop,"Game Add/Drop",&tc);
     run(&test_server_locks,"Server Locks",&tc);

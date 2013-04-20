@@ -38,6 +38,8 @@ typedef enum{
     ERR_NOOP            = -20, // No operation 
     ERR_NO_PLAYER       = -21, // No player found
     ERR_NO_OBJECT       = -22, // No object found
+    ERR_NO_SHOVEL_SPACE = -23, // No space for the shovel to be picked up
+    ERR_NO_FLAG_SPACE   = -24, // No space for the flag to be picked up
     ERR_CELL_HOLDING    = -40, // Cell is holding object
     ERR_CELL_OCCUPIED   = -41, // Cell is already occupied by player
     ERR_BAD_PLAYER_ID   = -60, // Bad authentication, the player id doesn't match FD
