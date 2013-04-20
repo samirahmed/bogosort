@@ -29,6 +29,55 @@ extern int object_get_index(Team_Types team , Object_Types object)
     return object+(team*2);
 }
 
+extern Object* object_get(Maze*m, Object_Types object,Team_Types team)
+{
+  return &m->objects[object_get_index(team,object)];
+}
+
+void object_init(Maze*m, Object_Types object, Team_Types team)
+{
+  Object* oo  = object_get(m,object,team);
+  bzero(oo,sizeof(Object));
+  oo->type = object;
+  oo->team = team;
+  if (oo->type == OBJECT_SHOVEL) 
+  {
+    oo->visiblity = 1;
+    int rx = m->home[team].max.x-1;
+    int ry = m->home[team].max.y-1;
+    Cell *cell = &m->get[rx][ry];
+    cell->object = oo;
+    oo->cell = cell;
+  }
+  if (oo->type == OBJECT_FLAG)
+  {
+    oo->visiblity = 0;
+    int size ,rx, ry, found;
+    found = 0;
+    while( found==0 )
+    {
+      size =(m->max.x / NUM_TEAMS);
+    
+      // Hard coded 
+      rx = 100*(team)+49;
+      ry = 99;
+      // Uncomment for randomized starting position
+      /*rx = randint()%(size+(team*size));*/
+      /*ry = randint()%(m->max.y);*/
+      if (rx >= m->max.x || ry >= m->max.y ) continue;
+      if (m->get[rx][ry].type != CELL_FLOOR) continue;
+      
+      // found viable cell to place this object in 
+      Cell* cell = &m->get[rx][ry];
+      cell->object = oo;
+      oo->cell = cell;
+      found = 1;
+    }
+  }
+
+  pthread_mutex_init(&oo->lock,NULL);
+}
+
 /******************/
 /* PLAYER METHODS */
 /******************/
@@ -228,16 +277,6 @@ extern void maze_init(Maze * m, int max_x, int max_y)
      m->min.x = 0;
      m->min.y = 0;
 
-     // Configure objects for indexing
-     m->objects[OBJECT_FLAG + 2*(TEAM_RED)].type    = OBJECT_FLAG;
-     m->objects[OBJECT_FLAG + 2*(TEAM_RED)].team    = TEAM_RED;
-     m->objects[OBJECT_FLAG + 2*(TEAM_BLUE)].type   = OBJECT_FLAG;
-     m->objects[OBJECT_FLAG + 2*(TEAM_BLUE)].team   = TEAM_BLUE;
-     m->objects[OBJECT_SHOVEL + 2*(TEAM_RED)].type  = OBJECT_SHOVEL;
-     m->objects[OBJECT_SHOVEL + 2*(TEAM_RED)].team  = TEAM_RED;
-     m->objects[OBJECT_SHOVEL + 2*(TEAM_BLUE)].type = OBJECT_SHOVEL;
-     m->objects[OBJECT_SHOVEL + 2*(TEAM_BLUE)].team = TEAM_BLUE;
-     
      // Setup locks
      pthread_rwlock_init(&m->wall_wrlock,NULL);
      pthread_rwlock_init(&m->object_wrlock,NULL);
@@ -342,6 +381,8 @@ void maze_fill_helper(Maze* map, char buffer[][MAX_COL_MAZE],int max_x, int max_
       max_players = (home_max.x - home_min.x) * ( home_max.y - home_min.y );
       max_players = max_players >= 50 ? max_players-10: max_players;
       plist_init(&map->players[team], team, max_players );
+      object_init(map,OBJECT_SHOVEL,team);
+      object_init(map,OBJECT_FLAG,team);
   }
 }
 

@@ -191,13 +191,6 @@ extern void run( void (*func)(TestContext*), char * test_name , TestContext *tc)
 /* HELPERS  */
 /************/
 
-// easy seeded random
-extern int randint()
-{
-   srand (time(NULL));
-   return rand();
-}
-
 // debug alias
 extern int test_debug()
 {

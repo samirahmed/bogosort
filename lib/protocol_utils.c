@@ -26,11 +26,19 @@
 #include <sys/types.h>
 #include <strings.h>
 #include <errno.h>
+#include <time.h>
 
 #include "protocol.h"
 #include "protocol_utils.h"
 
 int PROTO_DEBUG=0;
+
+// easy seeded random
+extern int randint()
+{
+   srand (time(NULL));
+   return rand();
+}
 
 extern void
 cell_dump(Cell *cell)
