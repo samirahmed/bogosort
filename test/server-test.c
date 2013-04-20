@@ -413,7 +413,7 @@ void test_pickup_drop_logic(TestContext*tc)
    server_request_init(&maze,&request,fd_blue,ACTION_MOVE,blue_shovel->cell->pos.x,blue_shovel->cell->pos.y);
    request.test_mode = 1; //  teleport
    server_game_action(&maze,&request);
-   server_request_init(&maze,&request,fd_blue,ACTION_PICKUP_SHOVEL,next.x,next.y);
+   server_request_init(&maze,&request,fd_blue,ACTION_PICKUP_SHOVEL,blue->cell->pos.x,blue->cell->pos.y);
    rc = server_game_action(&maze,&request);
    assertion = (rc >= 0) &&
                (blue_shovel->cell = blue->cell) &&
@@ -454,8 +454,86 @@ void test_pickup_drop_logic(TestContext*tc)
                (blue->shovel == blue_shovel);
 
    should("not be picked up when a player is holding a similar type",assertion,tc);
+  
+   /////////////////////////////////
+   // PICKUP FLAG AND SHOVEL
+   /////////////////////////////////
+   Object* blue_flag = object_get(&maze, OBJECT_FLAG , TEAM_BLUE);
+   server_request_init(&maze,&request,fd_blue,ACTION_MOVE,blue_flag->cell->pos.x,blue_flag->cell->pos.y);
+   request.test_mode = 1; //  teleport
+   server_game_action(&maze,&request);
 
+   server_request_init(&maze,&request,fd_blue,ACTION_PICKUP_FLAG,blue->cell->pos.x,blue->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   assertion = (rc >= 0) &&
+               (blue_flag->cell = blue->cell) &&
+               (blue_flag->player = blue)     &&
+               (blue->flag == blue_flag)    &&
+               (blue_flag->cell->object != blue_flag) &&
+               (player_has_shovel(blue) && player_has_flag(blue));
+   should("allow picking up both flag and shovel",assertion,tc);
+  
+   ////////////////////////
+   // MOVE WITH BOTH
+   /////////////////////// 
    
+   old = blue->cell->pos;
+   server_request_init(&maze,&request,fd_blue,ACTION_MOVE,blue->cell->pos.x-1,blue->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   assertion = (rc >= 0) &&
+               (blue_shovel->cell == blue->cell) && 
+               (blue_shovel->cell == blue->cell) && 
+               (blue_flag->cell = blue->cell)    &&
+               (blue_flag->player = blue)        &&
+               (blue->cell->pos.x == old.x-1)    &&
+               (blue->cell->pos.y == old.y)      &&
+               (blue->cell->object!= blue_shovel)&&
+               (player_has_shovel(blue) && player_has_flag(blue));
+   should("correctly move when a player holds both shovel & flag",assertion,tc);
+   
+   //////////////////////////////
+   // DROP SHOVEL AND DROP FLAG
+   //////////////////////////////
+    
+   server_request_init(&maze,&request,fd_blue,ACTION_DROP_FLAG,blue->cell->pos.x,blue->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   assertion = (rc >= 0) &&
+               (!player_has_flag(blue))         && 
+               (player_has_shovel(blue))        && 
+               (blue_flag->cell->object == blue_flag) &&
+               (blue_flag->player != blue ) &&
+               (blue->cell->player = blue);
+   should("drop correctly",assertion,tc);
+
+   ////////////////////////////
+   //  GET TAGGED WITH SHOVEL AND FLAG
+   ////////////////////////////
+   server_request_init(&maze,&request,fd_blue,ACTION_PICKUP_FLAG,blue->cell->pos.x,blue->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   
+   server_game_add_player(&maze,fd_red,&red);
+   server_request_init(&maze,&request,fd_blue,ACTION_MOVE,red->cell->pos.x+1,red->cell->pos.y);
+   request.test_mode = 1; //  teleport
+   server_game_action(&maze,&request);
+
+   server_request_init(&maze,&request,fd_red,ACTION_MOVE,red->cell->pos.x+1,red->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   assertion = ( rc>=0 ) &&
+               ( red->state == PLAYER_FREE)           && 
+               ( blue->state == PLAYER_JAILED )       &&
+               ( !player_has_shovel(blue))            &&
+               ( !player_has_flag(blue) )             &&
+               ( blue_shovel->cell->type == CELL_HOME)&&
+               ( blue_shovel->cell->turf == TEAM_BLUE)&&
+               ( blue_flag->cell->player = red  )     &&
+               ( blue_flag->cell->object = blue_flag) &&
+               ( blue_shovel->cell->object = blue_shovel);
+   should("correctly reset and drop when a player is tagged",assertion,tc);
+   
+   ////////////////////////////
+   // USE SHOVEL TEST ...
+   ///////////////////////////
+
    maze_destroy(&maze);
 }
 
