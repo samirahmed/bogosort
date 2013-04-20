@@ -48,6 +48,10 @@ typedef struct{
 extern int server_request_init(Maze*m,GameRequest*request,int fd,Action_Types action, int pos_x, int pos_y);
 extern int  server_fd_to_id_and_team(Maze*m,int fd, int *team_ptr, int*id_ptr);
 
+extern int* server_request_plist(Maze*m, Team_Types team, int* length);
+extern void server_request_objects(Maze*m,int*rshovel,int*rflag,int*bshovel,int*bflag);
+extern int* server_request_walls(Maze*m, int* length);
+
 // Game Methods
 extern int  server_game_add_player(Maze*maze,int fd, Player**player);
 extern void server_game_drop_player(Maze*maze,int team, int id);
@@ -72,6 +76,9 @@ extern void server_plist_write_lock(Plist*plist);
 extern void server_plist_unlock(Plist*plist);
 extern void _server_root_lock(Maze*m, Cell*c);    // requires cell to be locked before calling
 extern void _server_root_unlock(Maze*m, Cell*c);  // requires cell to be locked before calling
+extern void server_wall_read_lock(Maze*m);
+extern void server_wall_write_lock(Maze*m);
+extern void server_wall_unlock(Maze*m);
 
 // Object Methods
 extern void object_lock(Object*object);

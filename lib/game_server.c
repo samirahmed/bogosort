@@ -16,6 +16,85 @@
 /* REQUEST METHODS */
 /*******************/
 
+// ALLOCATES NEW MEMORY, SO REMEMBER TO FREE
+extern int* server_request_plist(Maze*m, Team_Types team, int* length)
+{
+  Plist*plist = &m->players[team];
+  *length = plist->max;
+  
+  int*list =(int*) malloc(sizeof(int)*(*length));
+  bzero(list,sizeof(int)*(*length));
+  
+  
+  int ii;  
+  server_plist_read_lock(plist);
+    for( ii=0; ii<plist->max ;ii++ )
+    {
+      Player*player = &plist->at[ii];
+      if (player->fd != -1)
+      {
+        player_lock(player);
+        compress_player(player,&list[ii], PLAYER_UNCHANGED);
+        player_unlock(player);
+      }
+    }
+  server_plist_unlock(plist);
+  
+  return list;
+}
+
+
+extern void server_request_objects(Maze*m,int*rshovel,int*rflag,int*bshovel,int*bflag)
+{
+  Object* object;
+  
+  object = object_get(m,OBJECT_FLAG,TEAM_RED);
+  object_lock(object); 
+  compress_object(object,rflag);
+  object_unlock(object);
+  
+  object = object_get(m,OBJECT_FLAG,TEAM_BLUE);
+  object_lock(object); 
+  compress_object(object,bflag);
+  object_unlock(object);
+  
+  object = object_get(m,OBJECT_SHOVEL,TEAM_RED);
+  object_lock(object); 
+  compress_object(object,rshovel);
+  object_unlock(object);
+  
+  object = object_get(m,OBJECT_SHOVEL,TEAM_BLUE);
+  object_lock(object); 
+  compress_object(object,bshovel);
+  object_unlock(object);
+}
+
+// ALLOCATES int*length memory at return pointer
+// Remember to Delocated
+extern int* server_request_walls(Maze*m, int* length)
+{
+  int ii,xx,yy,*list, count;
+  count =0;
+  ii=0;
+
+  server_wall_read_lock(m);
+  
+  for(xx=0; xx<m->max.x ;xx++) for(yy=0; yy<m->max.y ;yy++) if (m->wall[xx][yy]) count++;
+  
+  list = (int*) malloc(sizeof(int)*count);
+
+  for(xx=0; xx<m->max.x ;xx++) for(yy=0; yy<m->max.y ;yy++) if (m->wall[xx][yy])
+  {
+    compress_broken_wall(&m->get[xx][yy].pos,&list[ii]);
+  }
+
+  server_wall_unlock(m);  
+  
+  // set the length and return
+  *length = count;
+  return list;
+}
+
 extern int server_request_init(Maze*m,GameRequest*request,int fd,Action_Types action, int pos_x, int pos_y)
 {
   int team,id,rc;
@@ -468,22 +547,19 @@ extern void player_unlock(Player*player)
   pthread_mutex_unlock(&(player->lock));
 }
 
-// DELETE LATER
-extern void server_object_write_lock(Maze*m)
+extern void server_wall_write_lock(Maze*m)
 {
-  pthread_rwlock_wrlock(&(m->object_wrlock));
+  pthread_rwlock_wrlock(&m->wall_wrlock);
 }
 
-// DELETE LATER
-extern void server_object_read_lock(Maze*m)
+extern void server_wall_read_lock(Maze*m)
 {
-  pthread_rwlock_rdlock(&(m->object_wrlock));
+  pthread_rwlock_rdlock(&m->wall_wrlock);
 }
 
-// DELETE LATER
-extern void server_object_unlock(Maze*m)
+extern void server_wall_unlock(Maze*m)
 {
-  pthread_rwlock_unlock(&(m->object_wrlock));
+  pthread_rwlock_unlock(&m->wall_wrlock);
 }
 
 extern void server_plist_read_lock(Plist*plist)

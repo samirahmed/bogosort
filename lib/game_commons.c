@@ -329,6 +329,9 @@ void maze_fill_helper(Maze* map, char buffer[][MAX_COL_MAZE],int max_x, int max_
                   maze_calculate_mutable(buffer[y][x],x,y,max_x,max_y));
 		}
   }
+  
+  // Fill walls with zeros
+  for(x = map->min.x; x<map->max.x ; x++ ) for(y= map->min.y; y<map->max.y ; y++ ) map->wall[x][y]=0;
 
   int team;
   for ( team = 0; team < NUM_TEAMS; team++ )
