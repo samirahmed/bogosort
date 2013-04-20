@@ -410,25 +410,6 @@ extern void server_maze_unlock(Maze*m, Pos current, Pos next)
   // Order of cell unlock doesn't matter so long as jail is last unlocked
   cell_unlock(&C);
   cell_unlock(&N);
-
-   /*Unlock in reverse order Unlock N*/
-  /*if (N.object) object_unlock(N.object);*/
-  /*if (N.player)*/
-  /*{*/
-    /*if (N.player->shovel) object_unlock(N.player->shovel);*/
-    /*if (N.player->flag) object_unlock(N.player->flag);*/
-    /*player_unlock(N.player);*/
-  /*}*/
-  
-   /*Unlock C*/
-  /*if (C.object) object_unlock(C.object);*/
-  /*if (C.player)*/
-  /*{*/
-    /*if (C.player->shovel) object_unlock(C.player->shovel);*/
-    /*if (C.player->flag) object_unlock(C.player->flag);*/
-    /*player_unlock(C.player);*/
-  /*}*/
-  
 }
 
 // The cell is the root of all the objects. A cell root lock
@@ -442,16 +423,6 @@ extern void _server_root_lock(Maze*m, Cell* cell)
     player_lock(cell->player); 
     if (cell->player->shovel){ object_lock(cell->player->shovel); }
     if (cell->player->flag){ object_lock(cell->player->flag); }
-    
-    // Locked the player BUT he/she could be dropped
-    // Cleanup references if dropped
-    /*server_plist_read_lock(&m->players[cell->player->team]);    */
-    /*if (cell->player->fd = -1)*/
-    /*{*/
-      /*_server_drop_handler(m,cell->player); */
-      /*player_unlock(cell->player);*/
-    /*}*/
-    /*server_plist_unlock(&m->players[cell->player->team]);    */
   }
 }
 
