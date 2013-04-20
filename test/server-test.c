@@ -482,9 +482,9 @@ void test_game_move(TestContext*tc)
                 (server_home_count_read(&maze.home[other->team]) == 0 );
     should("spawn and move player correctly on TEAM_RED",assertion,tc);
 
-    /////////////////
-    // Tag Player
-    /////////////////
+    ///////////////////////////////////////////
+    // Tag Player (Unintentional i.e Passive)
+    //////////////////////////////////////////
     
     next.x = 150; next.y = 99;
     server_request_init(&maze,&request,fd_red,ACTION_MOVE,next.x,next.y);
@@ -495,8 +495,60 @@ void test_game_move(TestContext*tc)
                 (other->cell->player == other )  &&
                 (other->state == PLAYER_JAILED ) &&
                 (player->cell->pos.x == next.x && player->cell->pos.y == next.y);
-    should("correct jail player walking into other on enemy turf",assertion,tc);
+    should("correctly jail player walking into other on enemy turf",assertion,tc);
     
+    ///////////////////////////////////////////
+    // Make 2 new Players for Active tagging
+    //////////////////////////////////////////
+    
+    int fd_blue = fd+2;
+    Player*blue;
+    server_game_add_player(&maze,fd_blue,&blue);
+    server_request_init(&maze,&request,fd_blue,ACTION_MOVE,50,99);
+    request.test_mode = 1;
+    server_game_action(&maze,&request);
+    
+    int fd_tagger = fd+3;
+    Player*tagger;
+    server_game_add_player(&maze,fd_tagger,&tagger);
+    server_request_init(&maze,&request,fd_tagger,ACTION_MOVE,49,99);
+    request.test_mode = 1;
+    server_game_action(&maze,&request);
+
+    // active tagging
+    server_request_init(&maze,&request,fd_tagger,ACTION_MOVE,50,99);
+    rc = server_game_action(&maze,&request);
+    assertion = ( rc >= 0 ) &&
+                ( blue->cell->type == CELL_JAIL ) &&
+                ( blue->cell->player == blue )    &&
+                ( blue->state == PLAYER_JAILED )  &&
+                ( tagger->cell->player == tagger) &&
+                ( blue->cell->turf == opposite_team(blue->team) ) &&
+                ( tagger->cell->pos.x == 50 && tagger->cell->pos.y == 99);
+    
+    should("correctly jail player walking into enemy on home turf",assertion,tc);
+
+    ////////////////////////
+    // Test Freeing 
+    ////////////////////////
+    
+    // teleport player to write out side jail
+    server_request_init(&maze,&request,fd,ACTION_MOVE,maze.jail[opposite_team(player->team)].min.x-1,99);
+    request.test_mode = 1;
+    server_game_action(&maze,&request);
+    
+    // step into the jail
+    server_request_init(&maze,&request,fd,ACTION_MOVE,maze.jail[opposite_team(player->team)].min.x,99);
+    rc = server_game_action(&maze,&request);
+    assertion = (rc >=0) &&
+                ( player->cell->player == player ) &&
+                ( other->state == PLAYER_FREE )    &&
+                ( player->state == PLAYER_FREE )   &&
+                ( player->cell->pos.y == 99 )      &&
+                ( player->cell->pos.x == maze.jail[opposite_team(player->team)].min.x);
+    should("correctly free jailed players when moving into enemy jail cell while free",assertion,tc);
+
+
     maze_destroy(&maze);
 }
 

@@ -1000,6 +1000,8 @@ extern int _server_action_jail_player(Maze*m, Cell* currentcell)
   {
     _server_action_move_player(m,currentcell, nextcell);
   }
+  player_unlock(player);
+  cell_unlock(nextcell);
   return 0;
 }
 
