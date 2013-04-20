@@ -115,10 +115,10 @@ typedef enum{
 } Cell_State_Types;
 
 typedef enum{
-    RPC_SUCCESS
-    RPC_BAD_AUTH
-    RPC_INVALID_PARAM
-} RPC_Return_Codes
+    RPC_SUCCESS,
+    RPC_BAD_AUTH,
+    RPC_INVALID_PARAM,
+} RPC_Return_Codes;
 
 typedef enum{
     WALL_INFO,

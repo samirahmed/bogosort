@@ -44,7 +44,8 @@ extern int proto_client_set_event_handler(Proto_Client_Handle ch,
 // client side protocol rpc's
 extern int get_int(Proto_Client_Handle ch, int offset, int* result);
 extern void get_hdr(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr);
-extern int do_void_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h);
+extern int do_no_body_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h);
+extern int do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h);
 extern int proto_client_hello(Proto_Client_Handle ch);
 extern int proto_client_goodbye(Proto_Client_Handle ch);
 #endif

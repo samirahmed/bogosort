@@ -207,7 +207,7 @@ extern void get_hdr(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr)
 // all rpc's are assume to only reply only with a return code in the body
 // eg.  like the null_mes
 extern int 
-do_void_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
+do_no_body_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
 {
   int rc;
   Proto_Session *s;
