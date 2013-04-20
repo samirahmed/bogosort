@@ -35,8 +35,7 @@ typedef struct{
 } EventUpdate;
 
 typedef struct{
-  Pos          current;
-  Pos          next; 
+  Pos          pos; 
   Team_Types   team; 
   int          id; 
   int          fd; 
@@ -46,7 +45,7 @@ typedef struct{
 } GameRequest;
 
 // Request Methods
-extern int  server_request_init(Maze*m,GameRequest*request,int fd);
+extern int  server_request_init(Maze*m,GameRequest*request,int fd,Action_Types action, Pos pos);
 extern int  server_fd_to_id_and_team(Maze*m,int fd, int *team_ptr, int*id_ptr);
 
 // Game Methods

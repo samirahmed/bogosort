@@ -16,16 +16,19 @@
 /* REQUEST METHODS */
 /*******************/
 
-extern int server_request_init(Maze*m,GameRequest*request,int fd)
+extern int server_request_init(Maze*m,GameRequest*request,int fd,Action_Types action, Pos pos)
 {
   int team;
   int id;
   
   server_fd_to_id_and_team(m, fd, &team, &id);
   bzero(request,sizeof(request));
-  request->team = team;
-  request->fd   = fd;
-  request->id   = id;
+  request->team   = team;
+  request->fd     = fd;
+  request->id     = id;
+  request->pos.x  = pos.x;
+  request->pos.y  = pos.y;
+  request->action = action;
   
   return 0;
 }
@@ -117,16 +120,13 @@ extern void server_game_drop_player(Maze*maze,int team, int id)
 }
 
 // Processes move from cell to next cell.
-// Return -1 = Unauthenticated Request
-// Return -2 = Bad Current Position
-// Return -3 = Bad Next Position
-//
+// Return ERR_BAD_PLAYER_ID = Unauthenticated Request
+// Return ERR_BAD_NEXT_CELL = Bad Next Position
 extern int server_game_action(Maze*maze , GameRequest* request)
 {
   int team    = request->team;
   int id      = request->id;
-  Pos current = request->current;
-  Pos next    = request->next;
+  Pos next    = request->pos;
   int fd      = request->fd;
   Action_Types action  = request->action;
   
@@ -144,14 +144,8 @@ extern int server_game_action(Maze*maze , GameRequest* request)
 
   while(once--)
   {
-    // Check the player is where he thinks he is
-    if ( player->cell->pos.x != current.x && player->cell->pos.y != current.y)
-    {
-      rc = ERR_BAD_CURRENT_CEL; 
-      break;
-    }
 
-    currentcell = &(maze->get[current.x][current.y]);
+    currentcell = cell;
     nextcell    = &maze->get[next.x][next.y];
     
     // Check that the next cell is near the current cell
