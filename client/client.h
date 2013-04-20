@@ -23,8 +23,10 @@ typedef struct ClientState  {
 typedef struct RequestHandler{
   Client * client;
   Proto_Msg_Types type;
-  int x;
-  int y;
+  Action_Types action_type;
+  Pos current;
+  Pos next;
+  Information_Type info_type;
 }Request;
 
 typedef struct GlobalsInfo {
@@ -43,13 +45,11 @@ int client_map_init(Client *C,char* filename);
 //RPC calls
 int doRPCCmd(Request* request); //Master RPC CALLER RAWR
 
-//Set Request Header and call doRPCCmd()
-int send_hello_rpc(Request* request);
-int send_move_rpc(Request* request, int x, int y);
-int send_pickup_rpc(Request* request);
-int send_drop_rpc(Request* request);
-int send_sync_rpc(Request* request);
-int send_goodbye_rpc(Request* request);
+//Set Request Types and Required Information
+void request_action_init(Request* request, Client* client, Action_Types action, Pos current, Pos next);
+void request_hello_init(Request* request, Client* client);
+void request_goodbye_init(Request* request, Client* client);
+void request_sync_init(Request* request, Client* client,Information_Type info_type);
 
 
 

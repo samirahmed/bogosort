@@ -37,42 +37,36 @@ Globals globals;         //Host string and port
 static int connected;
 static char MenuString[] = "\n?> ";
 
-int send_hello_rpc(Request* request)
+void request_action_init(Request* request, Client* client,Action_Types action,Pos current, Pos next)
 {
-    request->type = PROTO_MT_REQ_HELLO;
-    return doRPCCmd(request);
-}
-
-int send_sync_rpc(Request* request)
-{
-    request->type = PROTO_MT_REQ_SYNC;
-    return doRPCCmd(request);
-}
-
-int send_move_rpc(Request* request,int x,int y)
-{
+    request->client = client;
+    request->current  = current;
     request->type = PROTO_MT_REQ_ACTION;
-    return doRPCCmd(request);
+    request->action_type = action_type;
+    if(action==ACTION_MOVE)
+        request->next = next;
 }
 
-int send_pickup_rpc(Request* request)
+void request_hello_init(Request* request,Client* client)
 {
-    request->type = PROTO_MT_REQ_ACTION;
-    return doRPCCmd(request);
-   
+    request->client = client;
+    request->type = PROTO_MT_REQ_HELLO    
 }
 
-int send_drop_rpc(Request* request)
+void request_goodbye_init(Request* request,Client* client)
 {
-    request->type = PROTO_MT_REQ_ACTION;
-    return doRPCCmd(request);
-}
-
-int send_goodbye_rpc(Request* request)
-{
+    request->client = client;
     request->type = PROTO_MT_REQ_GOODBYE;
-    return doRPCCmd(request);
 }
+
+void request_sync_init(Request* request,Client* client, Information_Type info_type)
+{
+    request->client = client;
+    request->type = PROTO_MT_REQ_SYNC;
+    request->info_type = info_type;
+
+}
+
 
 static int update_handler(Proto_Session *s )
 {
