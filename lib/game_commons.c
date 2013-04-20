@@ -387,6 +387,21 @@ void maze_fill_helper(Maze* map, char buffer[][MAX_COL_MAZE],int max_x, int max_
       object_init(map,OBJECT_SHOVEL,team);
       object_init(map,OBJECT_FLAG,team);
   }
+
+  // Set cell Wall mutablity
+  for(team=0;team<NUM_TEAMS;team++)
+  {
+    int xx,yy;
+    
+    for(xx=map->home[team].min.x-1; xx<=map->home[team].max.x ;xx++ )
+    for(yy=map->home[team].min.y-1; yy<=map->home[team].max.y ;yy++ )
+    if (map->get[xx][yy].type == CELL_WALL) map->get[xx][yy].is_mutable = CELLTYPE_MUTABLE;
+    
+    for(xx=map->jail[team].min.x-1; xx<=map->jail[team].max.x ;xx++ )
+    for(yy=map->jail[team].min.y-1; yy<=map->jail[team].max.y ;yy++ )
+    if (map->get[xx][yy].type == CELL_WALL) map->get[xx][yy].is_mutable = CELLTYPE_MUTABLE;
+  }
+  
 }
 
 extern int maze_build_from_file(Maze*map, char* filename)
