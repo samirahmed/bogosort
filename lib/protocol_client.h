@@ -26,6 +26,7 @@
 #include "protocol.h"
 #include "protocol_session.h"
 #include "types.h"
+#include "game_commons.h"
 
 typedef void * Proto_Client_Handle;
 

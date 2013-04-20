@@ -228,7 +228,7 @@ do_no_body_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
 }
 
 extern int 
-do_no_body_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
+do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h,Pos current, Pos next)
 {
   int rc;
   Proto_Session *s;

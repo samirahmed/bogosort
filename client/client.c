@@ -191,7 +191,7 @@ int doRPCCmd(Request* request)
     hdr.type = request->type;
     hdr.pstate.v0.raw = my_player->id;
     hdr.gstate.v2.raw = request->info_type;
-    rc = do_no_body_rpc(C->ph,&hdr);
+    rc = do_action_request_rpc(C->ph,&hdr,request->current,request->next);
     break;
   case PROTO_MT_REQ_GOODBYE:
     fprintf(stderr,"Goodbye COMMAND ISSUED");
