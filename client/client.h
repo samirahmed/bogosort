@@ -45,7 +45,9 @@ int doRPCCmd(Request* request); //Master RPC CALLER RAWR
 
 //Set Request Header and call doRPCCmd()
 int send_hello_rpc(Request* request);
-int send_action_rpc(Request* request);
+int send_move_rpc(Request* request, int x, int y);
+int send_pickup_rpc(Request* request);
+int send_drop_rpc(Request* request);
 int send_sync_rpc(Request* request);
 int send_goodbye_rpc(Request* request);
 
