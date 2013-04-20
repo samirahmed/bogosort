@@ -173,13 +173,11 @@ int doRPCCmd(Request* request)
 
   switch (request->type) {
   case PROTO_MT_REQ_HELLO:  
-    {
-     fprintf(stderr,"HELLO COMMAND ISSUED");
-     hdr.type = request->type;
-     rc = do_no_body_rpc(C->ph,&hdr);
-     if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);
-     if (rc < 0) fprintf(stderr, "Unable to connect");
-    }
+    fprintf(stderr,"HELLO COMMAND ISSUED");
+    hdr.type = request->type;
+    rc = do_no_body_rpc(C->ph,&hdr);
+    if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);
+    if (rc < 0) fprintf(stderr, "Unable to connect");
     break;
   case PROTO_MT_REQ_ACTION:
     fprintf(stderr,"Action COMMAND ISSUED");
@@ -189,17 +187,17 @@ int doRPCCmd(Request* request)
     rc = do_no_body_rpc(C->ph,&hdr);
     break;
   case PROTO_MT_REQ_SYNC:
-    fprintf(stderr,"Request COMMAND ISSUED");
+    fprintf(stderr,"Sync COMMAND ISSUED");
     hdr.type = request->type;
     hdr.pstate.v0.raw = my_player->id;
     hdr.gstate.v2.raw = request->info_type;
     rc = do_no_body_rpc(C->ph,&hdr);
     break;
   case PROTO_MT_REQ_GOODBYE:
-     fprintf(stderr,"Goodbye COMMAND ISSUED");
-     hdr.type = request->type;
-     hdr.pstate.v0.raw = my_player->id;
-     rc = do_no_body_rpc(C->ph,&hdr);
+    fprintf(stderr,"Goodbye COMMAND ISSUED");
+    hdr.type = request->type;
+    hdr.pstate.v0.raw = my_player->id;
+    rc = do_no_body_rpc(C->ph,&hdr);
     /*rc = proto_client_goodbye(C->ph);*/
     /*printf("Game Over - You Quit");*/
     break;

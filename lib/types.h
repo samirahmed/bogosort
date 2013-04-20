@@ -104,6 +104,7 @@ typedef enum{
 } RPC_Return_Codes;
 
 typedef enum{
+    MY_PLAYER_INFO,
     WALL_INFO,
     PLAYER_INFO,
     OBJECT_INFO    

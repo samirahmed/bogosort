@@ -221,6 +221,30 @@ do_no_body_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
   
   if(rc<=0) rc =-1;
 
+  //Get the return code from the receive header
+  rc = s->rhdr.gstate.v0.raw;
+
+  return rc;
+}
+
+extern int 
+do_no_body_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
+{
+  int rc;
+  Proto_Session *s;
+  Proto_Client *c = ch;
+  
+  s = &(c->rpc_session);
+  proto_session_hdr_marshall(s,h);
+  
+  rc = proto_session_send_msg(s,1);
+  rc = proto_session_rcv_msg(s);
+  
+  if(rc<=0) rc =-1;
+
+  //Get the return code from the receive header
+  rc = s->rhdr.gstate.v0.raw;
+
   return rc;
 }
 
