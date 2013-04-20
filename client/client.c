@@ -37,6 +37,42 @@ Globals globals;         //Host string and port
 static int connected;
 static char MenuString[] = "\n?> ";
 
+int send_hello_rpc(Request* request)
+{
+    request->type = PROTO_MT_REQ_HELLO;
+    return doRPCCmd(request);
+}
+
+int send_sync_rpc(Request* request)
+{
+    request->type = PROTO_MT_REQ_SYNC;
+    return doRPCCmd(request);
+}
+
+int send_move_rpc(Request* request,int x,int y)
+{
+    request->type = PROTO_MT_REQ_ACTION;
+    return doRPCCmd(request);
+}
+
+int send_pickup_rpc(Request* request)
+{
+    request->type = PROTO_MT_REQ_ACTION;
+    return doRPCCmd(request);
+   
+}
+
+int send_drop_rpc(Request* request)
+{
+    request->type = PROTO_MT_REQ_ACTION;
+    return doRPCCmd(request);
+}
+
+int send_goodbye_rpc(Request* request)
+{
+    request->type = PROTO_MT_REQ_GOODBYE;
+    return doRPCCmd(request);
+}
 
 static int update_handler(Proto_Session *s )
 {
