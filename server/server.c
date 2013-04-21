@@ -30,17 +30,17 @@
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/net.h"
-#include "../lib/maze.h"
+#include "../lib/game_commons.h"
+#include "../lib/game_server.h"
 #include "../lib/protocol_session.h"
 #include "../lib/protocol_server.h"
 #include "../lib/protocol_utils.h"
 
-static pthread_mutex_t maplock;
-static Maze map; 		//Static Global variable for the map
+static Maze maze; 		
+
 int client_lost_handler(Proto_Session *);
 void init_game(void);
 int updateClients(void);
-
 
 int hello_handler( Proto_Session *s)
 {
@@ -54,90 +54,10 @@ int goodbye_handler( Proto_Session *s)
   return reply(s,PROTO_MT_REP_BASE_GOODBYE,5);
 }
 
-int num_handler( Proto_Session *s)
-{
-  Cell cell;
-  Proto_Msg_Hdr hdr;
-  bzero(&hdr, sizeof(Proto_Msg_Hdr)); 
-  bzero(&cell, sizeof(Cell)); 
-  proto_session_hdr_unmarshall(s, &hdr); 
-  cell_unmarshall_from_header(&cell,&hdr);
-
-  int count;
-  count = 0;
-
-  int col;
-  int row;
-  for (col = 0; col < map.max_x; col++ ) 
-  {
-    for( row = 0; row < map.max_y; row++)
-    {
-      if (map.pos[col][row].type == cell.type)
-      {
-        switch( cell.type )
-        {
-            case CELL_WALL:
-              count++;
-              break;
-            case CELL_FLOOR:
-              count++;
-              break;
-            default:
-              if (map.pos[col][row].turf == cell.turf) count++;
-            break;
-        }
-      }
-    }
-  }
-  
-  return reply(s,PROTO_MT_REP_BASE_NUM,count);
-}
-
-int dim_handler( Proto_Session *s)
-{
-  fprintf(stderr, "dim received");
-  
-  put_int(s,map.max_x);
-  put_int(s,map.max_y);
-  return reply(s,PROTO_MT_REP_BASE_DIM,NULL);
-}
-
-int cinfo_handler( Proto_Session *s)
-{
-  
-  Proto_Msg_Hdr h;
-  bzero(&h, sizeof(Proto_Msg_Hdr)); 
-  proto_session_hdr_unmarshall(s, &h);
-  
-  int x;
-  int y;
-  int is_valid;
-  x= h.gstate.v0.raw;
-  y= h.gstate.v1.raw;
-  fprintf(stderr, "cinfo received for x= %d, y=%d \n",x,y);
-
-  is_valid = (x >= map.min_x && 
-             x<map.max_x && 
-             y >= map.min_y && 
-             y <map.max_y ) ? 1 : 0; 
-
-  if (is_valid)
-  {
-     Proto_Msg_Hdr shdr;
-     bzero(&shdr, sizeof(Proto_Msg_Hdr)); 
-     Cell cell ;
-     cell = map.pos[x][y];
-     cell_marshall_into_header(&cell,&shdr);
-     put_hdr(s,&shdr);
-  }
-
-  return reply(s,NULL,is_valid);
-}
-
 int dump_handler( Proto_Session *s)
 {
   fprintf(stderr, "dump received");
-  dump_maze(); 
+  maze_dump(&maze);
   return reply(s,PROTO_MT_REP_BASE_DUMP,NULL);
 }
 
@@ -155,14 +75,10 @@ extern void init_game(void)
  	proto_server_set_req_handler( PROTO_MT_REQ_BASE_HELLO , &(hello_handler) );
  	proto_server_set_req_handler( PROTO_MT_REQ_BASE_GOODBYE , &(goodbye_handler) );
  	proto_server_set_req_handler( PROTO_MT_REQ_BASE_DUMP, &(dump_handler) );
- 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_DIM, &(dim_handler) );
- 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_NUM, &(num_handler) );
- 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_CINFO, &(cinfo_handler) );
 
 	// Should set a session lost handler here
   proto_server_set_session_lost_handler( &(client_lost_handler) );	
 	// Init the lock
-	pthread_mutex_init(&maplock,0);
 }
 
 int 
@@ -178,20 +94,19 @@ doUpdateClients(void)
   return 1;
 }
 
+//////////////////
+//  SHELL CODE  //
+//////////////////
+
 char MenuString[] =
   "Usage: d/D-debug on/off\n\tu-update clients\n\tq-quit\n\tload <filename> - Loads a Map file\n\tdump - dump contents of map data structure\n";
 
-int 
-docmd(char* cmd)
+int docmd(char* cmd)
 {
   int rc = 1;
 
-  if((strncmp(cmd,"load",4))==0)	//Lazily put this here
-	return  load_maze(cmd+5);
-  else if((strncmp(cmd,"dump",4))==0){	//Lazily put this here
-	dump_maze();
-	return rc;
-  }
+  if((strncmp(cmd,"load",4))==0)  return maze_build_from_file(&maze,"../daGame.map");
+  else if((strncmp(cmd,"dump",4))==0) { maze_dump(&maze); return rc; }
 
   switch (*cmd) {
   case 'd':
@@ -216,8 +131,7 @@ docmd(char* cmd)
   return rc;
 }
 
-char*
-prompt(int menu) 
+char* prompt(int menu) 
 {
   if (menu) printf("%sSERVER_SHELL$ ", MenuString);
   fflush(stdout);
@@ -238,8 +152,7 @@ prompt(int menu)
 	return 0;
 }
 
-void *
-shell(void *arg)
+void * shell(void *arg)
 {
   char* c;
   int rc=1;
@@ -258,8 +171,7 @@ shell(void *arg)
   return NULL;
 }
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 { 
   if (proto_server_init()<0) {
     fprintf(stderr, "ERROR: failed to initialize proto_server subsystem\n");
