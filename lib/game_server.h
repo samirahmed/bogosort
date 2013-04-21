@@ -41,6 +41,7 @@ typedef struct{
   int          fd; 
   Action_Types action;
   int          test_mode;
+  int          timestamp;
   EventUpdate  update;
 } GameRequest;
 

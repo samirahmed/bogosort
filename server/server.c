@@ -39,58 +39,142 @@
 static Maze maze; 		
 
 int client_lost_handler(Proto_Session *);
-void init_game(void);
+int init_game(void);
 int updateClients(void);
 
 int hello_handler( Proto_Session *s)
 {
-  fprintf(stderr,"hello received");
-  return reply(s,PROTO_MT_REP_BASE_HELLO,5);
+  if (proto_debug()) fprintf(stderr,"Hello received\n");
+
+  int rc;
+  Player*player;
+  
+  rc = server_game_add_player(&maze,s->fd,&player);
+  if(rc<0) reply(s,PROTO_MT_REP_HELLO,rc,NULL);
+  
+  Proto_Msg_Hdr h;
+  bzero(&h, sizeof(Proto_Msg_Hdr));
+  h.pstate.v0.raw = player->id;
+  h.pstate.v1.raw = player->team;
+  h.gstate.v0.raw = rc;
+  put_hdr(s,&h);
+
+  return reply(s,NULL,NULL,NULL);
 }
 
 int goodbye_handler( Proto_Session *s)
 {
-  fprintf(stderr, "goodbye received");
-  return reply(s,PROTO_MT_REP_BASE_GOODBYE,5);
+  if(proto_debug()) fprintf(stderr,"Drop Request Received");
+  client_lost_handler(s);
+  return reply(s,PROTO_MT_REP_GOODBYE,0,NULL);
 }
 
-int dump_handler( Proto_Session *s)
+int sync_handler( Proto_Session *s)
 {
-  fprintf(stderr, "dump received");
-  maze_dump(&maze);
-  return reply(s,PROTO_MT_REP_BASE_DUMP,NULL);
+  Proto_Msg_Hdr h;
+  bzero(&h, sizeof(Proto_Msg_Hdr));
+  int *walls, *rlist, *blist, blen, rlen, wlen, rshovel, bshovel, bflag, rflag, rc,ii,info;
+
+  // Get the walls + rlist
+  walls = server_request_walls(&maze, &wlen);
+  rlist = server_request_plist(&maze, TEAM_RED, &rlen);
+  blist = server_request_plist(&maze, TEAM_BLUE, &blen);
+  
+  // Put them into the body
+  for (ii=0 ; ii<wlen ;ii++) put_int(s,walls[ii]);
+  for (ii=0 ; ii<rlen ;ii++) put_int(s,rlist[ii]);
+  for (ii=0 ; ii<rlen ;ii++) put_int(s,blist[ii]);
+
+  // Free memory
+  free(walls);
+  free(rlist);
+  free(blist);
+  
+  /// Now put in the objects
+  server_request_objects(&maze,&rshovel,&rflag,&bshovel,&bflag);
+  put_int(s,rflag);
+  put_int(s,bflag);
+  put_int(s,rshovel);
+  put_int(s,bshovel);
+
+  h.gstate.v0.raw = rc;
+  h.pstate.v2.raw = wlen;
+  h.pstate.v3.raw = rlen+blen;
+  put_hdr(s,&h);
+}
+
+int action_handler( Proto_Session *s)
+{
+  if (proto_debug()) fprintf(stderr,"Action Request Received from\n");
+
+  Proto_Msg_Hdr h;
+  int rc,id,team,action,fd;
+  Pos current,next;
+  GameRequest request;
+  rc = 0;
+  fd = s->fd;
+  
+  /// Extract information 
+  bzero(&h, sizeof(Proto_Msg_Hdr)); 
+  proto_session_hdr_unmarshall(s, &h);
+  action  = h.gstate.v1.raw;
+  id      = h.pstate.v0.raw;
+  team    = h.pstate.v1.raw;
+  proto_session_body_unmarshall_bytes(s, 0, sizeof(Pos), (char*)&current);
+  proto_session_body_unmarshall_bytes(s, sizeof(Pos), sizeof(Pos), (char*)&next);
+
+  rc = server_request_init(&maze,&request,fd,action,next.x,next.y);
+  if (rc<0) return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+  
+  rc = server_game_action(&maze, &request);
+
+  return reply(s,PROTO_MT_REP_ACTION,rc,request.timestamp);
 }
 
 extern int client_lost_handler( Proto_Session * s)
 {
-	fprintf(stdout, "Session lost - Dropping Client ...:\n");
+  int id,team,rc,fd;
+  fd = (int)s->fd;
+  rc =server_fd_to_id_and_team(&maze,fd,&team,&id);
+  if (rc <0) 
+  {
+    fprintf(stderr,"Client Lost but FD doesn't match existing player\n");
+    return -1;
+  }
+
+  server_game_drop_player(&maze, team, id);
+	fprintf(stdout, "Client Lost fd%d\n",(int)s->fd);
+  
   if (proto_debug()) proto_session_dump(s);
 	return -1;
 }
 
-extern void init_game(void)
-{
-	
+extern int init_game(void){
+	int rc;
+  rc = maze_build_from_file(&maze,"../daGame.map");
+  if (rc <0) fprintf(stderr, "ERROR: Failed to build map\n");
+  
+  if (proto_debug()) fprintf(stderr, "Initializing Request Handlers\n");
+  
   // Setup handler for Hello event
- 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_HELLO , &(hello_handler) );
- 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_GOODBYE , &(goodbye_handler) );
- 	proto_server_set_req_handler( PROTO_MT_REQ_BASE_DUMP, &(dump_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_HELLO, &(hello_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_GOODBYE, &(goodbye_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_ACTION, &(action_handler) );
 
 	// Should set a session lost handler here
   proto_server_set_session_lost_handler( &(client_lost_handler) );	
-	// Init the lock
+
 }
 
-int 
-doUpdateClients(void)
+int doUpdateClients(void)
 {
-  Proto_Session *s;
-  Proto_Msg_Hdr hdr;
+  /*Proto_Session *s;*/
+  /*Proto_Msg_Hdr hdr;*/
 
-  s = proto_server_event_session();
-  hdr.type = PROTO_MT_EVENT_BASE_UPDATE;
-  proto_session_hdr_marshall(s, &hdr);
-  proto_server_post_event();  
+  /*s = proto_server_event_session();*/
+  /*hdr.type = PROTO_MT_EVENT_BASE_UPDATE;*/
+  /*proto_session_hdr_marshall(s, &hdr);*/
+  /*proto_server_post_event();  */
   return 1;
 }
 
@@ -105,8 +189,7 @@ int docmd(char* cmd)
 {
   int rc = 1;
 
-  if((strncmp(cmd,"load",4))==0)  return maze_build_from_file(&maze,"../daGame.map");
-  else if((strncmp(cmd,"dump",4))==0) { maze_dump(&maze); return rc; }
+  if((strncmp(cmd,"dump",4))==0) { maze_dump(&maze); return rc; }
 
   switch (*cmd) {
   case 'd':
@@ -173,15 +256,16 @@ void * shell(void *arg)
 
 int main(int argc, char **argv)
 { 
-  if (proto_server_init()<0) {
+  if (proto_server_init()<0)
+  {
     fprintf(stderr, "ERROR: failed to initialize proto_server subsystem\n");
     exit(-1);
   }
-  fprintf(stderr, "Initializing Request Handlers\n");
-  init_game();
+  
+  int rc = init_game();
+  if (rc<0) {fprintf(stderr,"ERROR: Killing Server!\n"); exit(-1); }
 
-  fprintf(stderr, "RPC Port: %d, Event Port: %d\n", proto_server_rpcport(), 
-	  proto_server_eventport());
+  fprintf(stderr, "RPC Port: %d, Event Port: %d\n", proto_server_rpcport(), proto_server_eventport());
 
   if (proto_server_start_rpc_loop()<0) {
     fprintf(stderr, "ERROR: failed to start rpc loop\n");

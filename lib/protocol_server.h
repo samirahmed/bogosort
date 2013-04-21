@@ -41,5 +41,5 @@ extern int  proto_server_start_rpc_loop(void);
 extern void put_int(Proto_Session *s, int value);
 extern void proto_server_post_event(void);
 extern void put_hdr(Proto_Session*s, Proto_Msg_Hdr *hdr);
-extern int  reply( Proto_Session * s, unsigned int mt , int response);
+extern int reply( Proto_Session * s, unsigned int  mt , int response, int timestamp);
 #endif
