@@ -223,9 +223,6 @@ do_no_body_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
   
   if(rc<=0) rc =-1;
 
-  //Get the return code from the receive header
-  rc = s->rhdr.gstate.v0.raw;
-
   return rc;
 }
 
@@ -249,10 +246,6 @@ do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h,Pos current, Pos
   rc = proto_session_rcv_msg(s);
   
   if(rc<=0) rc =-1;
-
-  //Get the return code from the receive header
-  rc = s->rhdr.gstate.v0.raw;
-
   return rc;
 }
 
