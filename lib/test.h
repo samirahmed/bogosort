@@ -50,9 +50,7 @@ extern void should(const char* message, int valid, TestContext *tc);
 extern void test_summary(TestContext *tc);
 extern void test_init(int argc, char** argv, TestContext *tc);
 extern void run( void (*func)(TestContext*), char * test_name , TestContext *tc);
-<<<<<<< HEAD
 extern void parallelize(Task task[], int num_tasks, int num_threads );
 extern int  test_debug(void);
 extern int  randint(void);
 extern void test_task_init(Task *task, Proc func, int reps, void* a0,void*a1, void*a2, void*a3,void*a4,void*a5);
->>>>>>> Added blocking thread test
