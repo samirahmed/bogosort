@@ -34,6 +34,7 @@ typedef unsigned long uval;
 typedef long sval;
 
 typedef enum{
+    RPC_SUCCESS         =  1,  // Successful RPC
     ERR_WALL            = -10, // Can't move there is a wall.
     ERR_NOOP            = -20, // No operation 
     ERR_NO_PLAYER       = -21, // No player found
@@ -114,10 +115,5 @@ typedef enum{
     CELLSTATE_OCCUPIED_HOLDING
 } Cell_State_Types;
 
-typedef enum{
-    RPC_SUCCESS,
-    RPC_BAD_AUTH,
-    RPC_INVALID_PARAM,
-} RPC_Return_Codes;
 
 #endif /* __DA_GAME_TYPES_H__ */

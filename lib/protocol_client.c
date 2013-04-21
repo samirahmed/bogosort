@@ -204,8 +204,10 @@ extern void get_hdr(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr)
   proto_session_hdr_unmarshall(s,hdr);
 }
 
-// all rpc's are assume to only reply only with a return code in the body
-// eg.  like the null_mes
+//This function is used for RPC's that do not contain anything in the body
+//Parameter: Proto_Msg_Hdr ch - that contains all necessary information for the RPC
+//           Proto_Client_Handle *h - Handle to the Proto_Client 
+//Returns:   Return Code - as specified in Game_Error_Types in types.h
 extern int 
 do_no_body_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
 {
@@ -227,6 +229,12 @@ do_no_body_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
   return rc;
 }
 
+//This function is used for RPC's that do not contain anything in the body
+//Parameter: Proto_Msg_Hdr *h - that contains all necessary information for the RPC
+//           Proto_Client_Handle ch - Handle to the Proto_Client 
+//           Pos current - current position of the player
+//           Pos next - next position that the players wants to move to
+//Returns:   Return Code - as specified in Game_Error_Types in types.h
 extern int 
 do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h,Pos current, Pos next)
 {
@@ -248,16 +256,5 @@ do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h,Pos current, Pos
   return rc;
 }
 
-extern int 
-proto_client_hello(Proto_Client_Handle ch)
-{
-  return -1;
-}
-
-extern int 
-proto_client_goodbye(Proto_Client_Handle ch)
-{
-  return -1;
-}
 
 
