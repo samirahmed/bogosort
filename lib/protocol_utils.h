@@ -31,9 +31,9 @@ extern void proto_dump_pstate(Proto_Player_State *ps);
 extern void proto_dump_gstate(Proto_Game_State *gs);
 extern void proto_dump_msghdr(Proto_Msg_Hdr *hdr);
 extern void cell_dump(Cell *cell);
+extern int randint();
 
 static inline  void proto_debug_on(void) { PROTO_DEBUG = 1; }
 static inline void proto_debug_off(void) { PROTO_DEBUG = 0; }
 static inline int  proto_debug(void) {return PROTO_DEBUG; }
-
 #endif

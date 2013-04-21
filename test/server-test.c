@@ -12,8 +12,6 @@
 #include "../lib/game_server.h"
 #include "../lib/test.h"
 
-/*Maze maze;  // global maze*/
-
 void test_find_and_lock(TestContext * tc)
 {
     int assertion, key, team , xx,yy;
@@ -395,12 +393,356 @@ void test_server_locks(TestContext * tc)
     maze_destroy(&maze);
 }
 
+void test_pickup_drop_logic(TestContext*tc)
+{
+   Maze maze;
+   maze_build_from_file(&maze,"test.map");
+   
+   int rc, fd_blue, assertion, fd_red;
+   GameRequest request;
+   Player *blue,*red;
+   fd_blue = randint()%1000;
+   fd_red = fd_blue+1;
+
+   /////////////////
+   // PICKUP SHOVEL
+   /////////////////
+   Object* blue_shovel = object_get(&maze, OBJECT_SHOVEL , TEAM_BLUE);
+   server_game_add_player(&maze,fd_blue,&blue);
+   server_request_init(&maze,&request,fd_blue,ACTION_MOVE,blue_shovel->cell->pos.x,blue_shovel->cell->pos.y);
+   request.test_mode = 1; //  teleport
+   server_game_action(&maze,&request);
+   server_request_init(&maze,&request,fd_blue,ACTION_PICKUP_SHOVEL,blue->cell->pos.x,blue->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   assertion = (rc >= 0) &&
+               (blue_shovel->cell = blue->cell) &&
+               (blue_shovel->player = blue)     &&
+               (blue->shovel == blue_shovel)    &&
+               (blue_shovel->cell->object != blue_shovel) &&
+               (player_has_shovel(blue) && !player_has_flag(blue));
+   should("be picked up by players correctly",assertion,tc);
+
+   ///////////////
+   // MOVE WITH OBJECT
+   ///////////////
+   Pos old = blue->cell->pos;
+   server_request_init(&maze,&request,fd_blue,ACTION_MOVE,blue->cell->pos.x-1,blue->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   assertion = (rc >= 0) &&
+               (blue_shovel->cell == blue->cell) && 
+               (blue_shovel->cell == blue->cell) && 
+               (blue->cell->pos.x == old.x-1)    &&
+               (blue->cell->pos.y == old.y)      &&
+               (blue->cell->object!= blue_shovel)&&
+               (player_has_shovel(blue));
+   should("correctly move with players",assertion,tc);
+   
+   ////////////////////////////////
+   // TRY TO PICKUP ANOTHER SHOVEL
+   ////////////////////////////////
+   Object*red_shovel = object_get(&maze,OBJECT_SHOVEL,TEAM_RED); 
+   server_request_init(&maze,&request,fd_blue,ACTION_MOVE,red_shovel->cell->pos.x,red_shovel->cell->pos.y);
+   request.test_mode =1;
+   server_game_action(&maze,&request);
+   server_request_init(&maze,&request,fd_blue,ACTION_PICKUP_SHOVEL,blue->cell->pos.x,blue->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   
+   assertion = (rc == ERR_NO_SHOVEL_SPACE) && 
+               (red_shovel->cell->object == red_shovel) &&
+               (red_shovel->player != blue) &&
+               (blue->shovel == blue_shovel);
+
+   should("not be picked up when a player is holding a similar type",assertion,tc);
+  
+   /////////////////////////////////
+   // PICKUP FLAG AND SHOVEL
+   /////////////////////////////////
+   Object* blue_flag = object_get(&maze, OBJECT_FLAG , TEAM_BLUE);
+   server_request_init(&maze,&request,fd_blue,ACTION_MOVE,blue_flag->cell->pos.x,blue_flag->cell->pos.y);
+   request.test_mode = 1; //  teleport
+   server_game_action(&maze,&request);
+
+   server_request_init(&maze,&request,fd_blue,ACTION_PICKUP_FLAG,blue->cell->pos.x,blue->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   assertion = (rc >= 0) &&
+               (blue_flag->cell = blue->cell) &&
+               (blue_flag->player = blue)     &&
+               (blue->flag == blue_flag)    &&
+               (blue_flag->cell->object != blue_flag) &&
+               (player_has_shovel(blue) && player_has_flag(blue));
+   should("allow picking up both flag and shovel",assertion,tc);
+  
+   ////////////////////////
+   // MOVE WITH BOTH
+   /////////////////////// 
+   
+   old = blue->cell->pos;
+   server_request_init(&maze,&request,fd_blue,ACTION_MOVE,blue->cell->pos.x-1,blue->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   assertion = (rc >= 0) &&
+               (blue_shovel->cell == blue->cell) && 
+               (blue_shovel->cell == blue->cell) && 
+               (blue_flag->cell = blue->cell)    &&
+               (blue_flag->player = blue)        &&
+               (blue->cell->pos.x == old.x-1)    &&
+               (blue->cell->pos.y == old.y)      &&
+               (blue->cell->object!= blue_shovel)&&
+               (player_has_shovel(blue) && player_has_flag(blue));
+   should("correctly move when a player holds both shovel & flag",assertion,tc);
+   
+   //////////////////////////////
+   // DROP SHOVEL AND DROP FLAG
+   //////////////////////////////
+    
+   server_request_init(&maze,&request,fd_blue,ACTION_DROP_FLAG,blue->cell->pos.x,blue->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   assertion = (rc >= 0) &&
+               (!player_has_flag(blue))         && 
+               (player_has_shovel(blue))        && 
+               (blue_flag->cell->object == blue_flag) &&
+               (blue_flag->player != blue ) &&
+               (blue->cell->player = blue);
+   should("drop correctly",assertion,tc);
+
+   ////////////////////////////
+   //  GET TAGGED WITH SHOVEL AND FLAG
+   ////////////////////////////
+   server_request_init(&maze,&request,fd_blue,ACTION_PICKUP_FLAG,blue->cell->pos.x,blue->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   
+   server_game_add_player(&maze,fd_red,&red);
+   server_request_init(&maze,&request,fd_blue,ACTION_MOVE,red->cell->pos.x+1,red->cell->pos.y);
+   request.test_mode = 1; //  teleport
+   server_game_action(&maze,&request);
+
+   server_request_init(&maze,&request,fd_red,ACTION_MOVE,red->cell->pos.x+1,red->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   assertion = ( rc>=0 ) &&
+               ( red->state == PLAYER_FREE)           && 
+               ( blue->state == PLAYER_JAILED )       &&
+               ( !player_has_shovel(blue))            &&
+               ( !player_has_flag(blue) )             &&
+               ( blue_shovel->cell->type == CELL_HOME)&&
+               ( blue_shovel->cell->turf == TEAM_BLUE)&&
+               ( blue_flag->cell->player = red  )     &&
+               ( blue_flag->cell->object = blue_flag) &&
+               ( blue_shovel->cell->object = blue_shovel);
+   should("correctly reset and drop when a player is tagged",assertion,tc);
+   
+   ////////////////////////////
+   // USE SHOVEL TEST ...
+   ///////////////////////////
+
+   // move red player to the red shovel
+   server_request_init(&maze,&request,fd_red,ACTION_MOVE,red_shovel->cell->pos.x,red_shovel->cell->pos.y);
+   request.test_mode = 1; //  teleport
+   server_game_action(&maze,&request);
+
+   // pick up shovel
+   server_request_init(&maze,&request,fd_red,ACTION_PICKUP_SHOVEL,red->cell->pos.x,red->cell->pos.y);
+   server_game_action(&maze,&request);
+  
+   // try to break immutable wall
+   server_request_init(&maze,&request,fd_red,ACTION_MOVE,red_shovel->cell->pos.x+1,red_shovel->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   assertion = (rc == ERR_WALL )     &&
+               (red->shovel == red_shovel)    &&
+               (red->shovel->player == red);
+   should("not allow players to walk into immutable cells",assertion,tc);
+   
+   // move red player next to mutable wall
+   server_request_init(&maze,&request,fd_red,ACTION_MOVE,14,101);
+   request.test_mode = 1; //  teleport
+   server_game_action(&maze,&request);
+   
+   server_request_init(&maze,&request,fd_red,ACTION_MOVE,15,101);
+   rc =server_game_action(&maze,&request);
+   assertion = ( rc>=0) &&
+               ( !player_has_shovel(red))                     &&
+               ( red_shovel->cell->type == CELL_HOME)         &&
+               ( red_shovel->player !=  red )                 &&
+               ( red->cell->pos.x == 15)                      &&
+               ( red->cell->type == CELL_FLOOR)               &&
+               ( red->cell->is_mutable == CELLTYPE_IMMUTABLE) &&
+               ( maze.wall[red->cell->pos.x][red->cell->pos.y] == 1);
+   should("correctly break wall with shovel",assertion,tc);
+   maze_destroy(&maze);
+}
+
+// Create 1 BLUE
+// Create 1 RED 
+// Passive Jail Red by walking into blue
+// Create 2 BLUE
+// Create 2 RED
+// 2RED tags 2 BLUE
+// 1BLUE Frees 2 Blue
+void test_game_move(TestContext*tc)
+{
+    Maze maze;
+    maze_build_from_file(&maze,"test.map");
+
+    //////////////////
+    // Add a player
+    //////////////////
+    GameRequest request;
+    Pos  next;
+    int assertion,rc,fd,id,team;
+    fd   = randint()%9000 + 999;
+    team = randint()%2;
+    Player*player;
+    server_game_add_player(&maze, fd, &player );
+    assertion = (server_home_count_read(&maze.home[player->team]) == 1) ;
+    should("increment home count on spawn",assertion,tc);
+
+
+    //////////////////
+    // Move a player
+    //////////////////
+    Cell*current = player->cell;
+    next.x = player->cell->pos.x+1;
+    next.y = player->cell->pos.y;  
+    id = server_request_init(&maze,&request,fd,ACTION_MOVE,next.x,next.y);
+    
+    assertion = (player->id == 0 && id == 0 && player->team == 1);
+    should("successfully find the player id and team from the fd",assertion,tc);
+
+    rc = server_game_action(&maze, &request);
+    assertion = rc >= 0;
+    if (test_debug() && rc<0 ) fprintf(stderr,"Error Code: %d\n",rc);
+    should("not error on action request",assertion,tc);
+      
+    assertion =  (player->cell->pos.x == next.x && player->cell->pos.y == next.y);
+    should("successfully move the player's cell reference",assertion,tc);
+    
+    assertion = (maze.get[next.x][next.y].player == player && current->player != player);
+    should("successfully update the cell's player reference", assertion,tc);
+    
+    //////////////////
+    // Move into a Wall
+    //////////////////
+    current = player->cell; // This is test Safe Only
+    server_request_init(&maze,&request,fd,ACTION_MOVE,next.x,next.y-1);
+    
+    rc = server_game_action(&maze,&request);
+    assertion = rc == ERR_WALL;
+    should("prevent walking into wall cells",assertion,tc);
+
+    assertion = (player->cell == current && current->player == player);
+    should("maintain cell and player references",assertion,tc);
+    
+    //////////////////
+    // Try illegal move
+    //////////////////
+    server_request_init(&maze,&request,fd,ACTION_MOVE,150,99);
+    
+    rc = server_game_action(&maze,&request);
+    assertion = rc == ERR_BAD_NEXT_CELL;
+    should("should prevent moving to cells that are not adjacent",assertion,tc);
+    
+    //////////////////
+    // Test Home Counter
+    //////////////////
+
+    request.test_mode = 1; // Enable supernatural jumping
+    rc = server_game_action(&maze,&request);
+    assertion = rc >= 0;
+    assertion = (server_home_count_read(&maze.home[player->team]) == 0);
+    should("should home count when players walk out of cell",assertion,tc);
+
+    /////////////////
+    // Make New Player
+    /////////////////
+    int fd_red = fd+1;
+    Player*other ;
+    rc = server_game_add_player(&maze,fd_red,&other);
+    
+    server_request_init(&maze,&request,fd_red,ACTION_MOVE,149,99);
+    request.test_mode = 1;
+    
+    rc = server_game_action(&maze,&request); // move 
+    assertion = (rc >= 0) && 
+                (other->cell->pos.x == 149 && other->cell->pos.y == 99) &&
+                (server_home_count_read(&maze.home[other->team]) == 0 );
+    should("spawn and move player correctly on TEAM_RED",assertion,tc);
+
+    ///////////////////////////////////////////
+    // Tag Player (Unintentional i.e Passive)
+    //////////////////////////////////////////
+    
+    next.x = 150; next.y = 99;
+    server_request_init(&maze,&request,fd_red,ACTION_MOVE,next.x,next.y);
+
+    rc = server_game_action(&maze,&request);
+    assertion = (rc >= 0) && 
+                (other->cell->type == CELL_JAIL) &&
+                (other->cell->player == other )  &&
+                (other->state == PLAYER_JAILED ) &&
+                (player->cell->pos.x == next.x && player->cell->pos.y == next.y);
+    should("correctly jail player walking into other on enemy turf",assertion,tc);
+    
+    ///////////////////////////////////////////
+    // Make 2 new Players for Active tagging
+    //////////////////////////////////////////
+    
+    int fd_blue = fd+2;
+    Player*blue;
+    server_game_add_player(&maze,fd_blue,&blue);
+    server_request_init(&maze,&request,fd_blue,ACTION_MOVE,50,99);
+    request.test_mode = 1;
+    server_game_action(&maze,&request);
+    
+    int fd_tagger = fd+3;
+    Player*tagger;
+    server_game_add_player(&maze,fd_tagger,&tagger);
+    server_request_init(&maze,&request,fd_tagger,ACTION_MOVE,49,99);
+    request.test_mode = 1;
+    server_game_action(&maze,&request);
+
+    // active tagging
+    server_request_init(&maze,&request,fd_tagger,ACTION_MOVE,50,99);
+    rc = server_game_action(&maze,&request);
+    assertion = ( rc >= 0 ) &&
+                ( blue->cell->type == CELL_JAIL ) &&
+                ( blue->cell->player == blue )    &&
+                ( blue->state == PLAYER_JAILED )  &&
+                ( tagger->cell->player == tagger) &&
+                ( blue->cell->turf == opposite_team(blue->team) ) &&
+                ( tagger->cell->pos.x == 50 && tagger->cell->pos.y == 99);
+    
+    should("correctly jail player walking into enemy on home turf",assertion,tc);
+
+    ////////////////////////
+    // Test Freeing 
+    ////////////////////////
+    
+    // teleport player to write out side jail
+    server_request_init(&maze,&request,fd,ACTION_MOVE,maze.jail[opposite_team(player->team)].min.x-1,99);
+    request.test_mode = 1;
+    server_game_action(&maze,&request);
+    
+    // step into the jail
+    server_request_init(&maze,&request,fd,ACTION_MOVE,maze.jail[opposite_team(player->team)].min.x,99);
+    rc = server_game_action(&maze,&request);
+    assertion = (rc >=0) &&
+                ( player->cell->player == player ) &&
+                ( other->state == PLAYER_FREE )    &&
+                ( player->state == PLAYER_FREE )   &&
+                ( player->cell->pos.y == 99 )      &&
+                ( player->cell->pos.x == maze.jail[opposite_team(player->team)].min.x);
+    should("correctly free jailed players when moving into enemy jail cell while free",assertion,tc);
+
+
+    maze_destroy(&maze);
+}
+
 int main(int argc, char ** argv )
 {
     TestContext tc;
     test_init(argc, argv, &tc);
     
     // ADD TESTS HERE
+    run(test_pickup_drop_logic,"Objects",&tc);
+    run(&test_game_move,"Basic Movement",&tc);
     run(&test_game_add_drop,"Game Add/Drop",&tc);
     run(&test_server_locks,"Server Locks",&tc);
     run(&test_plist,"PLists",&tc);

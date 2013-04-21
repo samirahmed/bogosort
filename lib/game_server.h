@@ -25,9 +25,42 @@
 #include "./types.h" 
 #include "./game_commons.h" 
 
+typedef struct{
+  Player player_a;
+  Player player_b;
+  int    compress_player_a;
+  int    compress_player_b;
+  Pos    broken_wall;
+  int    wall_break;
+} EventUpdate;
+
+typedef struct{
+  Pos          pos; 
+  Team_Types   team; 
+  int          id; 
+  int          fd; 
+  Action_Types action;
+  int          test_mode;
+  EventUpdate  update;
+} GameRequest;
+
+// Request Methods
+extern int server_request_init(Maze*m,GameRequest*request,int fd,Action_Types action, int pos_x, int pos_y);
+extern int  server_fd_to_id_and_team(Maze*m,int fd, int *team_ptr, int*id_ptr);
+
+extern int* server_request_plist(Maze*m, Team_Types team, int* length);
+extern void server_request_objects(Maze*m,int*rshovel,int*rflag,int*bshovel,int*bflag);
+extern int* server_request_walls(Maze*m, int* length);
+
 // Game Methods
-extern int server_game_add_player(Maze*maze,int fd, Player**player);
+extern int  server_game_add_player(Maze*maze,int fd, Player**player);
 extern void server_game_drop_player(Maze*maze,int team, int id);
+extern int  server_game_action(Maze*maze , GameRequest* request);
+extern int  server_validate_player( Maze*m, Team_Types team, int id , int fd );
+extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next);
+extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next);
+extern int _server_game_state_update(Maze*m, Player*player, Cell*current, Cell*next);
+extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next);
 
 // Locking Methods
 extern void server_maze_property_unlock(Maze*m);
@@ -41,8 +74,11 @@ extern void server_object_write_lock(Maze*m);
 extern void server_plist_read_lock(Plist*plist);
 extern void server_plist_write_lock(Plist*plist);
 extern void server_plist_unlock(Plist*plist);
-extern void _server_root_lock(Maze*m, Cell*c);
-extern void _server_root_unlock(Maze*m, Cell*c);
+extern void _server_root_lock(Maze*m, Cell*c);    // requires cell to be locked before calling
+extern void _server_root_unlock(Maze*m, Cell*c);  // requires cell to be locked before calling
+extern void server_wall_read_lock(Maze*m);
+extern void server_wall_write_lock(Maze*m);
+extern void server_wall_unlock(Maze*m);
 
 // Object Methods
 extern void object_lock(Object*object);

@@ -126,7 +126,8 @@ typedef struct{
 extern Team_Types opposite_team(Team_Types team);
 
 // OBJECT METHODS
-extern int object_get_index(Team_Types team , Object_Types object);
+extern Object* object_get(Maze*m, Object_Types object,Team_Types team);
+extern int     object_get_index(Team_Types team , Object_Types object);
 
 // JAIL METHODS
 extern void jail_init(Jail*jail, Pos min, Pos max, Team_Types team);
@@ -152,6 +153,7 @@ extern int  cell_is_holding(Cell* cell);
 extern int  cell_is_walkable_type(Cell * cell);
 extern void cell_lock(Cell*);
 extern void cell_unlock(Cell*);
+extern int cell_is_near(Cell* current, Cell* next);
 
 // Maze Construction
 extern void maze_init(Maze * m,int max_x, int max_y);

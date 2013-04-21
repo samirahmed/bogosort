@@ -34,6 +34,23 @@ typedef unsigned long uval;
 typedef long sval;
 
 typedef enum{
+    ERR_WALL            = -10, // Can't move there is a wall.
+    ERR_NOOP            = -20, // No operation 
+    ERR_NO_PLAYER       = -21, // No player found
+    ERR_NO_OBJECT       = -22, // No object found
+    ERR_NO_SHOVEL_SPACE = -23, // No space for the shovel to be picked up
+    ERR_NO_FLAG_SPACE   = -24, // No space for the flag to be picked up
+    ERR_CELL_HOLDING    = -40, // Cell is holding object
+    ERR_CELL_OCCUPIED   = -41, // Cell is already occupied by player
+    ERR_BAD_PLAYER_ID   = -60, // Bad authentication, the player id doesn't match FD
+    ERR_BAD_X_Y         = -61, // Bad xy position
+    ERR_BAD_NEXT_CELL   = -62, // Next cell specified is wrong
+    ERR_BAD_ACTION      = -63, // Action Specified is not valid
+    ERR_JAIL_FULL       = -80  // Jail is full error 
+}
+Game_Error_Types;
+
+typedef enum{
     GAME_STATE_UNCHANGED =  0,
     GAME_STATE_WAITING   =  1,
     GAME_STATE_ACTIVE    =  2,
