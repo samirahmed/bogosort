@@ -204,6 +204,14 @@ extern void get_hdr(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr)
   proto_session_hdr_unmarshall(s,hdr);
 }
 
+extern void get_pos(Proto_Client_Handle ch, Pos* current)
+{
+  Proto_Session *s;
+  Proto_Client *c = ch;
+  s = &(c->rpc_session);
+  proto_session_body_unmarshall_bytes(s,0,sizeof(Pos),(char*)current);
+}
+
 //This function is used for RPC's that do not contain anything in the body
 //Parameter: Proto_Msg_Hdr ch - that contains all necessary information for the RPC
 //           Proto_Client_Handle *h - Handle to the Proto_Client 
@@ -241,6 +249,10 @@ do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h,Pos current, Pos
   
   s = &(c->rpc_session);
   proto_session_hdr_marshall(s,h);
+  if(h->hdr.gstate.v1.raw == ACTION_MOVE){
+      proto_session_body_marshall_byte(s,sizeof(Pos),(char*)current);
+      proto_session_body_marshall_byte(s,sizeof(Pos),(char*)next);
+  }
   
   rc = proto_session_send_msg(s,1);
   rc = proto_session_rcv_msg(s);
