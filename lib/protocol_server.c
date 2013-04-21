@@ -366,37 +366,32 @@ proto_server_init(void)
   return 0;
 }
 
-extern void
-put_int(Proto_Session* s, int value)
+extern void reply_put_int(Proto_Session* s, int value)
 {
   proto_session_body_marshall_int(s, value);
 }
 
-extern void
-put_hdr(Proto_Session*s, Proto_Msg_Hdr *hdr)
+extern void reply_put_hdr(Proto_Session*s, Proto_Msg_Hdr *hdr)
 {
   proto_session_hdr_marshall(s,hdr);
 }
 
-extern int
-reply( Proto_Session * s, Proto_Msg_Types mt , int response)
+extern int reply( Proto_Session * s, unsigned int  mt , int response)
 {
   int rc=1;
   Proto_Msg_Hdr h;
   if (proto_debug()) proto_session_dump(s);
 
-  // setup dummy reply header : set correct reply message type and 
-  // everything else empty
-  bzero(&h, sizeof(s));
-  
-  if (mt != NULL)
+  // setup  reply header : set correct reply message type and everything else empty
+  if ( (void*) mt != NULL)
   {
-    h.type = mt;
+    bzero(&h, sizeof(s));
+    h.type = (Proto_Msg_Types) mt;
     proto_session_hdr_marshall(s, &h);
   }
 
   // setup a dummy body that just has a return code 
-  if (response != NULL) proto_session_body_marshall_int(s, response);
+  if ( (void*)response != NULL) proto_session_body_marshall_int(s, response);
   rc=proto_session_send_msg(s,1);
   return rc;
 }
