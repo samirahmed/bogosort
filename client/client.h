@@ -26,7 +26,6 @@ typedef struct RequestHandler{
   Action_Types action_type;
   Pos current;
   Pos next;
-  Information_Type info_type;
 }Request;
 
 typedef struct GlobalsInfo {

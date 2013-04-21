@@ -67,8 +67,6 @@ void request_sync_init(Request* request,Client* client, Information_Type info_ty
     bzero(request,sizeof(Request));
     request->client = client;
     request->type = PROTO_MT_REQ_SYNC;
-    request->info_type = info_type;
-
 }
 
 

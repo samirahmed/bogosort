@@ -120,12 +120,4 @@ typedef enum{
     RPC_INVALID_PARAM,
 } RPC_Return_Codes;
 
-typedef enum{
-    MY_PLAYER_INFO,
-    WALL_INFO,
-    PLAYER_INFO,
-    OBJECT_INFO    
-}Information_Type;
-
-
 #endif /* __DA_GAME_TYPES_H__ */
