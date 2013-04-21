@@ -37,13 +37,17 @@ Globals globals;         //Host string and port
 static int connected;
 static char MenuString[] = "\n?> ";
 
-void request_action_init(Request* request, Client* client,Action_Types action,Pos current, Pos next)
+void request_action_init(Request* request, Client* client,Action_Types action,Pos* current, Pos* next)
 {
     bzero(request,sizeof(Request));
     request->client = client;
     request->current  = current;
     request->type = PROTO_MT_REQ_ACTION;
     request->action_type = action;
+    if(request->current)
+        request->current = *current;
+    if(request->next)
+        request->next = *next;
     if(action==ACTION_MOVE)
         request->next = next;
 }
@@ -67,6 +71,55 @@ void request_sync_init(Request* request,Client* client, Information_Type info_ty
     bzero(request,sizeof(Request));
     request->client = client;
     request->type = PROTO_MT_REQ_SYNC;
+}
+
+int process_hello_request(Player* my_player, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
+{
+   Pos current;
+   get_pos(ch,&current);
+
+
+
+    return hdr->gstate.v0.raw;
+}
+
+int process_goodbye_request(Proto_Client_Handle ch)
+{
+    return 0;
+}
+int process_action_request(Player* my_player, Proto_Client_Handle ch)
+{
+    return 0;
+}
+int process_sync_request(Maze* maze, Proto_Client_Handle ch)
+{
+    return 0;    
+}
+
+int process_RPC_message(Client *C)
+{
+    Proto_Msg_Hdr hdr;
+    get_hdr(c->ph,&hdr);
+    int rc;
+    
+    switch(h.type){
+        case PROTO_MT_REP_HELLO:
+            rc = process_hello_request(C->my_player,C->ph,&hdr);
+            break;
+        case PROTO_MT_REQ_GOODBYE:
+            rc = process_goodbye_request(C->ph);
+            break;
+        case PROTO_MT_REQ_ACTION:
+            rc = process_action_request(C->my_player,C->ph);
+            break;
+        case PROTO_MT_REQ_SYNC:
+            rc =process_sync_request(C->maze,C->ph);
+            break;
+    }
+    if(rd>0)
+        return hdr.type;
+    else
+        return rc;
 }
 
 
@@ -182,19 +235,19 @@ int doRPCCmd(Request* request)
     hdr.type = request->type;
     hdr.gstate.v1.raw = request->action_type;
     hdr.pstate.v0.raw = my_player->id;
-    rc = do_no_body_rpc(C->ph,&hdr);
+    rc = do_action_request_rpc(C->ch,&hdr,&request->current,&request->next);
     break;
   case PROTO_MT_REQ_SYNC:
     fprintf(stderr,"Sync COMMAND ISSUED");
     hdr.type = request->type;
     hdr.pstate.v0.raw = my_player->id;
     hdr.gstate.v2.raw = request->info_type;
-    rc = do_action_request_rpc(C->ph,&hdr,request->current,request->next);
+    rc = do_no_body_rpc(C->ph,&hdr);
     break;
   case PROTO_MT_REQ_GOODBYE:
     fprintf(stderr,"Goodbye COMMAND ISSUED");
     hdr.type = request->type;
-    hdr.pstate.v0.raw = my_player->id;
+    hdr.pstate.v0.raw = C->my_player->id;
     rc = do_no_body_rpc(C->ph,&hdr);
     /*rc = proto_client_goodbye(C->ph);*/
     /*printf("Game Over - You Quit");*/
