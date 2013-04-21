@@ -398,10 +398,9 @@ void test_pickup_drop_logic(TestContext*tc)
    Maze maze;
    maze_build_from_file(&maze,"test.map");
    
-   int rc, fd_blue, assertion, fd_red, id, team;
+   int rc, fd_blue, assertion, fd_red;
    GameRequest request;
    Player *blue,*red;
-   Pos next;
    fd_blue = randint()%1000;
    fd_red = fd_blue+1;
 
@@ -534,6 +533,39 @@ void test_pickup_drop_logic(TestContext*tc)
    // USE SHOVEL TEST ...
    ///////////////////////////
 
+   // move red player to the red shovel
+   server_request_init(&maze,&request,fd_red,ACTION_MOVE,red_shovel->cell->pos.x,red_shovel->cell->pos.y);
+   request.test_mode = 1; //  teleport
+   server_game_action(&maze,&request);
+
+   // pick up shovel
+   server_request_init(&maze,&request,fd_red,ACTION_PICKUP_SHOVEL,red->cell->pos.x,red->cell->pos.y);
+   server_game_action(&maze,&request);
+  
+   // try to break immutable wall
+   server_request_init(&maze,&request,fd_red,ACTION_MOVE,red_shovel->cell->pos.x+1,red_shovel->cell->pos.y);
+   rc = server_game_action(&maze,&request);
+   assertion = (rc == ERR_WALL )     &&
+               (red->shovel == red_shovel)    &&
+               (red->shovel->player == red);
+   should("not allow players to walk into immutable cells",assertion,tc);
+   
+   // move red player next to mutable wall
+   server_request_init(&maze,&request,fd_red,ACTION_MOVE,14,101);
+   request.test_mode = 1; //  teleport
+   server_game_action(&maze,&request);
+   
+   server_request_init(&maze,&request,fd_red,ACTION_MOVE,15,101);
+   rc =server_game_action(&maze,&request);
+   assertion = ( rc>=0) &&
+               ( !player_has_shovel(red))                     &&
+               ( red_shovel->cell->type == CELL_HOME)         &&
+               ( red_shovel->player !=  red )                 &&
+               ( red->cell->pos.x == 15)                      &&
+               ( red->cell->type == CELL_FLOOR)               &&
+               ( red->cell->is_mutable == CELLTYPE_IMMUTABLE) &&
+               ( maze.wall[red->cell->pos.x][red->cell->pos.y] == 1);
+   should("correctly break wall with shovel",assertion,tc);
    maze_destroy(&maze);
 }
 
@@ -592,7 +624,7 @@ void test_game_move(TestContext*tc)
     server_request_init(&maze,&request,fd,ACTION_MOVE,next.x,next.y-1);
     
     rc = server_game_action(&maze,&request);
-    assertion = rc == ERR_BAD_NEXT_CELL;
+    assertion = rc == ERR_WALL;
     should("prevent walking into wall cells",assertion,tc);
 
     assertion = (player->cell == current && current->player == player);

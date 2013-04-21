@@ -395,11 +395,11 @@ void maze_fill_helper(Maze* map, char buffer[][MAX_COL_MAZE],int max_x, int max_
     
     for(xx=map->home[team].min.x-1; xx<=map->home[team].max.x ;xx++ )
     for(yy=map->home[team].min.y-1; yy<=map->home[team].max.y ;yy++ )
-    if (map->get[xx][yy].type == CELL_WALL) map->get[xx][yy].is_mutable = CELLTYPE_MUTABLE;
+    if (map->get[xx][yy].type == CELL_WALL) map->get[xx][yy].is_mutable = CELLTYPE_IMMUTABLE;
     
     for(xx=map->jail[team].min.x-1; xx<=map->jail[team].max.x ;xx++ )
     for(yy=map->jail[team].min.y-1; yy<=map->jail[team].max.y ;yy++ )
-    if (map->get[xx][yy].type == CELL_WALL) map->get[xx][yy].is_mutable = CELLTYPE_MUTABLE;
+    if (map->get[xx][yy].type == CELL_WALL) map->get[xx][yy].is_mutable = CELLTYPE_IMMUTABLE;
   }
   
 }

@@ -324,17 +324,28 @@ extern int _server_game_state_update(Maze*m, Player*player, Cell*current, Cell*n
 
 extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next)
 {
-  if (!player->shovel) return ERR_BAD_NEXT_CELL;
+  if (!player->shovel) return ERR_WALL;
+  if (next->is_mutable == CELLTYPE_IMMUTABLE) return ERR_WALL;
+  int rc;
+
+  // lock walls
+  server_wall_write_lock(m);
   
-  int rc = ERR_NOOP;
-  // LOCK THE broken walls for writing
-  // BREAK THE WALL
-  // RESET THE SHOVEL
+  // reset shovel and continue
   rc = _server_action_player_reset_shovel(m,player);
-  // MOVE THE PLAYER
-  rc = _server_action_move_player(m,current,next);
-  // UNLOCK the broken walls
-  //
+  if (rc >=0 ) 
+  {
+    // If reset successful, Break the wall and mark as broken
+    next->type = CELL_FLOOR;
+    next->is_mutable = CELLTYPE_IMMUTABLE;
+    m->wall[next->pos.x][next->pos.y]=1;
+
+    // Move the player into the wall
+    rc = _server_action_move_player(m,current,next);
+  }
+  
+  // unlock broken walls
+  server_wall_unlock(m);
   return rc;
 }
 
