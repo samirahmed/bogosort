@@ -32,163 +32,11 @@
 #include "../lib/game_client.h"
 
 //Global Variables
-Player* my_player;      //Pointer to client's player struct
 Globals globals;         //Host string and port
-static int connected;
 static char MenuString[] = "\n?> ";
 
-void request_action_init(Request* request, Client* client,Action_Types action,Pos* current, Pos* next)
-{
-    bzero(request,sizeof(Request));
-    request->client = client;
-    request->current  = *current;
-    request->type = PROTO_MT_REQ_ACTION;
-    request->action_type = action;
-    if(current)
-        request->current = *current;
-    if(next)
-        request->next = *next;
-    if(action==ACTION_MOVE)
-        request->next = *next;
-}
-
-void request_hello_init(Request* request,Client* client)
-{
-    bzero(request,sizeof(Request));
-    request->client = client;
-    request->type = PROTO_MT_REQ_HELLO;
-}
-
-void request_goodbye_init(Request* request,Client* client)
-{
-    bzero(request,sizeof(Request));
-    request->client = client;
-    request->type = PROTO_MT_REQ_GOODBYE;
-}
-
-void request_sync_init(Request* request,Client* client)
-{
-    bzero(request,sizeof(Request));
-    request->client = client;
-    request->type = PROTO_MT_REQ_SYNC;
-}
-
-int process_hello_request(Maze* maze, Player* my_player, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
-{
-   //Get the Position of the Player
-   Pos current;
-   get_pos(ch,&current);
-
-   //Get the team and player id from the header
-   Team_Types team = hdr->pstate.v1.raw;
-   int id = hdr->pstate.v0.raw;
-
-   //Set local Client player pointer to corresponding player in the plist
-   my_player = &(maze->players[team].at[id]);
-
-   //Fill in the player data structure TODO: is all this information needed?
-   my_player->client_position.x = current.x;
-   my_player->client_position.y = current.y;
-   my_player->id = id;
-   my_player->state = PLAYER_FREE;
-
-   //Set the player pointer at cell position x,y to my player
-   maze->get[current.x][current.y].player = &(maze->players[team].at[id]); 
-
-    return hdr->gstate.v0.raw;
-}
-
-int process_goodbye_request(Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
-{
-    return hdr->gstate.v0.raw;
-}
-int process_action_request(Player* my_player, Proto_Client_Handle ch)
-{
-    return 0;
-}
-int process_sync_request(Maze* maze, Proto_Client_Handle ch)
-{
-    return 0;    
-}
-
-int process_RPC_message(Client *C)
-{
-    Proto_Msg_Hdr hdr;
-    get_hdr(C->ph,&hdr);
-    int rc;
-    
-    switch(hdr.type){
-        case PROTO_MT_REP_HELLO:
-            rc = process_hello_request(&C->maze,C->my_player,C->ph,&hdr);
-            break;
-        case PROTO_MT_REQ_GOODBYE:
-            rc = process_goodbye_request(C->ph,&hdr);
-            break;
-        case PROTO_MT_REQ_ACTION:
-            rc = process_action_request(C->my_player,C->ph);
-            break;
-        case PROTO_MT_REQ_SYNC:
-            rc =process_sync_request(&C->maze,C->ph);
-            break;
-        default:
-            return -1;
-    }
-    if(rc>0)
-        return hdr.type;
-    else
-        return rc;
-}
-
-
-static int update_handler(Proto_Session *s )
-{
-    return 0;
-}
-
-static int client_init(Client *C)
-{
-  // Zero global scope
-  bzero(C, sizeof(Client));
-
-  // Set connected state to zero
-  connected = 0; 
-  
-  // initialize the client protocol subsystem
-  if (proto_client_init(&(C->ph))<0) {
-    fprintf(stderr, "client: main: ERROR initializing proto system\n");
-    return -1;
-  }
- 
-  // Specify the event channel handlers
-  proto_client_set_event_handler(C->ph, PROTO_MT_EVENT_UPDATE, update_handler );
-  return 1;
-}
-
-int client_map_init(Client *C,char* filename)
-{
-    //Build maze from file
-    if(maze_build_from_file(&C->maze,filename)==-1)
-        return -1;
-
-    //Initialize the Blocking Data Structure
-    if(blocking_helper_init(&C->bh)==-1)
-        return -1;
-
-    //Set the maze pointer in the blocking helper
-    blocking_helper_set_maze(&C->bh,&C->maze);
-    return 1;
-}
-
-
-
-static int update_event_handler(Proto_Session *s)
-{
-  /*Client *C = proto_session_get_data(s);*/
-
-  fprintf(stderr, "%s: called", __func__);
-  return 1;
-}
-
+static int update_handler(Proto_Session *s ){return 0;}
+static int update_event_handler(Proto_Session *s){return 0;}
 
 int startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
 {
@@ -228,55 +76,6 @@ char* prompt(int menu)
 
 }
 
-int doRPCCmd(Request* request) 
-{
-  int rc=-1;
- 
-  // Unpack the request
-  Client *C;
-  Proto_Msg_Hdr hdr;
-  bzero(&hdr,sizeof(Proto_Msg_Hdr));
-
-  C = request->client;
-
-  switch (request->type) {
-  case PROTO_MT_REQ_HELLO:  
-    fprintf(stderr,"HELLO COMMAND ISSUED");
-    hdr.type = request->type;
-    rc = do_no_body_rpc(C->ph,&hdr);
-    if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);
-    if (rc < 0) fprintf(stderr, "Unable to connect");
-    break;
-  case PROTO_MT_REQ_ACTION:
-    fprintf(stderr,"Action COMMAND ISSUED");
-    hdr.type = request->type;
-    hdr.gstate.v1.raw = request->action_type;
-    hdr.pstate.v0.raw = my_player->id;
-    rc = do_action_request_rpc(C->ph,&hdr,request->current,request->next);
-    break;
-  case PROTO_MT_REQ_SYNC:
-    fprintf(stderr,"Sync COMMAND ISSUED");
-    hdr.type = request->type;
-    hdr.pstate.v0.raw = my_player->id;
-    rc = do_no_body_rpc(C->ph,&hdr);
-    break;
-  case PROTO_MT_REQ_GOODBYE:
-    fprintf(stderr,"Goodbye COMMAND ISSUED");
-    hdr.type = request->type;
-    hdr.pstate.v0.raw = C->my_player->id;
-    rc = do_no_body_rpc(C->ph,&hdr);
-    /*rc = proto_client_goodbye(C->ph);*/
-    /*printf("Game Over - You Quit");*/
-    break;
-  default:
-    printf("%s: unknown command %d\n", __func__, request->type);
-  }
-  // NULL MT OVERRIDE ;-)
-  if(proto_debug()) fprintf(stderr,"%s: rc=0x%x\n", __func__, rc);
-  if (rc == 0xdeadbeef) rc=1;
-  printf("rc=1\n");
-  return rc;
-}
 
 void disconnect (Client *C)
 {
@@ -287,10 +86,11 @@ void disconnect (Client *C)
   close(rpc->fd);
 }
 
-int doConnect(Client *C, char* cmd,Request* request)
+int doConnect(Client *C, char* cmd)
 {
   int rc;
-
+  Request request;
+  bzero(&request,sizeof(Request));
   char address[2][STRLEN]; 
 
   char* token;
@@ -322,39 +122,85 @@ int doConnect(Client *C, char* cmd,Request* request)
   }
 
   // configure request parameters
-  request->type = PROTO_MT_REQ_HELLO;
-  rc = doRPCCmd(request);
+  request.type = PROTO_MT_REQ_HELLO;
+  rc = doRPCCmd(&request);
 
   return rc;
 }
 
-int docmd(Client *C, char* cmd,Request* request)
+int docmd(Client *C, char* cmd)
 {
   int rc = 1;                      // Set up return code var
-  bzero(&request,sizeof(request)); // Set up request
-  request->client = C;
 
   if(strncmp(cmd,"quit",sizeof("quit")-1)==0) return -2;
 
   if(!connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
   {
-    rc = doConnect(C, cmd, request);
+    rc = doConnect(C, cmd);
+    return process_RPC_message(C);
   }
   else if(strncmp(cmd,"where",sizeof("where")-1)==0)
   {
     if (connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
-  else printf("Not connected\n");
+    else printf("Not connected\n");
   }
+  else if(strncmp(cmd,"load",sizeof("load")-1)==0)
+    {
+        char* pch;
+        pch = strtok(cmd+5," \n\0");
+        client_map_init(C,pch);
+    }
   else if( connected )
   {
+    Request request;
+
     if( strncmp(cmd,"disconnect",sizeof("disconnect")-1)==0)
     {  
-    
-    request->type = PROTO_MT_REQ_GOODBYE;
-    rc=doRPCCmd(request);
-    
-    disconnect(C);
+        request_goodbye_init(&request,C);
+        rc=doRPCCmd(&request);
+
+        disconnect(C);
     }
+    else if(strncmp(cmd,"move",sizeof("move")-1)==0)
+    {
+        char* pch;
+        Pos next;
+        pch = strtok(cmd+5," ");
+        next.x = atoi(pch);
+        pch = strtok(NULL," ");
+        next.y = atoi(pch);
+        request_action_init(&request,C,ACTION_MOVE,&my_player->client_position,&next);
+        rc = doRPCCmd(&request);
+
+    }
+    else if(strncmp(cmd,"pickup flag",sizeof("pickup flag")-1)==0)
+    {
+        request_action_init(&request,C,ACTION_PICKUP_FLAG,NULL,NULL);
+        rc = doRPCCmd(&request);
+
+    }
+    else if(strncmp(cmd,"drop flag",sizeof("drop flag")-1)==0)
+    {
+        request_action_init(&request,C,ACTION_DROP_FLAG,NULL,NULL);
+        rc = doRPCCmd(&request);
+    }
+    else if(strncmp(cmd,"pickup shovel",sizeof("pickup shovel")-1)==0)
+    {
+        request_action_init(&request,C,ACTION_PICKUP_SHOVEL,NULL,NULL);
+        rc = doRPCCmd(&request);
+
+    }
+    else if(strncmp(cmd,"drop shovel",sizeof("drop shovel")-1)==0)
+    {
+        request_action_init(&request,C,ACTION_DROP_SHOVEL,NULL,NULL);
+        rc = doRPCCmd(&request);
+    }
+    else if(strncmp(cmd,"sync",sizeof("drop shovel")-1)==0)
+    {
+        request_sync_init(&request,C);
+        rc = doRPCCmd(&request);
+    }
+    return process_RPC_message(C);
   }
   else
   {
@@ -370,10 +216,9 @@ void* shell(void *arg)
   char *c;
   int rc;
   int menu=1;
-  Request request;
 
   while (1) {
-    if ((c = prompt(menu))!=0) rc=docmd(C, c,&request);
+    if ((c = prompt(menu))!=0) rc=docmd(C, c);
     if (rc == -2) break; //only terminate when client issues 'q'
   
   //If this variable was allocated in prompt(menu) please free memory
