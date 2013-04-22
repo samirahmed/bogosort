@@ -126,7 +126,7 @@ proto_dump_mt(Proto_Msg_Types type)
     fprintf(stderr, "PROTO_MT_REP_ACTION");
     break;
   case PROTO_MT_REP_SYNC:
-    fprintf(stderr, "PROTO_MT_REP_ACTION");
+    fprintf(stderr, "PROTO_MT_REP_SYNC");
     break;
   case PROTO_MT_REP_GOODBYE:
     fprintf(stderr, "PROTO_MT_REP_BASE_GOODBYE");
