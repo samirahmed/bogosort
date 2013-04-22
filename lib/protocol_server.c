@@ -383,15 +383,15 @@ extern int reply( Proto_Session * s, unsigned int  mt , int response, int timest
   if (proto_debug()) proto_session_dump(s);
 
   // setup  reply header : set correct reply message type and everything else empty
-  if ( (void*) mt != NULL)
+  if ( (void*)(size_t) mt != NULL)
   {
     bzero(&h, sizeof(s));
     h.type = (Proto_Msg_Types) mt;
-    if ( (void*)response != NULL) h.gstate.v1.raw = response;
+    if ( (void*)(size_t)response != NULL) h.gstate.v1.raw = response;
     proto_session_hdr_marshall(s, &h);
   }
 
-  if ((void*) timestamp != NULL ) proto_session_body_marshall_int(s,timestamp);
+  if ((void*)(size_t) timestamp != NULL ) proto_session_body_marshall_int(s,timestamp);
 
   // setup a dummy body that just has a return code 
   rc=proto_session_send_msg(s,1);
