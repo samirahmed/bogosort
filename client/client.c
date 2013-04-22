@@ -91,7 +91,6 @@ int doConnect(Client *C, char* cmd)
   int rc;
   Request request;
   request_sync_init(&request,C);
-  bzero(&request,sizeof(Request));
   char address[2][STRLEN]; 
 
   char* token;
@@ -195,7 +194,7 @@ int docmd(Client *C, char* cmd)
         request_action_init(&request,C,ACTION_DROP_SHOVEL,NULL,NULL);
         rc = doRPCCmd(&request);
     }
-    else if(strncmp(cmd,"hello",sizeof("drop shovel")-1)==0)
+    else if(strncmp(cmd,"hello",sizeof("hello")-1)==0)
     {
         request_hello_init(&request,C);
         rc = doRPCCmd(&request);
