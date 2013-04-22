@@ -239,7 +239,7 @@ int client_init(Client *C)
   bzero(C, sizeof(Client));
 
   // Set connected state to zero
-  connected = 1; 
+  connected = 0; 
   
   // initialize the client protocol subsystem
   if (proto_client_init(&(C->ph))<0) {
