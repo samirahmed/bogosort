@@ -1,7 +1,8 @@
-#ifndef __DAGAME_PROTOCOL_CLIENT_H__
-#define __DAGAME_PROTOCOL_CLIENT_H__
+#ifndef __CLIENT_MAZE_H__
+#define __CLIENT_MAZE_H__
 /******************************************************************************
-* Copyright (C) 2011 by Jonathan Appavoo, Boston University
+* Copyright (C) 2013 by Katsu Kawakami, Will Seltzer, Samir Ahmed, 
+* Boston University
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -21,32 +22,31 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 * THE SOFTWARE.
 *****************************************************************************/
+#include "./types.h" 
+#include "./game_commons.h" 
+#include <pthread.h>
 
-#include "net.h"
-#include "protocol.h"
-#include "protocol_session.h"
-#include "types.h"
-#include "game_commons.h"
+typedef struct ClientBlockingStruct{
+    Maze *maze;    
+    pthread_mutex_t maze_lock;
+    pthread_cond_t maze_updated;
+} Blocking_Helper;
 
-typedef void * Proto_Client_Handle;
+// Init Methods
+extern int blocking_helper_init(Blocking_Helper *bh);
+extern void blocking_helper_set_maze(Blocking_Helper *bh, Maze *maze);
 
-extern Proto_Session *proto_client_rpc_session(Proto_Client_Handle ch);
-extern Proto_Session *proto_client_event_session(Proto_Client_Handle ch);
+// Destroy Methods
+extern int blocking_helper_destroy(Blocking_Helper *bh);
 
-extern int proto_client_init(Proto_Client_Handle *ch);
-extern int proto_client_connect(Proto_Client_Handle ch, char *host, PortType p);
+// Locking and Conditional Variable Helper Methods
+extern void client_maze_lock(Blocking_Helper *bh);
+extern void client_maze_unlock(Blocking_Helper *bh);
+extern void client_maze_signal(Blocking_Helper *bh);
+extern void client_maze_cond_wait(Blocking_Helper *bh);
 
-extern int proto_client_set_session_lost_handler(Proto_Client_Handle ch,
-						 Proto_MT_Handler h);
+// Signal and Wait Methods
+extern void client_wait_for_event(Blocking_Helper *bh);
+extern void client_signal_update(Blocking_Helper *bh);
 
-extern int proto_client_set_event_handler(Proto_Client_Handle ch,
-					  Proto_Msg_Types mt,
-					  Proto_MT_Handler h);
-
-// client side protocol rpc's
-extern int get_int(Proto_Client_Handle ch, int offset, int* result);
-extern void get_hdr(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr);
-extern void get_pos(Proto_Client_Handle ch, Pos* current);
-extern int do_no_body_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h);
-extern int do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h,Pos curent,Pos next);
 #endif
