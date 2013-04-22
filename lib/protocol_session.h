@@ -23,7 +23,7 @@
 *****************************************************************************/
 
 #define PROTO_SESSION_BUF_SIZE (4096 * 16)
-
+#include "net.h"
 // There is some redundancy here in the lengths
 // but it should make debugging easier
 typedef struct {
