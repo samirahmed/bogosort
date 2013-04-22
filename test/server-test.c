@@ -626,7 +626,7 @@ void test_parallelize_movement(TestContext*tc)
     maze_build_from_file(&maze,"test.map");
 
     int ii,assertion,reps,team,xx,yy;
-    int num_tasks = (maze.players[TEAM_RED].max)/15;
+    int num_tasks = (maze.players[TEAM_RED].max)/8;
     Task* tasks = malloc(sizeof(Task)*num_tasks);
     int*  fds = malloc(sizeof(int)*num_tasks);
     bzero(tasks,sizeof(Task)*num_tasks);
