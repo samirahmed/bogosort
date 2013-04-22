@@ -380,7 +380,6 @@ extern int reply( Proto_Session * s, unsigned int  mt , int response, int timest
 {
   int rc=1;
   Proto_Msg_Hdr h;
-  if (proto_debug()) proto_session_dump(s);
 
   // setup  reply header : set correct reply message type and everything else empty
   if ( (void*)(size_t) mt != NULL)
@@ -395,5 +394,8 @@ extern int reply( Proto_Session * s, unsigned int  mt , int response, int timest
 
   // setup a dummy body that just has a return code 
   rc=proto_session_send_msg(s,1);
+  
+  if (proto_debug()) proto_session_dump(s);
+  
   return rc;
 }
