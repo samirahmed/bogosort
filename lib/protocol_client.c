@@ -29,11 +29,9 @@
 #include <pthread.h>
 
 #include "protocol.h"
+#include "protocol_session.h"
 #include "protocol_utils.h"
 #include "protocol_client.h"
-
-
-
 #include "assert.h"
 #define NOT_IMPL assert(0)
 
@@ -241,17 +239,17 @@ do_no_body_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
 //           Pos next - next position that the players wants to move to
 //Returns:   Return Code - as specified in Game_Error_Types in types.h
 extern int 
-do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h,Pos current, Pos next)
+do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr,Pos current, Pos next)
 {
   int rc;
   Proto_Session *s;
   Proto_Client *c = ch;
   
   s = &(c->rpc_session);
-  proto_session_hdr_marshall(s,h);
-  if(h->hdr.gstate.v1.raw == ACTION_MOVE){
-      proto_session_body_marshall_byte(s,sizeof(Pos),(char*)current);
-      proto_session_body_marshall_byte(s,sizeof(Pos),(char*)next);
+  proto_session_hdr_marshall(s,hdr);
+  if(hdr->gstate.v1.raw == ACTION_MOVE){
+      proto_session_body_marshall_bytes(s,sizeof(Pos),(char*)&current);
+      proto_session_body_marshall_bytes(s,sizeof(Pos),(char*)&next);
   }
   
   rc = proto_session_send_msg(s,1);

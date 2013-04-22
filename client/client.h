@@ -46,17 +46,17 @@ int client_map_init(Client *C,char* filename);
 int doRPCCmd(Request* request); //Master RPC CALLER RAWR
 
 //Set Request Types and Required Information
-void request_action_init(Request* request, Client* client, Action_Types action, Pos current, Pos next);
+void request_action_init(Request* request, Client* client, Action_Types action, Pos* current, Pos* next);
 void request_hello_init(Request* request, Client* client);
 void request_goodbye_init(Request* request, Client* client);
-void request_sync_init(Request* request, Client* client,Information_Type info_type);
+void request_sync_init(Request* request, Client* client);
 
 //Read proto_session informations
-process_RPC_message(Client* c);
-process_hello_request(Player* my_player, Proto_Client_Handle ch);
-process_goodbye_request(Proto_Client_Handle ch);
-process_action_request(Player* my_player, Proto_Client_Handle ch);
-process_sync_request(Maze* maze, Proto_Client_Handle ch);
+int process_RPC_message(Client* c);
+int process_hello_request(Maze* maze, Player* my_player, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr);
+int process_goodbye_request(Proto_Client_Handle ch, Proto_Msg_Hdr* hdr);
+int process_action_request(Player* my_player, Proto_Client_Handle ch);
+int process_sync_request(Maze* maze, Proto_Client_Handle ch);
         
 
 
