@@ -42,8 +42,10 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
     int ii,x,y;
     Player player;
     Player* player_ptr;
-    for(ii = 0; ii < num_elements; ii++){
-        if(!decompress_is_ignoreable(&player_compress[ii])) {
+    for(ii = 0; ii < num_elements; ii++)
+    {
+        if(!decompress_is_ignoreable(&player_compress[ii])) 
+        {
             decompress_player(&player,&player_compress[ii],NULL);
 
            player_ptr =  &(maze->players[player.team].at[player.id]);
@@ -72,8 +74,10 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
     Object* object_ptr;
     Player* player;
     Cell* cell;
-    for(ii = 0; ii < num_elements; ii++){
-        if(!decompress_is_ignoreable(&object_compress[ii])) {
+    for(ii = 0; ii < num_elements; ii++)
+    {
+        if(!decompress_is_ignoreable(&object_compress[ii])) 
+        {
             decompress_object(&object,&object_compress[ii]);
             x = object.client_position.x;
             y = object.client_position.y;
@@ -83,7 +87,8 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
             object_ptr->team = object.team;
             object_ptr->type = object.type;
 
-            if(object.client_has_player){
+            if(object.client_has_player)
+            {
                 player = &maze->players[object.client_player_team].at[object.client_player_id];
                 if(object.type==OBJECT_SHOVEL)
                     player->shovel = object_ptr;
@@ -104,8 +109,10 @@ void update_walls(int num_elements,int* game_compress, Maze* maze)
 {
     Pos pos;
     int ii,x,y;
-    for(ii = 0; ii < num_elements; ii++){
-        if(!decompress_is_ignoreable(&game_compress[ii])) {
+    for(ii = 0; ii < num_elements; ii++)
+    {
+        if(!decompress_is_ignoreable(&game_compress[ii])) 
+        {
             decompress_broken_wall(&pos,&game_compress[ii]);
            x = pos.x;
            y = pos.y; 
@@ -184,7 +191,9 @@ int process_goodbye_request(Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
 }
 int process_action_request(Player* my_player, Proto_Client_Handle ch)
 {
-    return 0;
+    int result;
+    get_int(ch,0,&result);
+    return result;
 }
 int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
 {
@@ -213,7 +222,7 @@ int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
     free(broken_walls_compress);
     free(player_compress);
     free(object_compress);
-    return 0;    
+    return hdr->gstate.v0.raw;    
 }
 
 int process_RPC_message(Client *C)
@@ -222,7 +231,8 @@ int process_RPC_message(Client *C)
     get_hdr(C->ph,&hdr);
     int rc;
     
-    switch(hdr.type){
+    switch(hdr.type)
+    {
         case PROTO_MT_REP_HELLO:
             rc = process_hello_request(&C->maze,C->my_player,C->ph,&hdr);
             break;
@@ -392,10 +402,11 @@ void disconnect (Client *C)
   close(rpc->fd);
 }
 
-int doConnect(Client *C, char* cmd,Request* request)
+int doConnect(Client *C, char* cmd)
 {
   int rc;
-
+  Request request;
+  bzero(&request,sizeof(Request));
   char address[2][STRLEN]; 
 
   char* token;
@@ -427,39 +438,80 @@ int doConnect(Client *C, char* cmd,Request* request)
   }
 
   // configure request parameters
-  request->type = PROTO_MT_REQ_HELLO;
-  rc = doRPCCmd(request);
+  request.type = PROTO_MT_REQ_HELLO;
+  rc = doRPCCmd(&request);
 
   return rc;
 }
 
-int docmd(Client *C, char* cmd,Request* request)
+int docmd(Client *C, char* cmd)
 {
   int rc = 1;                      // Set up return code var
-  bzero(&request,sizeof(request)); // Set up request
-  request->client = C;
 
   if(strncmp(cmd,"quit",sizeof("quit")-1)==0) return -2;
 
   if(!connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
   {
-    rc = doConnect(C, cmd, request);
+    rc = doConnect(C, cmd);
   }
   else if(strncmp(cmd,"where",sizeof("where")-1)==0)
   {
     if (connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
-  else printf("Not connected\n");
+    else printf("Not connected\n");
   }
   else if( connected )
   {
+    Request request;
+
     if( strncmp(cmd,"disconnect",sizeof("disconnect")-1)==0)
     {  
-    
-    request->type = PROTO_MT_REQ_GOODBYE;
-    rc=doRPCCmd(request);
-    
-    disconnect(C);
+        request_goodbye_init(&request,C);
+        rc=doRPCCmd(&request);
+        disconnect(C);
     }
+    else if(strncmp(cmd,"move",sizeof("move")-1)==0)
+    {
+        char* pch;
+        Pos next;
+        pch = strtok(cmd+5," ");
+        next.x = atoi(pch);
+        pch = strtok(NULL," ");
+        next.y = atoi(pch);
+        request_action_init(&request,C,ACTION_MOVE,&my_player->client_position,&next);
+        rc = doRPCCmd(&request);
+
+    }
+    else if(strncmp(cmd,"pickup flag",sizeof("pickup flag")-1)==0)
+    {
+        request_action_init(&request,C,ACTION_PICKUP_FLAG,NULL,NULL);
+        rc = doRPCCmd(&request);
+
+    }
+    else if(strncmp(cmd,"drop flag",sizeof("drop flag")-1)==0)
+    {
+        request_action_init(&request,C,ACTION_DROP_FLAG,NULL,NULL);
+        rc = doRPCCmd(&request);
+    }
+    else if(strncmp(cmd,"pickup shovel",sizeof("pickup shovel")-1)==0)
+    {
+        request_action_init(&request,C,ACTION_PICKUP_SHOVEL,NULL,NULL);
+        rc = doRPCCmd(&request);
+
+    }
+    else if(strncmp(cmd,"drop shovel",sizeof("drop shovel")-1)==0)
+    {
+        request_action_init(&request,C,ACTION_DROP_SHOVEL,NULL,NULL);
+        rc = doRPCCmd(&request);
+    }
+    else if(strncmp(cmd,"sync",sizeof("drop shovel")-1)==0)
+    {
+        request_sync_init(&request,C);
+        rc = doRPCCmd(&request);
+    }
+
+
+
+
   }
   else
   {
@@ -475,10 +527,9 @@ void* shell(void *arg)
   char *c;
   int rc;
   int menu=1;
-  Request request;
 
   while (1) {
-    if ((c = prompt(menu))!=0) rc=docmd(C, c,&request);
+    if ((c = prompt(menu))!=0) rc=docmd(C, c);
     if (rc == -2) break; //only terminate when client issues 'q'
   
   //If this variable was allocated in prompt(menu) please free memory

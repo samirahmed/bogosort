@@ -221,7 +221,8 @@ extern int get_compress_from_body(Proto_Client_Handle ch,int offset ,int num_ele
   Proto_Client *c = ch;
   s = &(c->rpc_session);
   
-  for(ii = 0; ii<num_elements;ii++){
+  for(ii = 0; ii<num_elements;ii++)
+  {
       current_offset = proto_session_body_unmarshall_int(s,current_offset,ptr_to_array);
       ptr_to_array++;
   }
@@ -265,7 +266,8 @@ do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr,Pos current, P
   
   s = &(c->rpc_session);
   proto_session_hdr_marshall(s,hdr);
-  if(hdr->gstate.v1.raw == ACTION_MOVE){
+  if(hdr->gstate.v1.raw == ACTION_MOVE)
+  {
       proto_session_body_marshall_bytes(s,sizeof(Pos),(char*)&current);
       proto_session_body_marshall_bytes(s,sizeof(Pos),(char*)&next);
   }

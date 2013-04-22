@@ -66,10 +66,10 @@ void update_walls(int num_elements,int* game_compress,Maze* maze);
 //Connection and Disconnection
 int startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h);
 void disconnect (Client *C);
-int doConnect(Client *C, char* cmd,Request* request);
+int doConnect(Client *C, char* cmd);
 
 // Command Line Interface
-int docmd(Client *C, char* cmd,Request* request);
+int docmd(Client *C, char* cmd);
 void * shell(void *arg);
 void usage(char *pgm);
 char* prompt(int menu); 
