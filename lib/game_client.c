@@ -192,6 +192,11 @@ int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
     offset = get_compress_from_body(ch, offset, num_players, player_compress);
     offset = get_compress_from_body(ch, offset, 4, object_compress);
 
+    update_objects(4,object_compress,maze);
+    update_walls(num_walls,broken_walls_compress,maze);
+    update_players(num_players,player_compress,maze);
+
+
     //De-allocate the malloced variables
     free(broken_walls_compress);
     free(player_compress);
@@ -213,10 +218,10 @@ int process_RPC_message(Client *C)
         case PROTO_MT_REQ_GOODBYE:
             rc = process_goodbye_request(C->ph,&hdr);
             break;
-        case PROTO_MT_REQ_ACTION:
+        case PROTO_MT_REP_ACTION:
             rc = process_action_request(C->my_player,C->ph);
             break;
-        case PROTO_MT_REQ_SYNC:
+        case PROTO_MT_REP_SYNC:
             rc =process_sync_request(&C->maze,C->ph,&hdr);
             break;
         default:
@@ -297,13 +302,11 @@ int doRPCCmd(Request* request)
   case PROTO_MT_REQ_SYNC:
     fprintf(stderr,"Sync COMMAND ISSUED");
     hdr.type = request->type;
-    hdr.pstate.v0.raw = my_player->id;
     rc = do_no_body_rpc(C->ph,&hdr);
     break;
   case PROTO_MT_REQ_GOODBYE:
     fprintf(stderr,"Goodbye COMMAND ISSUED");
     hdr.type = request->type;
-    hdr.pstate.v0.raw = C->my_player->id;
     rc = do_no_body_rpc(C->ph,&hdr);
     /*rc = proto_client_goodbye(C->ph);*/
     /*printf("Game Over - You Quit");*/
