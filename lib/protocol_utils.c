@@ -26,20 +26,26 @@
 #include <sys/types.h>
 #include <strings.h>
 #include <errno.h>
+#include <time.h>
 
 #include "protocol.h"
-#include "maze.h"
 #include "protocol_utils.h"
 
-
 int PROTO_DEBUG=0;
+
+// easy seeded random
+extern int randint()
+{
+   srand (time(NULL));
+   return rand();
+}
 
 extern void
 cell_dump(Cell *cell)
 { 
   fprintf(stderr, "\n");
-  fprintf(stderr, "COLUMN - (x) - %d \n",cell->x);
-  fprintf(stderr, "ROW    - (y) - %d \n",cell->y);
+  fprintf(stderr, "COLUMN - (x) - %d \n",cell->pos.x);
+  fprintf(stderr, "ROW    - (y) - %d \n",cell->pos.y);
 
   switch(cell->type)
   {  
@@ -70,16 +76,16 @@ cell_dump(Cell *cell)
       break;
     case CELLSTATE_HOLDING:
       fprintf(stderr, "CELLSTATE: HOLDING");
-      fprintf(stderr, "PLAYER OBJECT_TYPE %d \n",cell->object_type);
+      /*fprintf(stderr, "PLAYER OBJECT_TYPE %d \n",cell->object_type);*/
       break;
     case CELLSTATE_OCCUPIED:
       fprintf(stderr, "CELLSTATE: OCCUPIED\n");
-      fprintf(stderr, "PLAYER TEAM %d \n",cell->player_type+1);
+      /*fprintf(stderr, "PLAYER TEAM %d \n",cell->player_type+1);*/
       break;
     case CELLSTATE_OCCUPIED_HOLDING:
       fprintf(stderr, "CELLSTATE: OCCUPIED AND HOLDING");
-      fprintf(stderr, "PLAYER TEAM %d \n",cell->player_type+1);
-      fprintf(stderr, "PLAYER OBJECT_TYPE %d \n",cell->object_type);
+      /*fprintf(stderr, "PLAYER TEAM %d \n",cell->player_type+1);*/
+      /*fprintf(stderr, "PLAYER OBJECT_TYPE %d \n",cell->object_type);*/
       break;
     default:
       fprintf(stderr, "CELLSTATE: UNKWOWN");
@@ -95,13 +101,16 @@ proto_dump_mt(Proto_Msg_Types type)
   case PROTO_MT_REQ_BASE_RESERVED_FIRST: 
     fprintf(stderr, "PROTO_MT_REQ_BASE_RESERVED_FIRST");
     break;
-  case PROTO_MT_REQ_BASE_HELLO: 
+  case PROTO_MT_REQ_HELLO:
     fprintf(stderr, "PROTO_MT_REQ_BASE_HELLO");
     break;
-  case PROTO_MT_REQ_BASE_MOVE: 
-    fprintf(stderr, "PROTO_MT_REQ_BASE_MOVE");
+  case PROTO_MT_REQ_ACTION: 
+    fprintf(stderr, "PROTO_MT_REQ_ACTION");
     break;
-  case PROTO_MT_REQ_BASE_GOODBYE: 
+  case PROTO_MT_REQ_SYNC: 
+    fprintf(stderr, "PROTO_MT_REQ_SYNC");
+    break;
+  case PROTO_MT_REQ_GOODBYE: 
     fprintf(stderr, "PROTO_MT_REQ_BASE_GOODBYE");
     break;
   case PROTO_MT_REQ_BASE_RESERVED_LAST: 
@@ -110,13 +119,16 @@ proto_dump_mt(Proto_Msg_Types type)
   case PROTO_MT_REP_BASE_RESERVED_FIRST: 
     fprintf(stderr, "PROTO_MT_REP_BASE_RESERVED_FIRST");
     break;
-  case PROTO_MT_REP_BASE_HELLO: 
+  case PROTO_MT_REP_HELLO: 
     fprintf(stderr, "PROTO_MT_REP_BASE_HELLO");
     break;
-  case PROTO_MT_REP_BASE_MOVE:
-    fprintf(stderr, "PROTO_MT_REP_BASE_MOVE");
+  case PROTO_MT_REP_ACTION:
+    fprintf(stderr, "PROTO_MT_REP_ACTION");
     break;
-  case PROTO_MT_REP_BASE_GOODBYE:
+  case PROTO_MT_REP_SYNC:
+    fprintf(stderr, "PROTO_MT_REP_ACTION");
+    break;
+  case PROTO_MT_REP_GOODBYE:
     fprintf(stderr, "PROTO_MT_REP_BASE_GOODBYE");
     break;
   case PROTO_MT_REP_BASE_RESERVED_LAST: 
@@ -125,7 +137,7 @@ proto_dump_mt(Proto_Msg_Types type)
   case PROTO_MT_EVENT_BASE_RESERVED_FIRST: 
     fprintf(stderr, "PROTO_MT_EVENT_BASE_RESERVED_LAST");
     break;
-  case PROTO_MT_EVENT_BASE_UPDATE: 
+  case PROTO_MT_EVENT_UPDATE: 
     fprintf(stderr, "PROTO_MT_EVENT_BASE_UPDATE");
     break;
   case PROTO_MT_EVENT_BASE_RESERVED_LAST: 

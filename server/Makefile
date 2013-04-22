@@ -1,3 +1,10 @@
+UNAME:=$(shell uname -s)
+ifeq ($(UNAME),Darwin)
+	CC:=cc
+else
+	CC:=gcc
+endif
+
 CFLAGS := -g -pthread -Wall
 targets=server
 src = server.c
@@ -8,9 +15,9 @@ all: $(targets)
 .PHONY: all
 
 server: $(objs) ../lib/libdagame.a
-	gcc $(CFLAGS) -o server $(objs) $(libs)
+	$(CC) $(CFLAGS) -o server $(objs) $(libs)
 
 $(objs) : $(src)
 
 clean:
-	rm $(objs) $(targets)
+	rm -f $(objs) $(targets)

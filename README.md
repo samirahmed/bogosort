@@ -4,30 +4,28 @@
 
 Members: 
 
-- Samir Ahmed, samahmed@bu.edu
-- Katsutoshi Kawakami, kkawakam@bu.edu
-- William Seltzer, wseltzer@bu.edu
+- Katsutoshi Kawakami, `kkawakam@bu.edu`
+- William Seltzer, `wseltzer@bu.edu`
+- Samir Ahmed, `samahmed@bu.edu`
 
-## TicTacToe
+## UI
 
-The following functions are supported
+## Client
 
-- Connect : to a host and port i.e `connect localhost:41515` or `connect 148.24.4.11:52524`. If you connect successfully you will be part of a game
-- Disconnect : disconnect from game/server, `disconnect`
-- Where :  figure out where you are connected, `where`
-- Quit : kill client, `quit`
-- Move : move by typing in a number from 0-8, i.e `2` to mark the 4th position
-- Refresh: just hit enter to print the latest game
+## Server
 
-## Cleaning and Building
+## Test
 
-Run `sh make.sh` and it will clean and build lib/client/server
+## Building, Cleaning, Testing
 
-or 
-
-Run 
+Building and running
 
 ```
-make clean
-make
+$ git clone https://github.com/BU-CS451-DS/bogosort.git
+$ cd bogosort
+$ make
+$ server/server
 ```
+
+`make clean` will clean and build lib/client/server
+`make test` will run tests
