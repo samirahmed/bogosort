@@ -30,7 +30,7 @@ else
   UILIBS = -lSDL
 endif
 
-CFLAGS := -g $(UIINCDIR) -std=c99
+CFLAGS := -g $(UIINCDIR) -pthread -std=gnu99
 
 all: uitest
 .PHONY: all

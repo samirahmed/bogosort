@@ -24,9 +24,10 @@
 #include <stdlib.h> /* for exit() */
 #include <pthread.h>
 #include <assert.h>
-#include "types.h"
+#include "types2.h"
 #include "uistandalone.h"
-
+#include "../lib/types.h"
+#include "../lib/game_commons.h"
 /* A lot of this code comes from http://www.libsdl.org/cgi/docwiki.cgi */
 
 /* Forward declaration of some dummy player code */
@@ -48,6 +49,8 @@ static void dummyPlayer_paint(UI *ui, SDL_Rect *t);
 #define UI_JACKHAMMER_BMP "shovel.bmp"
 
 int map[201][201];
+//move this to wherever the shallow copy is located
+
 int init_mapload = 0;
 typedef enum {UI_SDLEVENT_UPDATE, UI_SDLEVENT_QUIT} UI_SDL_Event;
 
@@ -338,15 +341,15 @@ for(i = 0; i < 200; i++){
 
 //helper function for ui_put pixel
 //paints SPRITE_W x SPRITE_H pixels starting with x,y at the upper left corner
-static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel, char c){
+static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel){
 	int w,h;
 	for(h = y; h < y+SPRITE_H; h++){
 		for(w = x; w < x+SPRITE_W; w++){
 			
 			ui_putpixel(surface, h, w, pixel);
 		
+		}
 	}
-}
 } 
 
 
@@ -372,39 +375,40 @@ for(i = 0; i < 201; i++){
 }
 init_mapload = 1;
 }
-int x,y;
+  int x,y;
   SDL_Rect t;
-  //int i, j
 
   y = 0; 
   x = 0;
   int scale_x, scale_y;
- 
-  
+  t.x = 0;
+  t.y = 0;
+    
   for (x = 0; x < 201; x++) {
     for (y = 0; y < 201; y++) {
         map_char = map[x][y];
 	scale_x = x * SPRITE_W;
 	scale_y = y * SPRITE_H;
 	if(map_char == ' '){
-		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> isle_c, 'e');
+		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> isle_c);
  			}
 	if(map_char == '#' && y < 100){
-		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teama_c, 'a');
+		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teama_c);
  			}
 	if(map_char == '#' && y >= 100){ 
-		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teamb_c, 'b');
+		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teamb_c);
 			}
 	//for now paint home areas white and jail areas yellow
        	if(map_char == 'j' || map_char == 'J'){
-		ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c, 'j');
+		ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c);
 			}
 
 	if(map_char == 'h' || map_char == 'H'){
-		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> white_c, 'h');
+		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> white_c);
 			}
 		}
 	}	
+
 
   dummyPlayer_paint(ui, &t);
 
@@ -607,47 +611,76 @@ static void
 dummyPlayer_init(UI *ui) 
 {
   dummyPlayer.id = 0;
-  dummyPlayer.x = 0; dummyPlayer.y = 0; dummyPlayer.team = 0; dummyPlayer.state = 0;
+  dummyPlayer.x = 5; dummyPlayer.y = 5; dummyPlayer.team = 0; dummyPlayer.state = 0;
   ui_uip_init(ui, &dummyPlayer.uip, dummyPlayer.id, dummyPlayer.team); 
 }
 
 static void 
 dummyPlayer_paint(UI *ui, SDL_Rect *t)
 {
+  //t -> y = 1;
+  //t -> x = 1;
+  //printf("y is %d\n", t->y);
+  //printf("x is %d\n", t->x); 
+  //printf("dummyplayer y is %d\n", dummyPlayer.y);
+  //printf("dummyplayer x is %d\n", dummyPlayer.x);
   
-  t->y = dummyPlayer.y * t->h; t->x = dummyPlayer.x * t->w;
-  dummyPlayer.uip->clip.x = dummyPlayer.uip->base_clip_x +
-    pxSpriteOffSet(dummyPlayer.team, dummyPlayer.state);
-  SDL_BlitSurface(dummyPlayer.uip->img, &(dummyPlayer.uip->clip), ui->screen, t);
+
+  ui_putnpixel(ui->screen, dummyPlayer.y, dummyPlayer.x, ui-> jackhammer_c);
+  //t->y = dummyPlayer.y * t->h; 
+  //t->x = dummyPlayer.x * t->w;
+  SDL_UpdateRect(ui->screen, 0, 0, ui->screen->w, ui->screen->h);
+ 
+  //dummyPlayer.uip->clip.x = dummyPlayer.uip->base_clip_x +
+   // pxSpriteOffSet(dummyPlayer.team, dummyPlayer.state);
+  //SDL_BlitSurface(dummyPlayer.uip->img, &(dummyPlayer.uip->clip), ui->screen, t);
 }
 
 int
 ui_dummy_left(UI *ui)
 {
+
   dummyPlayer.x--;
+
   return 2;
 }
 
 int
 ui_dummy_right(UI *ui)
 {
+ //send pair of ints to server along with move command
+ //if we receive a move player event update then update the dummy player location
+
   dummyPlayer.x++;
   return 2;
+
 }
+
 
 int
 ui_dummy_down(UI *ui)
 {
+//send pair of ints to
   dummyPlayer.y++;
+
   return 2;
 }
+
+
+
+
+
 
 int
 ui_dummy_up(UI *ui)
 {
   dummyPlayer.y--;
-  return 2;
+//}  
+return 2;
 }
+
+
+
 
 int
 ui_dummy_normal(UI *ui)
