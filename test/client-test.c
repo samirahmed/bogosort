@@ -77,9 +77,12 @@ void test_update_map_from_player_compress(TestContext* tc)
 
    update_players(1,&compress,&maze);
 
-   assertion = (maze.get[0][0].player)==(&maze.players[TEAM_RED].at[0]);
-   should("pointer from cell to player matches address of player in the plist",assertion,tc);
 
+   assertion = (maze.get[0][0].player)==(&maze.players[TEAM_RED].at[0]);
+   should("match address of player from cell to  address of player in the plist",assertion,tc);
+
+   assertion = (maze.get[0][0].player->state)==(PLAYER_FREE);
+   should("player is free",assertion,tc);
 
 
 }

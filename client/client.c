@@ -137,6 +137,7 @@ int docmd(Client *C, char* cmd)
   if(!connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
   {
     rc = doConnect(C, cmd);
+    return process_RPC_message(C);
   }
   else if(strncmp(cmd,"where",sizeof("where")-1)==0)
   {
