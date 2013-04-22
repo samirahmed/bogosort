@@ -242,7 +242,11 @@ extern int server_game_action(Maze*maze , GameRequest* request)
        
       // Check that the next cell is near the current cell
       // jump allows us to move player to anywhere
-      if (!cell_is_near(currentcell, nextcell) && !request->test_mode) {rc= ERR_BAD_NEXT_CELL; break;}
+      if (!cell_is_near(currentcell, nextcell) && !request->test_mode)
+      {
+        rc= ERR_BAD_NEXT_CELL; 
+        break;
+      }
       
       rc = _server_game_move(maze,player,currentcell,nextcell);
       

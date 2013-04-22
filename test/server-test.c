@@ -265,7 +265,9 @@ void test_plist(TestContext*tc)
     }
     assertion = assertion && ( server_plist_player_count(players) == players->max);
     should("support concurrent add and drops",assertion,tc);
-
+    
+    free(tasks);
+    free(fds);
     maze_destroy(&maze);
 }
 
@@ -340,7 +342,9 @@ void test_game_add_drop(TestContext * tc)
     assertion = (server_plist_player_count(&maze.players[TEAM_RED]) + 
                 server_plist_player_count(&maze.players[TEAM_BLUE])  == num_tasks );
     should("maintain player count correctly",assertion,tc);
-    
+   
+    free(tasks);
+    free(fds);
     maze_destroy(&maze);
 }
 
@@ -569,6 +573,108 @@ void test_pickup_drop_logic(TestContext*tc)
    maze_destroy(&maze);
 }
 
+//////////////////////////
+//  GAME MOVEMENT TEST  //
+//////////////////////////
+
+void st_zombie(void* task_ptr)
+{
+  Task* task = (Task*) task_ptr;
+  Maze* m    = (Maze*) task->arg0;
+  int*  fd   = (int*)  task->arg1;
+  int*  reps = (int*)  task->arg2;
+  int rc, ii,team,found,next_x,next_y;
+  Player*player;
+  Cell* current;
+
+  test_nanosleep();
+  GameRequest request;
+  rc = server_game_add_player( m ,*fd, &player );
+  if (test_debug()) fprintf(stderr,"%d add       %d, id=%d ,team=%d \n",rc,*fd,player->id, player->team);
+  team = player->team ;
+
+  for( ii=0; ii < *reps ;ii++)
+  {
+    test_nanosleep();
+    found = 0;
+    current = player->cell; // This is test SAFE ONLY
+    Pos next;
+    
+    // find a home cell to try to walk into
+    while(!found)
+    {
+        next_x =0 ; next_y=0;
+        switch (rand_r(&rc)%4)
+        {
+          case 0: next_x= 1; break;
+          case 1: next_x=-1; break;
+          case 2: next_y= 1; break;
+          case 3: next_y=-1; break;
+        }
+        next.x = current->pos.x+next_x; next.y = current->pos.y+next_y;
+        if (home_contains(&next,&m->home[team])) found = 1;
+    }
+    server_request_init(m,&request,*fd,ACTION_MOVE,next.x,next.y);
+    server_game_action(m,&request);
+  }
+  
+}
+
+void test_parallelize_movement(TestContext*tc)
+{
+    Maze maze;
+    maze_build_from_file(&maze,"test.map");
+
+    int ii,assertion,reps,team,xx,yy;
+    int num_tasks = (maze.players[TEAM_RED].max)/15;
+    Task* tasks = malloc(sizeof(Task)*num_tasks);
+    int*  fds = malloc(sizeof(int)*num_tasks);
+    bzero(tasks,sizeof(Task)*num_tasks);
+    bzero(fds,sizeof(int)*num_tasks);
+    reps = 100;
+
+    for (ii=0; ii< num_tasks; ii++)
+    {
+      fds[ii] = ii + 1500;
+      test_task_init(&tasks[ii],(Proc)&st_zombie,1,&maze,&fds[ii],&reps,NULL,NULL,NULL);
+    }
+    parallelize(tasks,num_tasks,1); // run each task one 1 thread only
+    
+    for (team=0; team<NUM_TEAMS; team++)
+    {
+      assertion = 1; 
+      for (xx=maze.home[team].min.x; xx<maze.home[team].max.x ;xx++ )
+      {
+        for (yy=maze.home[team].min.y; yy<maze.home[team].max.y ;yy++ )
+        {
+           Cell* cell = &maze.get[xx][yy];
+           
+           if (cell->object) assertion = assertion && ( cell->object->cell == cell );
+           if (cell->player)
+           { 
+             assertion = assertion && ( cell->player->cell == cell );
+             if (cell->player->shovel) 
+             {
+              assertion = assertion && (cell->player->shovel->player == cell->player);
+              assertion = assertion && (cell->player->shovel->cell == cell);
+             }
+             if (cell->player->flag) 
+             {
+              assertion = assertion && (cell->player->flag->player == cell->player);
+              assertion = assertion && (cell->player->flag->cell == cell);
+             }
+           }
+        }
+      }
+      should("maintain referential integrity with parallelized requests",assertion,tc);
+    }
+
+    free(fds);
+    free(tasks);
+    maze_destroy(&maze);
+}
+
+
 // Create 1 BLUE
 // Create 1 RED 
 // Passive Jail Red by walking into blue
@@ -741,12 +847,13 @@ int main(int argc, char ** argv )
     test_init(argc, argv, &tc);
     
     // ADD TESTS HERE
-    run(test_pickup_drop_logic,"Objects",&tc);
-    run(&test_game_move,"Basic Movement",&tc);
-    run(&test_game_add_drop,"Game Add/Drop",&tc);
+    run(&test_pickup_drop_logic,"Objects",&tc);
     run(&test_server_locks,"Server Locks",&tc);
     run(&test_plist,"PLists",&tc);
     run(&test_find_and_lock,"Find and Lock Empty Routine",&tc);
+    run(&test_game_add_drop,"Game Add/Drop",&tc);
+    run(&test_game_move,"Basic Movement",&tc);
+    run(&test_parallelize_movement,"Concurrent Movement",&tc);
     
     // TEST END HERE
     
