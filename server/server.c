@@ -38,6 +38,35 @@
 
 static Maze maze; 		
 
+///////////////////
+//  EVENT CODE   //
+///////////////////
+
+int doUpdateClients(Maze*m,EventUpdate *update)
+{
+  Proto_Session *s;
+  Proto_Msg_Hdr hdr;
+  
+  // Copy players/broken walls into update
+  hdr.sver.raw = update->timestamp;
+  hdr.pstate.v0.raw = update->game_state_update;
+  hdr.pstate.v1.raw = update->compress_player_a;
+  hdr.pstate.v2.raw = update->compress_player_b;
+
+  // Push objects into update
+  server_request_objects(m,&hdr.pstate.v2.raw,&hdr.pstate.v0.raw,&hdr.pstate.v3.raw,&hdr.pstate.v1.raw);
+
+  s = proto_server_event_session();
+  hdr.type = PROTO_MT_EVENT_UPDATE;
+  proto_session_hdr_marshall(s, &hdr);
+  proto_server_post_event();  
+  return 1;
+}
+
+///////////////////
+//  LOST  CODE   //
+///////////////////
+
 int client_lost_handler( Proto_Session * s)
 {
   int id,team,rc,fd;
@@ -55,8 +84,10 @@ int client_lost_handler( Proto_Session * s)
   if (proto_debug()) proto_session_dump(s);
 	return -1;
 }
-/*int init_game(void);*/
-/*int updateClients(void);*/
+
+///////////////////
+// HANDLER CODE ///
+///////////////////
 
 int hello_handler( Proto_Session *s)
 {
@@ -68,6 +99,8 @@ int hello_handler( Proto_Session *s)
   rc = server_game_add_player(&maze,s->fd,&player);
   if(rc<0) reply(s,PROTO_MT_REP_HELLO,rc,(size_t)NULL);
   
+  /// EVENT UPDATE GOES HERE
+
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr));
   h.pstate.v0.raw = player->id;
@@ -82,6 +115,8 @@ int goodbye_handler( Proto_Session *s)
 {
   if(proto_debug()) fprintf(stderr,"Drop Request Received");
   client_lost_handler(s);
+  
+  /// EVENT UPDATE GOES HERE
   return reply(s,PROTO_MT_REP_GOODBYE,0,(size_t)NULL);
 }
 
@@ -146,11 +181,14 @@ int action_handler( Proto_Session *s)
   if (rc<0) return reply(s,PROTO_MT_REP_ACTION,rc,-1);
   
   rc = server_game_action(&maze, &request);
+  if (rc<0) return reply(s,PROTO_MT_REP_ACTION,rc,-1);
 
-  return reply(s,PROTO_MT_REP_ACTION,rc,request.timestamp);
+  /// EVENT UPDATE GOES HERE
+  
+  return reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
 }
 
-extern int init_game(void){
+int init_game(void){
 	int rc;
   rc = maze_build_from_file(&maze,"../daGame.map");
   if (rc <0) fprintf(stderr, "ERROR: Failed to build map\n");
@@ -166,18 +204,6 @@ extern int init_game(void){
   proto_server_set_session_lost_handler( &(client_lost_handler) );	
   
   return rc;
-}
-
-int doUpdateClients(void)
-{
-  /*Proto_Session *s;*/
-  /*Proto_Msg_Hdr hdr;*/
-
-  /*s = proto_server_event_session();*/
-  /*hdr.type = PROTO_MT_EVENT_BASE_UPDATE;*/
-  /*proto_session_hdr_marshall(s, &hdr);*/
-  /*proto_server_post_event();  */
-  return 1;
 }
 
 //////////////////
@@ -199,9 +225,6 @@ int docmd(char* cmd)
     break;
   case 'D':
     proto_debug_off();
-    break;
-  case 'u':
-    rc = doUpdateClients();
     break;
   case 'q':
     rc=-1;

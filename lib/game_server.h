@@ -31,7 +31,8 @@ typedef struct{
   int    compress_player_a;
   int    compress_player_b;
   Pos    broken_wall;
-  int    wall_break;
+  int    game_state_update;
+  int    timestamp;
 } EventUpdate;
 
 typedef struct{
@@ -41,7 +42,6 @@ typedef struct{
   int          fd; 
   Action_Types action;
   int          test_mode;
-  int          timestamp;
   EventUpdate  update;
 } GameRequest;
 
