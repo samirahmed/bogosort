@@ -508,10 +508,13 @@ int docmd(Client *C, char* cmd)
         request_sync_init(&request,C);
         rc = doRPCCmd(&request);
     }
-
-
-
-
+    else if(strncmp(cmd,"load",sizeof("load")-1)==0)
+    {
+        char* pch;
+        Pos next;
+        pch = strtok(cmd+5," \n\0");
+        client_map_init(C,pch);
+    }
   }
   else
   {
