@@ -210,6 +210,25 @@ extern void get_pos(Proto_Client_Handle ch, Pos* current)
   proto_session_body_unmarshall_bytes(s,0,sizeof(Pos),(char*)current);
 }
 
+extern int get_compress_from_body(Proto_Client_Handle ch,int offset ,int num_elements,int* alloc_pointer)
+{
+  int ii, current_offset;
+  int* ptr_to_array;
+  current_offset = offset;
+  ptr_to_array = alloc_pointer;
+  
+  Proto_Session *s;
+  Proto_Client *c = ch;
+  s = &(c->rpc_session);
+  
+  for(ii = 0; ii<num_elements;ii++)
+  {
+      current_offset = proto_session_body_unmarshall_int(s,current_offset,ptr_to_array);
+      ptr_to_array++;
+  }
+  return current_offset;
+}
+
 //This function is used for RPC's that do not contain anything in the body
 //Parameter: Proto_Msg_Hdr ch - that contains all necessary information for the RPC
 //           Proto_Client_Handle *h - Handle to the Proto_Client 
@@ -247,7 +266,8 @@ do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr,Pos current, P
   
   s = &(c->rpc_session);
   proto_session_hdr_marshall(s,hdr);
-  if(hdr->gstate.v1.raw == ACTION_MOVE){
+  if(hdr->gstate.v1.raw == ACTION_MOVE)
+  {
       proto_session_body_marshall_bytes(s,sizeof(Pos),(char*)&current);
       proto_session_body_marshall_bytes(s,sizeof(Pos),(char*)&next);
   }
