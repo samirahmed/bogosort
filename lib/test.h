@@ -10,7 +10,7 @@
 #define SYMBOL_TICK "\xe2\x9c\x94"
 #define SYMBOL_CROSS "\xe2\x9c\x97"
 
-#define BREAKPOINT() raise(SIGINFO);    // should be caught in gdb - is ignorable (unix only)
+#define BREAKPOINT() raise(SIGUSR1);    // should be caught in gdb - is ignorable (unix only)
 #define SUICIDE() raise(SIGUSR1);
 
 typedef void(*Proc)(void*);
