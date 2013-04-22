@@ -103,6 +103,7 @@ int hello_handler( Proto_Session *s)
 
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr));
+  h.type = PROTO_MT_REP_HELLO;
   h.pstate.v0.raw = player->id;
   h.pstate.v1.raw = player->team;
   h.gstate.v0.raw = rc;
@@ -149,6 +150,7 @@ int sync_handler( Proto_Session *s)
   put_int(s,rshovel);
   put_int(s,bshovel);
 
+  h.type = PROTO_MT_REP_SYNC;
   h.gstate.v0.raw = rc;
   h.pstate.v2.raw = wlen;
   h.pstate.v3.raw = rlen+blen;
