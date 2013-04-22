@@ -199,6 +199,7 @@ int init_game(void){
  	proto_server_set_req_handler( PROTO_MT_REQ_HELLO, &(hello_handler) );
  	proto_server_set_req_handler( PROTO_MT_REQ_GOODBYE, &(goodbye_handler) );
  	proto_server_set_req_handler( PROTO_MT_REQ_ACTION, &(action_handler) );
+ 	proto_server_set_req_handler( PROTO_MT_REQ_SYNC, &(sync_handler) );
 
 	// Should set a session lost handler here
   proto_server_set_session_lost_handler( &(client_lost_handler) );	
