@@ -98,7 +98,7 @@ extern int* server_request_walls(Maze*m, int* length)
 extern int server_request_init(Maze*m,GameRequest*request,int fd,Action_Types action, int pos_x, int pos_y)
 {
   int team,id,rc;
-  bzero(request,sizeof(request));
+  bzero(request,sizeof(GameRequest));
  
   rc = server_fd_to_id_and_team(m, fd, &team, &id);
   if (rc < 0) { return rc;}
