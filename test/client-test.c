@@ -24,11 +24,11 @@ int test_marshall_int_read_buffer(Proto_Session *s, int v)
   return -1;
 }
 
-void test_decompress_sync_client(TestContext* tc)
+void test_getcompress_from_rbuf(TestContext* tc)
 {
     int ii,assertion;
     char buffer[20];
-    char output[100];
+    char output[1000];
     //Init Client and Map
     Client C;
     client_init(&C);
@@ -50,10 +50,38 @@ void test_decompress_sync_client(TestContext* tc)
         offset = get_compress_from_body(C.ph,offset,1,&result);
         assertion = ((result)==ii);
         sprintf(buffer,"%d",ii);
-        strcat(output,"The result should be ");
+        bzero(output,sizeof(output));
+        strcat(output,"unmarshall the number: ");
         strcat(output,buffer);
         should(output,assertion,tc);
     } 
+}
+
+
+void test_update_map_from_player_compress(TestContext* tc)
+{
+   int assertion;
+
+   Maze maze;
+   maze_build_from_file(&maze,"test.map");
+
+   Player test_player;
+   player_init(&test_player);
+   test_player.cell = &maze.get[0][0];
+   test_player.id = 0;
+   test_player.state = PLAYER_FREE;
+   test_player.team = TEAM_RED;
+    
+   int compress; 
+   compress_player(&test_player,&compress,PLAYER_ADDED);
+
+   update_players(1,&compress,&maze);
+
+   assertion = (maze.get[0][0].player)==(&maze.players[TEAM_RED].at[0]);
+   should("pointer from cell to player matches address of player in the plist",assertion,tc);
+
+
+
 }
 
 void st_client_wait_for_event(Task* task)
@@ -98,8 +126,9 @@ int main(int argc, char ** argv )
     
     
     // ADD TESTS HERE
-//    run(&test_blocking_threads,"Blocking Threads",&tc);
-    run(&test_decompress_sync_client,"Decompressing Body",&tc);
+    run(&test_blocking_threads,"Blocking Threads",&tc);
+    run(&test_getcompress_from_rbuf,"Get Read Buffer",&tc);
+    run(&test_update_map_from_player_compress,"Test map updates",&tc);
     // TEST END HERE
 
     test_summary(&tc);

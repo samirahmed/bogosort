@@ -15,11 +15,12 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
     int ii,x,y;
     Player player;
     Player* player_ptr;
+    Player_Update_Types update_type;
     for(ii = 0; ii < num_elements; ii++)
     {
         if(!decompress_is_ignoreable(&player_compress[ii])) 
         {
-            decompress_player(&player,&player_compress[ii],NULL);
+            decompress_player(&player,&player_compress[ii],&update_type);
 
            player_ptr =  &(maze->players[player.team].at[player.id]);
            bzero(player_ptr,sizeof(Player));            
