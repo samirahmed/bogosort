@@ -37,6 +37,85 @@ Globals globals;         //Host string and port
 static int connected;
 static char MenuString[] = "\n?> ";
 
+void update_players(int num_elements,int* player_compress, Maze* maze)
+{
+    int ii,x,y;
+    Player player;
+    Player* player_ptr;
+    for(ii = 0; ii < num_elements; ii++){
+        if(!decompress_is_ignoreable(&player_compress[ii])) {
+            decompress_player(&player,&player_compress[ii],NULL);
+
+           player_ptr =  &(maze->players[player.team].at[player.id]);
+           bzero(player_ptr,sizeof(Player));            
+           
+           x = player.client_position.x;
+           y = player.client_position.y; 
+
+           //Fill in the player data structure TODO: is all this information needed?
+           player_ptr->client_position.x = x;
+           player_ptr->client_position.y = y;
+           player_ptr->id = player.id;
+           player_ptr->state = player.state;
+           player_ptr->team = player.team;
+
+           //Set the player pointer at cell position x,y to my player
+           maze->get[x][y].player = player_ptr; 
+        }
+    }
+}
+
+void update_objects(int num_elements,int* object_compress, Maze* maze)
+{
+    int ii,x,y;
+    Object object;
+    Object* object_ptr;
+    Player* player;
+    Cell* cell;
+    for(ii = 0; ii < num_elements; ii++){
+        if(!decompress_is_ignoreable(&object_compress[ii])) {
+            decompress_object(&object,&object_compress[ii]);
+            x = object.client_position.x;
+            y = object.client_position.y;
+            object_ptr = &maze->objects[object_get_index(object.type,object.team)];
+            object_ptr->client_position.x = x;
+            object_ptr->client_position.y = y;
+            object_ptr->team = object.team;
+            object_ptr->type = object.type;
+
+            if(object.client_has_player){
+                player = &maze->players[object.client_player_team].at[object.client_player_id];
+                if(object.type==OBJECT_SHOVEL)
+                    player->shovel = object_ptr;
+                else
+                    player->flag = object_ptr;
+            }
+            else{
+                cell = &maze->get[x][y];
+                cell->object = object_ptr;
+            }
+
+        }
+    }
+    
+}
+
+void update_walls(int num_elements,int* game_compress, Maze* maze)
+{
+    Pos pos;
+    int ii,x,y;
+    for(ii = 0; ii < num_elements; ii++){
+        if(!decompress_is_ignoreable(&game_compress[ii])) {
+            decompress_broken_wall(&pos,&game_compress[ii]);
+           x = pos.x;
+           y = pos.y; 
+           maze->get[x][y].type = CELL_FLOOR;
+        }
+    }
+    
+}
+
+
 void request_action_init(Request* request, Client* client,Action_Types action,Pos* current, Pos* next)
 {
     bzero(request,sizeof(Request));
@@ -91,6 +170,7 @@ int process_hello_request(Maze* maze, Player* my_player, Proto_Client_Handle ch,
    my_player->client_position.y = current.y;
    my_player->id = id;
    my_player->state = PLAYER_FREE;
+   my_player->team = team;
 
    //Set the player pointer at cell position x,y to my player
    maze->get[current.x][current.y].player = &(maze->players[team].at[id]); 
@@ -106,8 +186,33 @@ int process_action_request(Player* my_player, Proto_Client_Handle ch)
 {
     return 0;
 }
-int process_sync_request(Maze* maze, Proto_Client_Handle ch)
+int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
 {
+    // Variable Declaration
+    int* broken_walls_compress;
+    int* player_compress;
+    int* object_compress;
+    int offset;
+
+    //Get number of elements for walls and players
+    int num_walls = hdr->pstate.v2.raw;
+    int num_players = hdr->pstate.v3.raw;
+
+    //Malloc the variables
+    broken_walls_compress = (int*) malloc(num_walls);
+    player_compress = (int*) malloc(num_players);
+    object_compress = (int*) malloc(4);
+
+    //Get the data from the body of the message
+    offset = 0;
+    offset = get_compress_from_body(ch, offset, num_walls, broken_walls_compress);
+    offset = get_compress_from_body(ch, offset, num_players, player_compress);
+    offset = get_compress_from_body(ch, offset, 4, object_compress);
+
+    //De-allocate the malloced variables
+    free(broken_walls_compress);
+    free(player_compress);
+    free(object_compress);
     return 0;    
 }
 
@@ -128,7 +233,7 @@ int process_RPC_message(Client *C)
             rc = process_action_request(C->my_player,C->ph);
             break;
         case PROTO_MT_REQ_SYNC:
-            rc =process_sync_request(&C->maze,C->ph);
+            rc =process_sync_request(&C->maze,C->ph,&hdr);
             break;
         default:
             return -1;
