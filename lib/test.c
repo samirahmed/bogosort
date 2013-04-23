@@ -72,7 +72,7 @@ extern void parallelize(Task tasks[], int num_tasks, int threads_per_task)
   pthread_attr_t attr; 
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
-  pthread_attr_setstacksize(&attr,PTHREAD_STACK_SIZE);
+  pthread_attr_setstacksize(&attr,PTHREAD_STACK_SIZE*2);
   struct sched_param param;
   bzero(&param,sizeof(struct sched_param));
 
