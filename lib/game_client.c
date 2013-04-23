@@ -73,7 +73,7 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
             decompress_object(&object,&object_compress[ii]);
             x = object.client_position.x;
             y = object.client_position.y;
-            object_ptr = &maze->objects[object_get_index(object.type,object.team)];
+            object_ptr = object_get(maze,object.type,object.team);
             object_ptr->client_position.x = x;
             object_ptr->client_position.y = y;
             object_ptr->team = object.team;
