@@ -232,26 +232,7 @@ extern int server_game_action(Maze*maze , GameRequest* request)
   nextcell    = &maze->get[next.x][next.y];
   Player*other = nextcell->player;
 
-  /*unsigned int thread = (unsigned int) pthread_self();*/
-  /*if (currentcell->thread!=thread )*/
-  /*{*/
-    /*fprintf(stderr,"no lock!\n");*/
-  /*}*/
-  /*if (nextcell->thread!=thread )*/
-  /*{*/
-    /*fprintf(stderr,"no lock!\n");*/
-  /*}*/
-  /*if (player->thread!=thread )*/
-  /*{*/
-    /*fprintf(stderr,"no lock!\n");*/
-  /*}*/
-  /*if (other)*/
-  /*if (other->thread!=thread )*/
-  /*{*/
-    /*fprintf(stderr,"no lock!\n");*/
-  /*}*/
-
-// Delegate the Action Accordingly
+  // Delegate the Action Accordingly
   switch(action)
   {
     case ACTION_NOOP: 
