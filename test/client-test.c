@@ -14,6 +14,38 @@
 #include "../lib/game_client.h"
 #include "../lib/test.h"
 
+void client_wait_for_event(Blocking_Helper *bh,TestContext* tc)
+{
+    int assertion;
+    assertion = client_maze_lock(bh)==0;
+    should("lock the maze from the waiting thread",assertion,tc);
+    while (bh->maze->current_game_state !=GAME_STATE_ACTIVE) 
+    {
+        assertion = client_maze_cond_wait(bh)==0;
+        should("wait and recieve signal for condition variable",assertion,tc);
+    }
+    assertion = client_maze_unlock(bh)==0;
+    should("unlock client maze from waiting thread",assertion,tc);
+
+    pthread_exit(NULL);
+}
+
+void client_signal_update(Blocking_Helper *bh,TestContext* tc)
+{
+    int assertion;
+    assertion = client_maze_lock(bh)==0;
+    should("lock the maze from signaling thread",assertion,tc);
+    
+    bh->maze->current_game_state = GAME_STATE_ACTIVE;
+    assertion = client_maze_signal(bh)==0;
+    should("signal the other thread for a change in condition",assertion,tc);
+    
+    assertion = client_maze_unlock(bh)==0;
+    should("unlock client maze from signaling thread",assertion,tc);
+
+    pthread_exit(NULL);
+}
+
 int test_marshall_int_read_buffer(Proto_Session *s, int v)
 {
   if (s && ((s->rlen + sizeof(int)) < PROTO_SESSION_BUF_SIZE)) {
@@ -89,13 +121,13 @@ void test_update_map_from_player_compress(TestContext* tc)
 
 void st_client_wait_for_event(Task* task)
 {
-    client_wait_for_event((Blocking_Helper*)(task->arg0));
+    client_wait_for_event((Blocking_Helper*)(task->arg0),(TestContext*)(task->arg1));
 }
 
 void st_client_signal_update(Task *task)
 {
-    sleep(3);
-    client_signal_update((Blocking_Helper*)(task->arg0));
+    sleep(1);
+    client_signal_update((Blocking_Helper*)(task->arg0),(TestContext*)(task->arg1));
 }
 
 void test_blocking_threads(TestContext *tc)
@@ -115,8 +147,8 @@ void test_blocking_threads(TestContext *tc)
     Task tasks[2];
     bzero(tasks, sizeof(Task)*2 );
     
-    test_task_init(&tasks[0],(Proc)&st_client_wait_for_event,1,&bh,NULL,NULL,NULL,NULL,NULL);
-    test_task_init(&tasks[1],(Proc)&st_client_signal_update,1,&bh,NULL,NULL,NULL,NULL,NULL);
+    test_task_init(&tasks[0],(Proc)&st_client_wait_for_event,1,&bh,tc,NULL,NULL,NULL,NULL);
+    test_task_init(&tasks[1],(Proc)&st_client_signal_update,1,&bh,tc,NULL,NULL,NULL,NULL);
     parallelize(tasks,2,thread_per_task);
     
 }
