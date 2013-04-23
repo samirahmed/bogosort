@@ -56,7 +56,7 @@ int test_marshall_int_read_buffer(Proto_Session *s, int v)
   return -1;
 }
 
-void test_getcompress_from_rbuf(TestContext* tc)
+void test_get_compress_from_body(TestContext* tc)
 {
     int ii,assertion;
     char buffer[20];
@@ -70,6 +70,8 @@ void test_getcompress_from_rbuf(TestContext* tc)
     s = &(proto_client->rpc_session);
     for(ii = 0;ii<20;ii++)
     {
+        //I have to use this function because no function in lib will write
+        //to the receive buffer
         test_marshall_int_read_buffer(s,ii);
     }
 
@@ -90,35 +92,85 @@ void test_getcompress_from_rbuf(TestContext* tc)
 }
 
 
-void test_update_map_from_player_compress(TestContext* tc)
+void test_update_players_from_compress(TestContext* tc)
 {
    int assertion;
+   int compress; 
 
+   //Create maze
    Maze maze;
    maze_build_from_file(&maze,"test.map");
 
+   //Initialize a dummy player
    Player test_player;
    player_init(&test_player);
    test_player.cell = &maze.get[0][0];
    test_player.id = 0;
    test_player.state = PLAYER_FREE;
    test_player.team = TEAM_RED;
-    
-   int compress; 
+   
+   //Compress Player 
    compress_player(&test_player,&compress,PLAYER_ADDED);
 
+   //Update Maze based on compressed player
    update_players(1,&compress,&maze);
 
 
    assertion = (maze.get[0][0].player)==(&maze.players[TEAM_RED].at[0]);
-   should("match address of player from cell to  address of player in the plist",assertion,tc);
+   should("match the address of the player stored in the cell to the address of the player in the plist",assertion,tc);
 
    assertion = (maze.get[0][0].player->state)==(PLAYER_FREE);
-   should("player is free",assertion,tc);
-
-
+   should("match the player's state before the compress",assertion,tc);
 }
 
+void test_update_objects_from_compress(TestContext* tc)
+{
+   int assertion;
+   int red_flag_compress,blue_flag_compress,red_shovel_compress,blue_shovel_compress;
+
+   //Create maze
+   Maze maze;
+   maze_build_from_file(&maze,"test.map");
+
+   //Initialize a dummy object
+   Object* red_flag = object_get(&maze,OBJECT_FLAG,TEAM_RED);
+   Object* blue_flag = object_get(&maze,OBJECT_FLAG,TEAM_BLUE);
+   Object* red_shovel = object_get(&maze,OBJECT_SHOVEL,TEAM_RED);
+   Object* blue_shovel = object_get(&maze,OBJECT_SHOVEL,TEAM_BLUE);
+  
+   //Position of each object somewhere on the map
+   red_flag->cell = &maze.get[0][0];
+   blue_flag->cell = &maze.get[1][1];
+   red_shovel->cell = &maze.get[2][2];
+   blue_shovel->cell = &maze.get[3][3];
+  
+   //Compress Object 
+   compress_object(red_flag,&red_flag_compress);
+   compress_object(blue_flag,&blue_flag_compress);
+   compress_object(red_shovel,&red_shovel_compress);
+   compress_object(blue_shovel,&blue_shovel_compress);
+
+   //Update Maze based on compressed object
+   update_objects(1,&red_flag_compress,&maze);
+   update_objects(1,&blue_flag_compress,&maze);
+   update_objects(1,&red_shovel_compress,&maze);
+   update_objects(1,&blue_shovel_compress,&maze);
+   
+   //Check if pointer to object from object list points to same object from the cell it occupies
+   assertion = (object_get(&maze,OBJECT_FLAG,TEAM_RED)->client_position.x == 0) &&
+               (object_get(&maze,OBJECT_FLAG,TEAM_RED)->client_position.y == 0);
+   should("Correct (x,y) updated: RED FLAG",assertion,tc);
+   assertion = (object_get(&maze,OBJECT_FLAG,TEAM_BLUE)->client_position.x == 1) &&
+               (object_get(&maze,OBJECT_FLAG,TEAM_BLUE)->client_position.y == 1);
+   should("Correct (x,y) updated: BLUE FLAG",assertion,tc);
+   assertion = (object_get(&maze,OBJECT_SHOVEL,TEAM_RED)->client_position.x == 2) &&
+               (object_get(&maze,OBJECT_SHOVEL,TEAM_RED)->client_position.y == 2);
+   should("Correct (x,y) updated: RED SHOVEL",assertion,tc);
+   assertion = (object_get(&maze,OBJECT_SHOVEL,TEAM_BLUE)->client_position.x == 3) &&
+               (object_get(&maze,OBJECT_SHOVEL,TEAM_BLUE)->client_position.y == 3);
+   should("Correct (x,y) updated: BLUE SHOVEL",assertion,tc);
+
+}
 void st_client_wait_for_event(Task* task)
 {
     client_wait_for_event((Blocking_Helper*)(task->arg0),(TestContext*)(task->arg1));
@@ -161,9 +213,10 @@ int main(int argc, char ** argv )
     
     
     // ADD TESTS HERE
-    run(&test_blocking_threads,"Blocking Threads",&tc);
-    run(&test_getcompress_from_rbuf,"Get Read Buffer",&tc);
-    run(&test_update_map_from_player_compress,"Test map updates",&tc);
+    run(&test_blocking_threads,"Conditional wait and signal",&tc);
+    run(&test_get_compress_from_body,"Get read buffer",&tc);
+    run(&test_update_players_from_compress,"Update players from compress",&tc);
+    run(&test_update_objects_from_compress,"Update objects from compress",&tc);
     // TEST END HERE
 
     test_summary(&tc);
