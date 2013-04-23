@@ -566,18 +566,14 @@ extern void object_unlock(Object*object)
 
 extern void player_lock(Player*player)
 {
-  /*fprintf(stderr,"[%d]\tLocks p:%d t:%d\n",*/
-    /*(unsigned int)pthread_self(),player->id,player->team);*/
   pthread_mutex_lock(&(player->lock));
   player->thread = (unsigned int) pthread_self();
 }
 
 extern void player_unlock(Player*player)
 {
-  /*fprintf(stderr,"[%d]\tUnlocks p:%d t:%d\n",*/
-    /*(unsigned int)pthread_self(),player->id,player->team);*/
   player->thread = 0;
-  int rc =pthread_mutex_unlock(&(player->lock));
+  pthread_mutex_unlock(&(player->lock));
 }
 
 extern void server_wall_write_lock(Maze*m)

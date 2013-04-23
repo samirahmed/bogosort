@@ -584,6 +584,7 @@ void st_zombie(void* task_ptr)
   int*  fd   = (int*)  task->arg1;
   int*  reps = (int*)  task->arg2;
   int rc, ii,team,found,next_x,next_y;
+  unsigned int seed = (unsigned int) pthread_self();
   Player*player;
   Cell* current;
 
@@ -604,7 +605,7 @@ void st_zombie(void* task_ptr)
     while(!found)
     {
         next_x =0 ; next_y=0;
-        switch (rand_r(&rc)%4)
+        switch (rand_r(&seed)%4)
         {
           case 0: next_x= 1; break;
           case 1: next_x=-1; break;
