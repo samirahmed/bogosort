@@ -135,9 +135,6 @@ void request_sync_init(Request* request,Client* client)
 
 int process_hello_request(Maze* maze, Player* my_player, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
 {
-   //Get the Position of the Player
-   Pos current;
-   get_pos(ch,&current);
 
    //Get the team and player id from the header
    Team_Types team = hdr->pstate.v1.raw;
@@ -146,15 +143,9 @@ int process_hello_request(Maze* maze, Player* my_player, Proto_Client_Handle ch,
    //Set local Client player pointer to corresponding player in the plist
    my_player = &(maze->players[team].at[id]);
 
-   //Fill in the player data structure TODO: is all this information needed?
-   my_player->client_position.x = current.x;
-   my_player->client_position.y = current.y;
    my_player->id = id;
-   my_player->state = PLAYER_FREE;
    my_player->team = team;
 
-   //Set the player pointer at cell position x,y to my player
-   maze->get[current.x][current.y].player = &(maze->players[team].at[id]); 
 
     return hdr->gstate.v0.raw;
 }
@@ -182,9 +173,9 @@ int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
     int num_players = hdr->pstate.v3.raw;
 
     //Malloc the variables
-    broken_walls_compress = (int*) malloc(num_walls);
-    player_compress = (int*) malloc(num_players);
-    object_compress = (int*) malloc(4);
+    broken_walls_compress = (int*) malloc(num_walls*sizeof(int));
+    player_compress = (int*) malloc(num_players*sizeof(int));
+    object_compress = (int*) malloc(4*sizeof(int));
 
     //Get the data from the body of the message
     offset = 0;

@@ -143,12 +143,12 @@ int docmd(Client *C, char* cmd)
     if (connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
     else printf("Not connected\n");
   }
-  else if(strncmp(cmd,"load",sizeof("load")-1)==0)
-    {
-        char* pch;
-        pch = strtok(cmd+5," \n\0");
-        client_map_init(C,pch);
-    }
+  /*else if(strncmp(cmd,"load",sizeof("load")-1)==0)*/
+    /*{*/
+        /*char* pch;*/
+        /*pch = strtok(cmd+5," \n\0");*/
+        /*client_map_init(C,pch);*/
+    /*}*/
   else if( connected )
   {
     Request request;
@@ -212,6 +212,7 @@ int docmd(Client *C, char* cmd)
 void* shell(void *arg)
 {
   Client *C = arg;
+ client_map_init(C,"daGame.map"); 
   char *c;
   int rc;
   int menu=1;
@@ -267,7 +268,6 @@ void globals_init(int argc, char argv[][STRLEN])
 int main(int argc, char **argv)
 {
   Client c;
-  
   if (client_init(&c) < 0) {
     fprintf(stderr, "ERROR: clientInit failed\n");
     return -1;
