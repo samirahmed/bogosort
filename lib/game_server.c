@@ -147,7 +147,7 @@ extern int server_fd_to_id_and_team(Maze*m,int fd, int *team_ptr, int*id_ptr)
 // Returns -1 if player exists
 // Returns -2 if player cannot be added to plist for some reason
 // Returns -3 if player spawn in home cell failed
-extern int server_game_add_player(Maze*maze,int fd, Player**player)
+extern int server_game_add_player(Maze*maze,int fd, Player**player,Pos *pos)
 {
   int rc,team,id;
   
@@ -168,11 +168,20 @@ extern int server_game_add_player(Maze*maze,int fd, Player**player)
   if (rc < 0 ) return -2;
   id = rc;
 
-  rc = server_player_spawn(maze,&(maze->players[team].at[id]) );
+  Pos spawn_pos;
+  rc = server_player_spawn(maze,  &(maze->players[team].at[id]), &spawn_pos );
   if (proto_debug() && rc<0) fprintf(stderr,"player with fd %d could not be spawned: rc=%d\n",fd,rc); 
   if (rc < 0) return -3;
-  
+ 
+
+  // Set the player and spawn position
   *player = &(maze->players[team].at[id]);
+  
+  if (pos)
+  {
+    pos->x = spawn_pos.x;
+    pos->y = spawn_pos.y;
+  }
 
   return id;
 }
@@ -737,7 +746,7 @@ extern int player_has_flag(Player * player)
 // Find a position for a player. Ensure that player doesn't have an object or shovel
 // Returns -1 if unable to find a home cell
 // Returns -2 if player is holding an object, they can't be spawned
-extern int server_player_spawn(Maze* m, Player* player)
+extern int server_player_spawn(Maze* m, Player* player, Pos*pos)
 {
   int rc = 0;
   Cell* homecell;
@@ -750,6 +759,8 @@ extern int server_player_spawn(Maze* m, Player* player)
   player->cell = homecell;
   homecell->player = player;
   server_home_count_increment(&m->home[player->team]);
+  pos->x = homecell->pos.x;
+  pos->y = homecell->pos.y;
   cell_unlock(homecell);
   return rc;
 }

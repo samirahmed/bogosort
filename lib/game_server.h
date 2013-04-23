@@ -54,7 +54,7 @@ extern void server_request_objects(Maze*m,int*rshovel,int*rflag,int*bshovel,int*
 extern int* server_request_walls(Maze*m, int* length);
 
 // Game Methods
-extern int  server_game_add_player(Maze*maze,int fd, Player**player);
+extern int  server_game_add_player(Maze*maze,int fd, Player**player,Pos *pos);
 extern void server_game_drop_player(Maze*maze,int team, int id);
 extern int  server_game_action(Maze*maze , GameRequest* request);
 extern int  server_validate_player( Maze*m, Team_Types team, int id , int fd );
@@ -94,7 +94,6 @@ extern void maze_update_object_player( Maze*m, Object* object, Player* player );
 extern void maze_move_player( Maze*m, Cell* current, Cell* next);
 extern void maze_use_shovel( Maze*m, Cell* current, Cell* next);
 extern void maze_object_drop_pickup( Maze*m, Action_Types action, Cell* current, Cell* next);
-extern void maze_spawn_player(Maze* m, Player* p);
 extern void maze_reset_shovel(Maze* m, Object* object);
 
 // JAIL METHODS
@@ -110,7 +109,7 @@ extern void player_lock(Player*player);
 extern void player_unlock(Player*player);
 extern int  player_has_shovel(Player * player);
 extern int  player_has_flag(Player * player);
-extern int  server_player_spawn(Maze*m, Player * player);
+extern int  server_player_spawn(Maze* m, Player* player, Pos*pos);
 
 // HOME METHODS
 extern void server_home_hash( Maze* m, int key, Cell** cell, Team_Types team);

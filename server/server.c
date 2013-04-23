@@ -95,8 +95,8 @@ int hello_handler( Proto_Session *s)
 
   int rc;
   Player*player;
-  
-  rc = server_game_add_player(&maze,s->fd,&player);
+  Pos pos;  
+  rc = server_game_add_player(&maze,s->fd,&player,&pos);
   if(rc<0) reply(s,PROTO_MT_REP_HELLO,rc,(size_t)NULL);
   
   /// EVENT UPDATE GOES HERE

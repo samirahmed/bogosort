@@ -284,7 +284,7 @@ void st_game_add_drop(void*task_ptr)
   for (ii = 0; ii<10;ii++)
   {
       test_nanosleep();
-      rc = server_game_add_player( m ,*fd, &player );
+      rc = server_game_add_player( m ,*fd, &player , NULL);
       if (test_debug()) fprintf(stderr,"%d add       %d, id=%d ,team=%d \n",rc,*fd,player->id, player->team);
       
       if (rc >=0) 
@@ -296,7 +296,7 @@ void st_game_add_drop(void*task_ptr)
   }
 
   test_nanosleep();
-  rc =  server_game_add_player( m ,*fd , &player);
+  rc =  server_game_add_player( m ,*fd , &player, NULL);
   if (test_debug()) fprintf(stderr,"%d finally add  %d, id=%d ,team=%d\n",rc,*fd,player->id,player->team);
 
 }
@@ -412,7 +412,7 @@ void test_pickup_drop_logic(TestContext*tc)
    // PICKUP SHOVEL
    /////////////////
    Object* blue_shovel = object_get(&maze, OBJECT_SHOVEL , TEAM_BLUE);
-   server_game_add_player(&maze,fd_blue,&blue);
+   server_game_add_player(&maze,fd_blue,&blue, NULL);
    server_request_init(&maze,&request,fd_blue,ACTION_MOVE,blue_shovel->cell->pos.x,blue_shovel->cell->pos.y);
    request.test_mode = 1; //  teleport
    server_game_action(&maze,&request);
@@ -514,7 +514,7 @@ void test_pickup_drop_logic(TestContext*tc)
    server_request_init(&maze,&request,fd_blue,ACTION_PICKUP_FLAG,blue->cell->pos.x,blue->cell->pos.y);
    rc = server_game_action(&maze,&request);
    
-   server_game_add_player(&maze,fd_red,&red);
+   server_game_add_player(&maze,fd_red,&red, NULL);
    server_request_init(&maze,&request,fd_blue,ACTION_MOVE,red->cell->pos.x+1,red->cell->pos.y);
    request.test_mode = 1; //  teleport
    server_game_action(&maze,&request);
@@ -584,13 +584,13 @@ void st_zombie(void* task_ptr)
   int*  fd   = (int*)  task->arg1;
   int*  reps = (int*)  task->arg2;
   int rc, ii,team,found,next_x,next_y;
-  unsigned int seed = (unsigned int) pthread_self();
+  unsigned int seed = (unsigned int)(size_t) pthread_self();
   Player*player;
   Cell* current;
 
   test_nanosleep();
   GameRequest request;
-  rc = server_game_add_player( m ,*fd, &player );
+  rc = server_game_add_player( m ,*fd, &player , NULL);
   if (test_debug()) fprintf(stderr,"%d add       %d, id=%d ,team=%d \n",rc,*fd,player->id, player->team);
   team = player->team ;
 
@@ -696,7 +696,7 @@ void test_game_move(TestContext*tc)
     fd   = randint()%9000 + 999;
     team = randint()%2;
     Player*player;
-    server_game_add_player(&maze, fd, &player );
+    server_game_add_player(&maze, fd, &player, NULL );
     assertion = (server_home_count_read(&maze.home[player->team]) == 1) ;
     should("increment home count on spawn",assertion,tc);
 
@@ -760,7 +760,7 @@ void test_game_move(TestContext*tc)
     /////////////////
     int fd_red = fd+1;
     Player*other ;
-    rc = server_game_add_player(&maze,fd_red,&other);
+    rc = server_game_add_player(&maze,fd_red,&other,NULL);
     
     server_request_init(&maze,&request,fd_red,ACTION_MOVE,149,99);
     request.test_mode = 1;
@@ -792,14 +792,14 @@ void test_game_move(TestContext*tc)
     
     int fd_blue = fd+2;
     Player*blue;
-    server_game_add_player(&maze,fd_blue,&blue);
+    server_game_add_player(&maze,fd_blue,&blue,NULL);
     server_request_init(&maze,&request,fd_blue,ACTION_MOVE,50,99);
     request.test_mode = 1;
     server_game_action(&maze,&request);
     
     int fd_tagger = fd+3;
     Player*tagger;
-    server_game_add_player(&maze,fd_tagger,&tagger);
+    server_game_add_player(&maze,fd_tagger,&tagger,NULL);
     server_request_init(&maze,&request,fd_tagger,ACTION_MOVE,49,99);
     request.test_mode = 1;
     server_game_action(&maze,&request);
@@ -841,6 +841,8 @@ void test_game_move(TestContext*tc)
     maze_destroy(&maze);
 }
 
+/*void test_event_updates()*/
+
 int main(int argc, char ** argv )
 {
     TestContext tc;
@@ -854,7 +856,8 @@ int main(int argc, char ** argv )
     run(&test_game_add_drop,"Game Add/Drop",&tc);
     run(&test_game_move,"Basic Movement",&tc);
     run(&test_parallelize_movement,"Concurrent Movement",&tc);
-    
+    /*run(&test_event_updates,"Event Updates",&tc);*/
+
     // TEST END HERE
     
     test_summary(&tc);
