@@ -30,7 +30,6 @@
 #define STRLEN 81
 
 static int connected;
-Player* my_player;
 
 typedef struct ClientBlockingStruct{
     Maze *maze;    

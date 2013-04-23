@@ -144,15 +144,22 @@ void request_action_init(Request* request, Client* client,Action_Types action,Po
 {
     bzero(request,sizeof(Request));
     request->client = client;
-    request->current  = *current;
     request->type = PROTO_MT_REQ_ACTION;
     request->action_type = action;
-    if(current)
-        request->current = *current;
-    if(next)
-        request->next = *next;
     if(action==ACTION_MOVE)
-        request->next = *next;
+    {
+        if(current)
+        {
+            request->current.x = current->x;
+            request->current.y = current->y;
+        }
+        if(next)
+        {
+            request->next.x = next->x;
+            request->next.y = next->y;
+        }
+        
+    }
 }
 
 
@@ -427,7 +434,7 @@ int doRPCCmd(Request* request)
     fprintf(stderr,"Action COMMAND ISSUED");
     hdr.type = request->type;
     hdr.gstate.v1.raw = request->action_type;
-    hdr.pstate.v0.raw = my_player->id;
+    hdr.pstate.v0.raw = C->my_player->id;
     rc = do_action_request_rpc(C->ph,&hdr,request->current,request->next);
     break;
   case PROTO_MT_REQ_SYNC:
