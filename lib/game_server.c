@@ -230,6 +230,7 @@ extern int server_game_action(Maze*maze , GameRequest* request)
   cell = player->cell;
   currentcell = cell;
   nextcell    = &maze->get[next.x][next.y];
+  Player*other = nextcell->player;
 
 // Delegate the Action Accordingly
   switch(action)
@@ -283,6 +284,9 @@ extern int server_game_action(Maze*maze , GameRequest* request)
   if (proto_debug() && rc<0) fprintf(stderr,"Error: %d for Action:%d | Id:%d | Team:%d\n",rc,action,id,team);
   
   // unlock the maze
+  if (other != nextcell->player && nextcell->player!=player) {
+    fprintf(stderr,"what is going on?\n");
+  }
   server_maze_unlock(maze ,cell->pos, next);
   return rc;
 }
@@ -554,12 +558,18 @@ extern void object_unlock(Object*object)
 
 extern void player_lock(Player*player)
 {
+  /*fprintf(stderr,"[%d]\tLocks p:%d t:%d\n",*/
+    /*(unsigned int)pthread_self(),player->id,player->team);*/
   pthread_mutex_lock(&(player->lock));
+  player->thread = (unsigned int) pthread_self();
 }
 
 extern void player_unlock(Player*player)
 {
-  pthread_mutex_unlock(&(player->lock));
+  /*fprintf(stderr,"[%d]\tUnlocks p:%d t:%d\n",*/
+    /*(unsigned int)pthread_self(),player->id,player->team);*/
+  player->thread = 0;
+  int rc =pthread_mutex_unlock(&(player->lock));
 }
 
 extern void server_wall_write_lock(Maze*m)

@@ -69,6 +69,7 @@ typedef struct PlayerStruct{
     int                 fd;
     Pos                 client_position;
     pthread_mutex_t     lock;
+    unsigned int        thread;
 } Player;
 
 typedef struct CellStruct{

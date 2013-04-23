@@ -615,9 +615,8 @@ void st_zombie(void* task_ptr)
         if (home_contains(&next,&m->home[team])) found = 1;
     }
     server_request_init(m,&request,*fd,ACTION_MOVE,next.x,next.y);
-    server_game_action(m,&request);
+    server_game_action(m,&request);  
   }
-  
 }
 
 void test_parallelize_movement(TestContext*tc)
@@ -626,12 +625,12 @@ void test_parallelize_movement(TestContext*tc)
     maze_build_from_file(&maze,"test.map");
 
     int ii,assertion,reps,team,xx,yy;
-    int num_tasks = (maze.players[TEAM_RED].max)/8;
+    int num_tasks = (maze.players[TEAM_RED].max)/10;
     Task* tasks = malloc(sizeof(Task)*num_tasks);
     int*  fds = malloc(sizeof(int)*num_tasks);
     bzero(tasks,sizeof(Task)*num_tasks);
     bzero(fds,sizeof(int)*num_tasks);
-    reps = 100;
+    reps = 40;
 
     for (ii=0; ii< num_tasks; ii++)
     {
