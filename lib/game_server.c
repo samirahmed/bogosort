@@ -506,6 +506,8 @@ extern void server_maze_lock(Maze*m , Pos current, Pos next)
  
   // First Lock Cells
   cell_lock(first);
+  int thread = first->thread;
+  Cell* ff = first;
   if (!(current.x == next.x && current.y == next.y ))
   {
     // if current != next;
@@ -513,12 +515,22 @@ extern void server_maze_lock(Maze*m , Pos current, Pos next)
     lock_second=1;
   }
 
+  if (thread!=first->thread)
+  {
+        fprintf(stderr,"uhoh\n");
+  }
+  
   // Now Lock the cell heirarhcy
   _server_root_lock(m,first);
+
 
   // if second cell is not the same repeat
   if (lock_second)
   {
+      if (second->thread != (unsigned int) pthread_self())
+      {
+        fprintf(stderr,"uhoh\n");
+      }
     _server_root_lock(m,second);
   }
 
@@ -544,6 +556,10 @@ extern void server_maze_unlock(Maze*m, Pos current, Pos next)
 // It will check if a player has dropped and if so, drop all change all the references.
 extern void _server_root_lock(Maze*m, Cell* cell)
 {
+  if (cell->thread != (unsigned int) pthread_self())
+  {
+    fprintf(stderr,"uhoh\n");
+  }
   if (cell->object){ object_lock(cell->object); }
   if (cell->player)
   { 
@@ -578,10 +594,12 @@ extern void server_maze_property_unlock(Maze*m)
 extern void object_lock(Object*object)
 {
   pthread_mutex_lock(&(object->lock));
+  object->thread = (unsigned int)(size_t) pthread_self();
 }
 
 extern void object_unlock(Object*object)
 {
+  if (object->thread == (unsigned int) pthread_self()) object->thread = 0;
   pthread_mutex_unlock(&(object->lock));
 }
 
@@ -1062,7 +1080,7 @@ extern int _server_action_update_player(Maze*m, Player*player, Cell*newcell)
   if (!player) return ERR_NO_PLAYER;
   player->cell = newcell;
   _server_action_update_cell(m, player->shovel, newcell );
-  _server_action_update_cell(m, player->shovel, newcell );
+  _server_action_update_cell(m, player->flag, newcell );
   return 0;
 }
 

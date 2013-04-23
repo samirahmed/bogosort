@@ -585,6 +585,7 @@ void st_zombie(void* task_ptr)
   int*  reps = (int*)  task->arg2;
   int rc, ii,team,found,next_x,next_y;
   unsigned int seed = (unsigned int)(size_t) pthread_self();
+  int pickup;
   Player*player;
   Cell* current;
 
@@ -598,9 +599,36 @@ void st_zombie(void* task_ptr)
   {
     test_nanosleep();
     found = 0;
+    pickup = 0;
     current = player->cell; // This is test SAFE ONLY
     Pos next;
-    
+   
+    // Pick up an object if there is one
+    if ( current->object)
+    {
+        test_nanosleep();
+        if (current->object->type == OBJECT_FLAG)
+          server_request_init(m,&request,*fd,ACTION_PICKUP_FLAG,current->pos.x,current->pos.y);
+        else
+          server_request_init(m,&request,*fd,ACTION_PICKUP_SHOVEL,current->pos.x,current->pos.y);
+         
+        server_game_action(m,&request);  
+        pickup = 1;
+    }
+
+    if (!pickup && player->shovel)
+    {
+          test_nanosleep();
+          server_request_init(m,&request,*fd,ACTION_DROP_SHOVEL,current->pos.x,current->pos.y);
+          server_game_action(m,&request);  
+    }
+    else if (!pickup && player->flag)
+    {
+          test_nanosleep();
+          server_request_init(m,&request,*fd,ACTION_DROP_FLAG,current->pos.x,current->pos.y);
+          server_game_action(m,&request);  
+    }
+
     // find a home cell to try to walk into
     while(!found)
     {
@@ -624,8 +652,33 @@ void test_parallelize_movement(TestContext*tc)
 {
     Maze maze;
     maze_build_from_file(&maze,"test.map");
-
+    
     int ii,assertion,reps,team,xx,yy;
+
+    /// MOVE SHOVEL AND FLAGS INTO HOME... 
+    for ( team=0; team< NUM_TEAMS;team++)
+    { 
+      Object* flag = object_get(&maze , OBJECT_FLAG, team );
+      Object* shovel= object_get(&maze , OBJECT_SHOVEL, team );
+
+      // orphan objects
+      flag->cell->object =0;
+      shovel->cell->object =0;
+
+      Cell* fcell = &maze.get[ maze.home[team].min.x+1 ][maze.home[team].min.y+1 ];
+      Cell* scell = &maze.get[ maze.home[team].min.x+2 ][maze.home[team].min.y+1 ];
+      
+      // set new cell to own object
+      fcell->object = flag;
+      scell->object = shovel;
+     
+      // link object to new cell
+      flag->cell = fcell;
+      shovel->cell = scell;
+      
+    }
+
+    /// PARALLEL ZOMBIE TASKS
     int num_tasks = (maze.players[TEAM_RED].max);
     Task* tasks = malloc(sizeof(Task)*num_tasks);
     int*  fds = malloc(sizeof(int)*num_tasks);
@@ -663,11 +716,25 @@ void test_parallelize_movement(TestContext*tc)
               assertion = assertion && (cell->player->flag->player == cell->player);
               assertion = assertion && (cell->player->flag->cell == cell);
              }
+             if (!assertion) BREAKPOINT();
            }
         }
       }
-      should("maintain referential integrity with parallelized requests",assertion,tc);
+      should("maintain referential integrity down cell heirarchy",assertion,tc);
+    
+      assertion =1;
+      for (ii=0;ii<maze.players[team].max;ii++)
+      {
+        Player*player = &maze.players[team].at[ii];
+        if (player->fd != -1)
+        {
+          assertion = assertion && (player->cell) && (player->cell->player == player);
+        }
+      }
+      should("maintain referential integrity between players and their cells",assertion,tc);
+
     }
+
 
     free(fds);
     free(tasks);
