@@ -230,8 +230,9 @@ extern int server_game_action(Maze*maze , GameRequest* request)
   cell = player->cell;
   currentcell = cell;
   nextcell    = &maze->get[next.x][next.y];
+  Player*other = nextcell->player;
 
-// Delegate the Action Accordingly
+  // Delegate the Action Accordingly
   switch(action)
   {
     case ACTION_NOOP: 
@@ -242,7 +243,11 @@ extern int server_game_action(Maze*maze , GameRequest* request)
        
       // Check that the next cell is near the current cell
       // jump allows us to move player to anywhere
-      if (!cell_is_near(currentcell, nextcell) && !request->test_mode) {rc= ERR_BAD_NEXT_CELL; break;}
+      if (!cell_is_near(currentcell, nextcell) && !request->test_mode)
+      {
+        rc= ERR_BAD_NEXT_CELL; 
+        break;
+      }
       
       rc = _server_game_move(maze,player,currentcell,nextcell);
       
@@ -278,6 +283,12 @@ extern int server_game_action(Maze*maze , GameRequest* request)
   // Print debug if error
   if (proto_debug() && rc<0) fprintf(stderr,"Error: %d for Action:%d | Id:%d | Team:%d\n",rc,action,id,team);
   
+  if (other != nextcell->player && nextcell->player!=player) 
+  {
+    fprintf(stderr,"ERROR Memory Corrupted. Anomaly at  %s,%d \n",
+      __FILE__,__LINE__);
+  }
+
   // unlock the maze
   server_maze_unlock(maze ,cell->pos, next);
   return rc;
@@ -426,6 +437,11 @@ extern int server_maze_lock_by_player(Maze*m, Player*player , Pos * next )
       next? server_maze_unlock(m,cell->pos,*next): server_maze_lock(m,cell->pos,cell->pos);
     }
   }
+  if (rc !=0 || player->cell->thread ==0  )
+  {
+    fprintf(stderr,"uhoh\n");
+  }
+
   return rc;
 }
 
@@ -433,30 +449,30 @@ extern int server_maze_lock_by_player(Maze*m, Player*player , Pos * next )
 // If you only want to lock down one current = next
 extern void server_maze_lock(Maze*m , Pos current, Pos next)
 {
-  Cell C = m->get[current.x][current.y];
-  Cell N = m->get[next.x][next.y];
+  Cell* C = &m->get[current.x][current.y];
+  Cell* N = &m->get[next.x][next.y];
   
-  Cell first;
-  Cell second;
+  Cell* first;
+  Cell* second;
   int lock_second=0;
   
   // first is lower x value if x equal then lower y value.
-  if ( C.pos.x < N.pos.x )
+  if ( C->pos.x < N->pos.x )
   {
     first = C;
     second = N;
   }
-  else if ( N.pos.x < C.pos.x )
+  else if ( N->pos.x < C->pos.x )
   {
     first = N;
     second = C;
   }
-  else if ( C.pos.y < N.pos.y )
+  else if ( C->pos.y < N->pos.y )
   {
     first = C;
     second = N;
   }
-  else if ( N.pos.y < C.pos.y )
+  else if ( N->pos.y < C->pos.y )
   {
     first = N;
     second = C;
@@ -468,21 +484,21 @@ extern void server_maze_lock(Maze*m , Pos current, Pos next)
   }
  
   // First Lock Cells
-  cell_lock(&first);
+  cell_lock(first);
   if (!(current.x == next.x && current.y == next.y ))
   {
     // if current != next;
-    cell_lock(&second);
+    cell_lock(second);
     lock_second=1;
   }
 
   // Now Lock the cell heirarhcy
-  _server_root_lock(m,&first);
+  _server_root_lock(m,first);
 
   // if second cell is not the same repeat
   if (lock_second)
   {
-    _server_root_lock(m,&second);
+    _server_root_lock(m,second);
   }
 
 }
@@ -491,15 +507,15 @@ extern void server_maze_lock(Maze*m , Pos current, Pos next)
 // doesn't matter if they are the same or different
 extern void server_maze_unlock(Maze*m, Pos current, Pos next)
 {
-  Cell C = m->get[current.x][current.y];
-  Cell N = m->get[next.x][next.y];
+  Cell* C = &m->get[current.x][current.y];
+  Cell* N = &m->get[next.x][next.y];
 
-  _server_root_unlock(m,&C);
-  _server_root_unlock(m,&N);
+  _server_root_unlock(m,C);
+  _server_root_unlock(m,N);
   
   // Order of cell unlock doesn't matter so long as jail is last unlocked
-  cell_unlock(&C);
-  cell_unlock(&N);
+  cell_unlock(C);
+  cell_unlock(N);
 }
 
 // The cell is the root of all the objects. A cell root lock
@@ -551,10 +567,12 @@ extern void object_unlock(Object*object)
 extern void player_lock(Player*player)
 {
   pthread_mutex_lock(&(player->lock));
+  player->thread = (unsigned int) pthread_self();
 }
 
 extern void player_unlock(Player*player)
 {
+  player->thread = 0;
   pthread_mutex_unlock(&(player->lock));
 }
 
