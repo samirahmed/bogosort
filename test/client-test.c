@@ -139,10 +139,10 @@ void test_update_objects_from_compress(TestContext* tc)
    Object* blue_shovel = object_get(&maze,OBJECT_SHOVEL,TEAM_BLUE);
   
    //Position of each object somewhere on the map
-   red_flag->cell = &maze.get[0][0];
-   blue_flag->cell = &maze.get[1][1];
-   red_shovel->cell = &maze.get[2][2];
-   blue_shovel->cell = &maze.get[3][3];
+   red_flag->cell = &maze.get[50][27];
+   blue_flag->cell = &maze.get[99][20];
+   red_shovel->cell = &maze.get[34][53];
+   blue_shovel->cell = &maze.get[79][22];
   
    //Compress Object 
    compress_object(red_flag,&red_flag_compress);
@@ -157,19 +157,50 @@ void test_update_objects_from_compress(TestContext* tc)
    update_objects(1,&blue_shovel_compress,&maze);
    
    //Check if pointer to object from object list points to same object from the cell it occupies
-   assertion = (object_get(&maze,OBJECT_FLAG,TEAM_RED)->client_position.x == 0) &&
-               (object_get(&maze,OBJECT_FLAG,TEAM_RED)->client_position.y == 0);
-   should("Correct (x,y) updated: RED FLAG",assertion,tc);
-   assertion = (object_get(&maze,OBJECT_FLAG,TEAM_BLUE)->client_position.x == 1) &&
-               (object_get(&maze,OBJECT_FLAG,TEAM_BLUE)->client_position.y == 1);
-   should("Correct (x,y) updated: BLUE FLAG",assertion,tc);
-   assertion = (object_get(&maze,OBJECT_SHOVEL,TEAM_RED)->client_position.x == 2) &&
-               (object_get(&maze,OBJECT_SHOVEL,TEAM_RED)->client_position.y == 2);
-   should("Correct (x,y) updated: RED SHOVEL",assertion,tc);
-   assertion = (object_get(&maze,OBJECT_SHOVEL,TEAM_BLUE)->client_position.x == 3) &&
-               (object_get(&maze,OBJECT_SHOVEL,TEAM_BLUE)->client_position.y == 3);
-   should("Correct (x,y) updated: BLUE SHOVEL",assertion,tc);
+   assertion = (object_get(&maze,OBJECT_FLAG,TEAM_RED)->client_position.x == 50) &&
+               (object_get(&maze,OBJECT_FLAG,TEAM_RED)->client_position.y == 27);
+   should("correctly update (50,27): RED FLAG",assertion,tc);
+   assertion = (object_get(&maze,OBJECT_FLAG,TEAM_BLUE)->client_position.x == 99) &&
+               (object_get(&maze,OBJECT_FLAG,TEAM_BLUE)->client_position.y == 20);
+   should("correctly update (99,20): BLUE FLAG",assertion,tc);
+   assertion = (object_get(&maze,OBJECT_SHOVEL,TEAM_RED)->client_position.x == 34) &&
+               (object_get(&maze,OBJECT_SHOVEL,TEAM_RED)->client_position.y == 53);
+   should("correctly update (34,53): RED SHOVEL",assertion,tc);
+   assertion = (object_get(&maze,OBJECT_SHOVEL,TEAM_BLUE)->client_position.x == 79) &&
+               (object_get(&maze,OBJECT_SHOVEL,TEAM_BLUE)->client_position.y == 22);
+   should("correctly update (79,22): BLUE SHOVEL",assertion,tc);
 
+   //Position of each object somewhere on the map
+   red_flag->cell = &maze.get[11][22];
+   blue_flag->cell = &maze.get[52][61];
+   red_shovel->cell = &maze.get[20][16];
+   blue_shovel->cell = &maze.get[12][28];
+  
+   //Compress Object 
+   compress_object(red_flag,&red_flag_compress);
+   compress_object(blue_flag,&blue_flag_compress);
+   compress_object(red_shovel,&red_shovel_compress);
+   compress_object(blue_shovel,&blue_shovel_compress);
+
+   //Update Maze based on compressed object
+   update_objects(1,&red_flag_compress,&maze);
+   update_objects(1,&blue_flag_compress,&maze);
+   update_objects(1,&red_shovel_compress,&maze);
+   update_objects(1,&blue_shovel_compress,&maze);
+   
+   //Check if pointer to object from object list points to same object from the cell it occupies
+   assertion = (object_get(&maze,OBJECT_FLAG,TEAM_RED)->client_position.x == 11) &&
+               (object_get(&maze,OBJECT_FLAG,TEAM_RED)->client_position.y == 22);
+   should("correctly update (11,22): RED FLAG",assertion,tc);
+   assertion = (object_get(&maze,OBJECT_FLAG,TEAM_BLUE)->client_position.x == 52) &&
+               (object_get(&maze,OBJECT_FLAG,TEAM_BLUE)->client_position.y == 61);
+   should("correctly update (52,61): BLUE FLAG",assertion,tc);
+   assertion = (object_get(&maze,OBJECT_SHOVEL,TEAM_RED)->client_position.x == 20) &&
+               (object_get(&maze,OBJECT_SHOVEL,TEAM_RED)->client_position.y == 16);
+   should("correctly update (20,16): RED SHOVEL",assertion,tc);
+   assertion = (object_get(&maze,OBJECT_SHOVEL,TEAM_BLUE)->client_position.x == 12) &&
+               (object_get(&maze,OBJECT_SHOVEL,TEAM_BLUE)->client_position.y == 28);
+   should("correctly update (12,28): BLUE SHOVEL",assertion,tc);
 }
 void st_client_wait_for_event(Task* task)
 {
