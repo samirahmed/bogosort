@@ -59,9 +59,9 @@ extern void server_game_drop_player(Maze*maze,int team, int id);
 extern int  server_game_action(Maze*maze , GameRequest* request);
 extern int  server_validate_player( Maze*m, Team_Types team, int id , int fd );
 extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next);
-extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next);
+extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next, EventUpdate*update);
 extern int _server_game_state_update(Maze*m, Player*player, Cell*current, Cell*next);
-extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next);
+extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next, EventUpdate*update);
 
 // Locking Methods
 extern void server_maze_property_unlock(Maze*m);
@@ -143,7 +143,7 @@ extern int _server_action_update_cell_and_player(Maze*m, Object* object, Cell* n
 extern int _server_action_update_player(Maze*m, Player*player, Cell*newcell);
 extern int _server_action_move_player(Maze*m, Cell* currentcell , Cell* nextcell );
 extern int _server_action_jailbreak( Maze*m, Team_Types team, Cell*current, Cell*next );
-extern int _server_action_jail_player(Maze*m, Cell* currentcell);
+extern int _server_action_jail_player(Maze*m, Cell* currentcell, EventUpdate*update);
 
 // OTHERS 
 extern void _server_drop_handler(Maze*m, Player*player);

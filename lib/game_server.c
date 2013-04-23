@@ -218,7 +218,8 @@ extern int server_game_action(Maze*maze , GameRequest* request)
   Pos next    = request->pos;
   int fd      = request->fd;
   Action_Types action  = request->action;
-  
+  EventUpdate* update = &request->update;
+
   // Get the player 
   Player*player = &(maze->players[team].at[id]);
   Cell *cell, *currentcell, *nextcell;
@@ -249,7 +250,7 @@ extern int server_game_action(Maze*maze , GameRequest* request)
         break;
       }
       
-      rc = _server_game_move(maze,player,currentcell,nextcell);
+      rc = _server_game_move(maze,player,currentcell,nextcell,update);
       
       if (rc>=0 && proto_debug())
       {
@@ -294,7 +295,7 @@ extern int server_game_action(Maze*maze , GameRequest* request)
   return rc;
 }
 
-extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next)
+extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next, EventUpdate * update)
 {
   int rc = 0;
 
@@ -307,13 +308,24 @@ extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next)
   else if ( next->type == CELL_WALL )
   {
     rc = _server_game_wall_move(m,player,current,next);
+    
+    // capture broken wall update if necessary
+    if (rc == 0) 
+    {
+      update->broken_wall.x = next->pos.x;
+      update->broken_wall.y = next->pos.y;
+    }
   }
   else
   {
-    rc = _server_game_floor_move(m,player,current,next);
+    rc = _server_game_floor_move(m,player,current,next,update);
   }
   
-  if (rc>=0) rc = _server_game_state_update(m,player,current,next);
+  if (rc>=0) 
+  { 
+    rc = _server_game_state_update(m,player,current,next);
+    update->player_a = *next->player;
+  }
   
   return rc;
 }
@@ -333,7 +345,7 @@ extern int _server_game_state_update(Maze*m, Player*player, Cell*current, Cell*n
   return rc;
 }
 
-extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next)
+extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next )
 {
   if (!player->shovel) return ERR_WALL;
   if (next->is_mutable == CELLTYPE_IMMUTABLE) return ERR_WALL;
@@ -360,7 +372,7 @@ extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next)
   return rc;
 }
 
-extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next)
+extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next,EventUpdate*update)
 {
   int rc = ERR_NOOP;
   if ( cell_is_unoccupied(next) )
@@ -380,11 +392,11 @@ extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*nex
     if ( next->player->state==PLAYER_JAILED ) return ERR_CELL_OCCUPIED;
     if ( next->player->team != player->team && next->turf != player->team )
     {
-      rc = _server_action_jail_player(m,current);
+      rc = _server_action_jail_player(m,current,update);
     }
     if ( next->player->team != player->team && next->turf == player->team )
     {
-      _server_action_jail_player(m,next);
+      _server_action_jail_player(m,next,update);
       if(cell_is_unoccupied(next)) rc = _server_action_move_player(m, current, next);
     }
   }
@@ -567,7 +579,7 @@ extern void object_unlock(Object*object)
 extern void player_lock(Player*player)
 {
   pthread_mutex_lock(&(player->lock));
-  player->thread = (unsigned int) pthread_self();
+  player->thread = (unsigned int)(size_t) pthread_self();
 }
 
 extern void player_unlock(Player*player)
@@ -1053,7 +1065,7 @@ extern int _server_action_move_player(Maze*m, Cell* currentcell , Cell* nextcell
    return 0;
 }
 
-extern int _server_action_jail_player(Maze*m, Cell* currentcell)
+extern int _server_action_jail_player(Maze*m, Cell* currentcell,EventUpdate*update)
 {
   if (!currentcell->player) return ERR_NO_PLAYER;
   Player * player = currentcell->player;
@@ -1076,6 +1088,9 @@ extern int _server_action_jail_player(Maze*m, Cell* currentcell)
   {
     _server_action_move_player(m,currentcell, nextcell);
   }
+
+  // copy player into B
+  update->player_b = *player;
   player_unlock(player);
   cell_unlock(nextcell);
   return 0;

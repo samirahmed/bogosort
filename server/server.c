@@ -125,7 +125,8 @@ int sync_handler( Proto_Session *s)
 {
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr));
-  int *walls, *rlist, *blist, blen, rlen, wlen, rshovel, bshovel, bflag, rflag, rc,ii;
+  int *walls, *rlist, *blist, blen, rlen, wlen, 
+      rshovel, bshovel, bflag, rflag, rc,ii;
   rc = 0;
 
   // Get the walls + rlist
