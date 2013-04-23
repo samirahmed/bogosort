@@ -97,13 +97,10 @@ extern void blocking_helper_set_maze(Blocking_Helper *bh, Maze *maze);
 extern int blocking_helper_destroy(Blocking_Helper *bh);
 
 // Locking and Conditional Variable Helper Methods
-extern void client_maze_lock(Blocking_Helper *bh);
-extern void client_maze_unlock(Blocking_Helper *bh);
-extern void client_maze_signal(Blocking_Helper *bh);
-extern void client_maze_cond_wait(Blocking_Helper *bh);
+extern int client_maze_lock(Blocking_Helper *bh);
+extern int client_maze_unlock(Blocking_Helper *bh);
+extern int client_maze_signal(Blocking_Helper *bh);
+extern int client_maze_cond_wait(Blocking_Helper *bh);
 
-// Signal and Wait Methods
-extern void client_wait_for_event(Blocking_Helper *bh);
-extern void client_signal_update(Blocking_Helper *bh);
 
 #endif

@@ -505,9 +505,9 @@ extern int blocking_helper_destroy(Blocking_Helper *bh)
     parameter: bh     pointer to allocated Blocking_Helper 
     return:    void
 */
-extern void client_maze_lock(Blocking_Helper *bh)
+extern int client_maze_lock(Blocking_Helper *bh)
 {
-    pthread_mutex_lock(&bh->maze_lock);
+    return pthread_mutex_lock(&bh->maze_lock);
 }
 
 /*  client_maze_unlock
@@ -516,9 +516,9 @@ extern void client_maze_lock(Blocking_Helper *bh)
     parameter: bh     pointer to allocated Blocking_Helper 
     return:    void
 */
-extern void client_maze_unlock(Blocking_Helper *bh)
+extern int client_maze_unlock(Blocking_Helper *bh)
 {
-    pthread_mutex_unlock(&bh->maze_lock);
+    return pthread_mutex_unlock(&bh->maze_lock);
 }
 
 /*  client_maze_signal
@@ -527,9 +527,9 @@ extern void client_maze_unlock(Blocking_Helper *bh)
     parameter: bh     pointer to allocated Blocking_Helper 
     return:    void
 */
-extern void client_maze_signal(Blocking_Helper *bh)
+extern int client_maze_signal(Blocking_Helper *bh)
 {
-    pthread_cond_signal(&bh->maze_updated);
+    return pthread_cond_signal(&bh->maze_updated);
 }
 
 /*  client_maze_cond_wait
@@ -538,46 +538,7 @@ extern void client_maze_signal(Blocking_Helper *bh)
     parameter: bh     pointer to allocated Blocking_Helper 
     return:    void
 */
-extern void client_maze_cond_wait(Blocking_Helper *bh)
+extern int client_maze_cond_wait(Blocking_Helper *bh)
 {
-    pthread_cond_wait(&bh->maze_updated,&bh->maze_lock);
-}
-
-/*  client_wait_for_event
-    TODO: Finish implementing this Currently used for test purposes
-   
-    parameter: bh     pointer to allocated Blocking_Helper 
-    return:    void
-*/
-extern void client_wait_for_event(Blocking_Helper *bh)
-{
-    //TODO: Not fully implemented, at this point only has test functionality
-    printf("Thread wait_function lock\n");
-    client_maze_lock(bh);
-    printf("Thread wait_function waiting for condition variable\n");
-    while (bh->maze->current_game_state !=GAME_STATE_ACTIVE) 
-        client_maze_cond_wait(bh);
-    printf("Thread wait_function unlocks\n");
-    client_maze_unlock(bh);
-    pthread_exit(NULL);
-}
-
-/*  client_signal_update
-    TODO: Finish implementing this Currently used for test purposes
-   
-    parameter: bh     pointer to allocated Blocking_Helper 
-    return:    void
-*/
-extern void client_signal_update(Blocking_Helper *bh)
-{
-    //TODO: Not fully implemented, at this point only has test functionality
-    printf("Thread signal_function lock\n");
-    client_maze_lock(bh);
-    printf("Thread signal_function change game state\n");
-    bh->maze->current_game_state = GAME_STATE_ACTIVE;
-    printf("Thread signal_function signal to other thread that state has changed\n");
-    client_maze_signal(bh);
-    printf("Thread signal_function unlock\n");
-    client_maze_unlock(bh);
-    pthread_exit(NULL);
+    return pthread_cond_wait(&bh->maze_updated,&bh->maze_lock);
 }
