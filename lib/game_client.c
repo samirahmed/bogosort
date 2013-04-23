@@ -10,6 +10,15 @@
 #include "protocol_session.h"
 #include "game_client.h"
 
+/*  update_players 
+    Takes the player compress array and decompresses
+    each element and adds the information to the Maze.
+
+    parameter: num_elements    the number of elements in the player compress array
+    parameter: player_compress pointer to the array that contains player compresses
+    parameter: maze            pointer to client version of the maze
+    return:    void
+*/
 void update_players(int num_elements,int* player_compress, Maze* maze)
 {
     int ii,x,y;
@@ -41,6 +50,15 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
     }
 }
 
+/*  update_objects 
+    Take the data in the object compress array and decompresses
+    each element and adds the information to the Maze.
+
+    parameter: num_elements    the number of elements in the player compress array
+    parameter: object_compress pointer to the array that contains object compresses
+    parameter: maze            pointer to client version of the maze
+    return:    void
+*/
 void update_objects(int num_elements,int* object_compress, Maze* maze)
 {
     int ii,x,y;
@@ -79,6 +97,16 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
     
 }
 
+
+/*  update_walls
+    Takes game compress array and decompresses
+    each element and adds broken wall information to the Maze.
+
+    parameter: num_elements    the number of elements in the player compress array
+    parameter: game_compress   pointer to the array that contains game compresses
+    parameter: maze            pointer to client version of the maze
+    return:    void
+*/
 void update_walls(int num_elements,int* game_compress, Maze* maze)
 {
     Pos pos;
@@ -97,6 +125,21 @@ void update_walls(int num_elements,int* game_compress, Maze* maze)
 }
 
 
+/*  request_action_init
+    Fills the request data structure with a
+    - pointer to a client,
+    - type of action that will be sent in the request (e.g., ACTION_MOVE)
+    - current position of the player                  (iff non-null)
+    - next position of the player                     (iff non-null)
+    - the Proto Message type of the request  (as specified in protocol.h)
+    
+    parameter: request         pointer to a request data structure
+    parameter: client          pointer to a client data structure
+    parameter: action          action type of the request
+    parameter: current         pointer client's current position data structure
+    parameter: next            pointer to client's next position data structure
+    return:    void
+*/
 void request_action_init(Request* request, Client* client,Action_Types action,Pos* current, Pos* next)
 {
     bzero(request,sizeof(Request));
@@ -112,6 +155,16 @@ void request_action_init(Request* request, Client* client,Action_Types action,Po
         request->next = *next;
 }
 
+
+/*  request_hello_init
+    Fills the request data structure with a
+    - pointer to a client,
+    - the Proto Message type of the request  (as specified in protocol.h)
+    
+    parameter: request         pointer to a request data structure
+    parameter: client          pointer to a client data structure
+    return:    void
+*/
 void request_hello_init(Request* request,Client* client)
 {
     bzero(request,sizeof(Request));
@@ -119,6 +172,16 @@ void request_hello_init(Request* request,Client* client)
     request->type = PROTO_MT_REQ_HELLO;
 }
 
+
+/*  request_goodbye_init
+    Fills the request data structure with a
+    - pointer to a client,
+    - the Proto Message type of the request  (as specified in protocol.h)
+    
+    parameter: request         pointer to a request data structure
+    parameter: client          pointer to a client data structure
+    return:    void
+*/
 void request_goodbye_init(Request* request,Client* client)
 {
     bzero(request,sizeof(Request));
@@ -126,6 +189,15 @@ void request_goodbye_init(Request* request,Client* client)
     request->type = PROTO_MT_REQ_GOODBYE;
 }
 
+/*  request_sync_init
+    Fills the request data structure with a
+    - pointer to a client,
+    - the Proto Message type of the request  (as specified in protocol.h)
+    
+    parameter: request         pointer to a request data structure
+    parameter: client          pointer to a client data structure
+    return:    void
+*/
 void request_sync_init(Request* request,Client* client)
 {
     bzero(request,sizeof(Request));
@@ -133,7 +205,17 @@ void request_sync_init(Request* request,Client* client)
     request->type = PROTO_MT_REQ_SYNC;
 }
 
-int process_hello_request(Maze* maze, Player* my_player, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
+/*  process_hello_request
+    After the RPC thread recieves a hello response from the server
+    we set the player's if and team based on the information sent
+    by the server in the Proto_Msg_Hdr
+   
+    parameter: maze         pointer to the client's local version of the maze 
+    parameter: hdr          Proto_Msg_Hdr that was unmarshalled from the server's response
+    parameter: my_player    pointer to my player structure
+    return:    int          return code
+*/
+int process_hello_request(Maze* maze, Player* my_player, Proto_Msg_Hdr* hdr)
 {
 
    //Get the team and player id from the header
@@ -150,16 +232,45 @@ int process_hello_request(Maze* maze, Player* my_player, Proto_Client_Handle ch,
     return hdr->gstate.v0.raw;
 }
 
-int process_goodbye_request(Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
+/*  process_goodbye_request
+    After the RPC thread recieves a goodbye response from the server
+    we set the player's if and team based on the information sent
+    by the server in the Proto_Msg_Hdr
+   
+    parameter: hdr          Proto_Msg_Hdr that was unmarshalled from the server's response
+    return:    int          return code
+*/
+int process_goodbye_request(Proto_Msg_Hdr* hdr)
 {
     return hdr->gstate.v0.raw;
 }
+
+/*  process_action_request
+    After the RPC thread recieves a goodbye response from the server
+    we set the player's if and team based on the information sent
+    by the server in the Proto_Msg_Hdr
+   
+    parameter: my_player    pointer to my player structure
+    parameter: ch           handle to a Proto_Client
+    return:    int          return code
+*/
 int process_action_request(Player* my_player, Proto_Client_Handle ch)
 {
     int result;
     get_int(ch,0,&result);
     return result;
 }
+
+/*  process_sync_request
+    After the RPC thread recieves a sync response from the server
+    we update the object information in the maze, the broken
+    walls in the maze and the players in the game
+   
+    parameter: maze         pointer to the client's local copy of the maze
+    parameter: ch           handle to a Proto_Client
+    parameter: hdr          pointer to hdr that contains unmarshalled data
+    return:    int          return code
+*/
 int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
 {
     // Variable Declaration
@@ -195,6 +306,14 @@ int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
     return hdr->gstate.v0.raw;    
 }
 
+/*  process_RPC_message
+    After the RPC thread recieves a response from the server
+    this function will call one of the functions to process the data 
+    received
+   
+    parameter: C            pointer client data structure
+    return:    int          return code from the header
+*/
 int process_RPC_message(Client *C)
 {
     Proto_Msg_Hdr hdr;
@@ -204,10 +323,10 @@ int process_RPC_message(Client *C)
     switch(hdr.type)
     {
         case PROTO_MT_REP_HELLO:
-            rc = process_hello_request(&C->maze,C->my_player,C->ph,&hdr);
+            rc = process_hello_request(&C->maze,C->my_player,&hdr);
             break;
         case PROTO_MT_REQ_GOODBYE:
-            rc = process_goodbye_request(C->ph,&hdr);
+            rc = process_goodbye_request(&hdr);
             break;
         case PROTO_MT_REP_ACTION:
             rc = process_action_request(C->my_player,C->ph);
@@ -230,6 +349,12 @@ static int update_handler(Proto_Session *s )
     return 0;
 }
 
+/*  client_init
+    Initialize the client data structure
+   
+    parameter: C            pointer client data structure
+    return:    int          1 or -1 for success or failure respectively
+*/
 int client_init(Client *C)
 {
   // Zero global scope
@@ -249,6 +374,13 @@ int client_init(Client *C)
   return 1;
 }
 
+/*  client_map_init
+    Load the maze with the information in .map files
+   
+    parameter: C            pointer client data structure
+    parameter: filename     filename for the map file
+    return:    int          1 or -1 for success or failure respectively
+*/
 int client_map_init(Client *C,char* filename)
 {
     //Build maze from file
@@ -264,6 +396,14 @@ int client_map_init(Client *C,char* filename)
     return 1;
 }
 
+/*  doRPCCmd
+    Based on the request type (set by one of the init function)
+    send an RPC to the server
+   
+    parameter: request     pointer to request data structure that was already
+                            initialized
+    return:    int          1 or -1 for success or failure respectively
+*/
 int doRPCCmd(Request* request) 
 {
   int rc=-1;
@@ -312,8 +452,12 @@ int doRPCCmd(Request* request)
   return rc;
 }
 
-
-
+/*  blocking_helper_init
+    Initialize the blocking helper data structure
+   
+    parameter: request     pointer to allocated Blocking_Helper 
+    return:    int         1 or -1 for success or failure respectively
+*/
 extern int blocking_helper_init(Blocking_Helper *bh)
 {
     bzero(bh,sizeof(Blocking_Helper));
@@ -324,11 +468,25 @@ extern int blocking_helper_init(Blocking_Helper *bh)
     return 1;
 }
 
+/*  blocking_helper_set_maze
+    have the blocking helper's maze parameter point to the local
+    copy of the maze
+   
+    parameter: bh     pointer to allocated Blocking_Helper 
+    parameter: m      pointer to local copy of the maze 
+    return:    void
+*/
 extern void blocking_helper_set_maze(Blocking_Helper *bh, Maze* m)
 {
     bh->maze = m;    
 }
 
+/*  blocking_helper_destroy
+    destroy the mutex and the condition variable
+   
+    parameter: bh     pointer to allocated Blocking_Helper 
+    return:    int    returns 1 or -1 for success or failure respectively
+*/
 extern int blocking_helper_destroy(Blocking_Helper *bh)
 {
     if(pthread_mutex_destroy(&bh->maze_lock)!=0)
@@ -338,25 +496,59 @@ extern int blocking_helper_destroy(Blocking_Helper *bh)
    return 1;
 }
 
+
+
+
+/*  client_maze_lock
+    locks the mutex in the Blocking_Helper
+   
+    parameter: bh     pointer to allocated Blocking_Helper 
+    return:    void
+*/
 extern void client_maze_lock(Blocking_Helper *bh)
 {
     pthread_mutex_lock(&bh->maze_lock);
 }
 
+/*  client_maze_unlock
+    unlocks the mutex in the Blocking_Helper
+   
+    parameter: bh     pointer to allocated Blocking_Helper 
+    return:    void
+*/
 extern void client_maze_unlock(Blocking_Helper *bh)
 {
     pthread_mutex_unlock(&bh->maze_lock);
 }
 
+/*  client_maze_signal
+    signals the condition variable in the Blocking_Helper
+   
+    parameter: bh     pointer to allocated Blocking_Helper 
+    return:    void
+*/
 extern void client_maze_signal(Blocking_Helper *bh)
 {
     pthread_cond_signal(&bh->maze_updated);
 }
 
+/*  client_maze_cond_wait
+    waits for the condition variable to be signaled in the Blocking_Helper
+   
+    parameter: bh     pointer to allocated Blocking_Helper 
+    return:    void
+*/
 extern void client_maze_cond_wait(Blocking_Helper *bh)
 {
     pthread_cond_wait(&bh->maze_updated,&bh->maze_lock);
 }
+
+/*  client_wait_for_event
+    TODO: Finish implementing this Currently used for test purposes
+   
+    parameter: bh     pointer to allocated Blocking_Helper 
+    return:    void
+*/
 extern void client_wait_for_event(Blocking_Helper *bh)
 {
     //TODO: Not fully implemented, at this point only has test functionality
@@ -370,6 +562,12 @@ extern void client_wait_for_event(Blocking_Helper *bh)
     pthread_exit(NULL);
 }
 
+/*  client_signal_update
+    TODO: Finish implementing this Currently used for test purposes
+   
+    parameter: bh     pointer to allocated Blocking_Helper 
+    return:    void
+*/
 extern void client_signal_update(Blocking_Helper *bh)
 {
     //TODO: Not fully implemented, at this point only has test functionality
