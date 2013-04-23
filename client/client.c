@@ -168,7 +168,7 @@ int docmd(Client *C, char* cmd)
         next.x = atoi(pch);
         pch = strtok(NULL," ");
         next.y = atoi(pch);
-        request_action_init(&request,C,ACTION_MOVE,&my_player->client_position,&next);
+        request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
         rc = doRPCCmd(&request);
 
     }
