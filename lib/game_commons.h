@@ -57,6 +57,7 @@ typedef struct{
     Team_Types      client_player_team;
     int             client_has_player;
     pthread_mutex_t lock;
+    unsigned int    thread;
 } Object;
 
 typedef struct PlayerStruct{
@@ -81,6 +82,7 @@ typedef struct CellStruct{
     Player*          player;
     Object*          object;
     pthread_mutex_t  lock;
+    unsigned int     thread;
 } Cell;
 
 typedef struct{
