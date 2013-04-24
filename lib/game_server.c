@@ -968,7 +968,7 @@ extern int _server_action_drop_flag(Maze*m , Player* player)
     cell->object = object;
     player->flag = 0;
 
-    if ( currentcell == cell ) 
+    if ( currentcell != cell ) 
     {
       object_unlock(object);
       cell_unlock(cell);
