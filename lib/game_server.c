@@ -580,7 +580,7 @@ extern void object_lock(Object*object)
 
 extern void object_unlock(Object*object)
 {
-  if (object->thread == (unsigned int) pthread_self()) object->thread = 0;
+  if (object->thread == (unsigned int)(size_t) pthread_self()) object->thread = 0;
   pthread_mutex_unlock(&(object->lock));
 }
 
@@ -671,10 +671,7 @@ extern int server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell** 
       else break;
    }
    
-   if (found != 0) 
-   {
-    return -1;
-   }
+   if (found != 0) return -1; 
    return 0;
 }
 
@@ -951,17 +948,31 @@ extern void server_plist_drop_player_by_id(Maze*m, Plist* plist, int id )
 extern int _server_action_drop_flag(Maze*m , Player* player)
 {
     if (!player)                              return ERR_NO_PLAYER;
-    //FIXME can't drop flag,take flag with you(jail/heaven)
-    if (player->cell && player->cell->object) return ERR_NO_OBJECT; 
     if (!player->flag)                        return 1;  // no need to drop
-    
+    if (!player->cell) { fprintf(stderr,"ERROR No Cell On Player\n");}
+    Cell* currentcell = player->cell;
+    Cell* cell;
     Object*object = player->flag; 
-    Cell* cell = player->cell;
+   
+    if (player->cell->object) 
+    {
+      cell = _server_action_find_nearby_and_lock(m,currentcell);
+    }
+    else 
+    {
+      cell = currentcell;
+    }
     
     // update everbodies references
     _server_action_update_cell_and_player(m,object,cell,0);
     cell->object = object;
     player->flag = 0;
+
+    if ( currentcell == cell ) 
+    {
+      object_unlock(object);
+      cell_unlock(cell);
+    }
     return 0;
 }
 
@@ -1067,6 +1078,37 @@ extern int _server_action_move_player(Maze*m, Cell* currentcell , Cell* nextcell
    currentcell->player = 0;
    _server_action_update_player(m, nextcell->player, nextcell);
    return 0;
+}
+
+extern Cell* _server_action_find_nearby_and_lock(Maze*m, Cell* currentcell)
+{
+   int found, xx, yy, dx, dy, nx,ny;
+   Cell * c = 0;
+   found = -1;
+   xx = currentcell->pos.x;
+   yy = currentcell->pos.y;
+   dx = 0; dy = 0;
+   
+   while ( found!=0 )
+   {
+      // increment delta
+      dx > dy ? (dx++) : (dy++);
+      nx = (xx + dx) % (m->max.x);
+      ny = (yy + dy) % (m->max.y);
+      c = &m->get[nx][ny];
+      
+      found = pthread_mutex_trylock(&(c->lock));
+     
+      if (found != 0) continue;
+      else if (cell_is_holding(c) || c->type==CELL_WALL)
+      {
+        found = -1;
+        cell_unlock(c);
+      }
+      else break;
+   }
+  
+   return c;
 }
 
 extern int _server_action_jail_player(Maze*m, Cell* currentcell,EventUpdate*update)

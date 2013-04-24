@@ -147,5 +147,6 @@ extern int _server_action_jail_player(Maze*m, Cell* currentcell, EventUpdate*upd
 // OTHERS 
 extern void _server_drop_handler(Maze*m, Player*player);
 extern void _server_validate_request(Maze*m, Player*player);
+extern Cell* _server_action_find_nearby_and_lock(Maze*m, Cell* currentcell);
 
 #endif
