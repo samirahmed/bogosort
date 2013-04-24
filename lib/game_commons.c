@@ -186,16 +186,13 @@ extern void cell_init( Cell* cell, int x, int y, Team_Types turf, Cell_Types typ
 
 extern void cell_lock(Cell* cell)
 {
-  int rc= pthread_mutex_lock(&(cell->lock));
-  if (rc != 0) {
-    fprintf(stderr,"omg\n");
-  }
-  cell->thread = (unsigned int) pthread_self();
+  pthread_mutex_lock(&(cell->lock));
+  cell->thread = (unsigned int)(size_t)pthread_self();
 }
 
 extern void cell_unlock(Cell* cell)
 {
-  cell->thread = 0;
+  if ( cell->thread == (unsigned int)(size_t) pthread_self())cell->thread = 0;
   pthread_mutex_unlock(&(cell->lock));
 }
 
