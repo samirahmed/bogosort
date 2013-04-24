@@ -548,7 +548,7 @@ extern void server_maze_unlock(Maze*m, Pos current, Pos next)
   
   // Order of cell unlock doesn't matter so long as jail is last unlocked
   cell_unlock(C);
-  cell_unlock(N);
+  if (C!=N) cell_unlock(N);
 }
 
 // The cell is the root of all the objects. A cell root lock
