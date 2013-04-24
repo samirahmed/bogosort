@@ -640,7 +640,6 @@ extern void server_home_hash( Maze* m, int key, Cell** cell, Team_Types team)
   yy += home->min.y;
   xx = (unsigned) key % xlen;
   xx += home->min.x;
-  /*fprintf(stderr,"%d,%d\n",xx,yy);*/
   *cell = &(m->get[xx][yy]);
 }
 
@@ -663,18 +662,13 @@ extern int server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell** 
       try++;
       found = pthread_mutex_trylock(&(c->lock));
      
-      if (found != 0) { 
-      continue;
-      }
-
+      if (found != 0) continue;
       else if ((query==0 && !cell_is_unoccupied(c)) || (query!=0 && cell_is_holding(c))) 
       {
         found = -1;
         cell_unlock(c);
       }
-      else { 
-        break;
-      }
+      else break;
    }
    
    if (found != 0) 
