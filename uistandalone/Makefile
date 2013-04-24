@@ -30,19 +30,25 @@ else
   UILIBS = -lSDL
 endif
 
-CFLAGS := -g $(UIINCDIR) -pthread -std=gnu99
+CFLAGS := -g $(UIINCDIR) -pthread  -L../lib -ldagame -std=gnu99
 
 all: uitest
 .PHONY: all
+targets = libdagame.a
 
-uistandalone.o: uistandalone.c uistandalone.h
-	gcc ${CFLAGS} uistandalone.c -c
 
-uitest.o: uitest.c uistandalone.h
+libdagame.a: $(objs)
+	ar -c -r libdagame.a $(objs)
+
+
+uistandalone.o: uistandalone.c uistandalone.h ../lib/game_commons.c ../lib/game_commons.h  
+	gcc ${CFLAGS} uistandalone.c -c 
+
+uitest.o: uitest.c uistandalone.h ../lib/game_commons.c
 	gcc $(CFLAGS) uitest.c -c 
 
 uitest: uistandalone.o uitest.o
-	gcc $(CFLAGS) uistandalone.o uitest.o -o uitest ${UILIBS}
+	gcc $(CFLAGS) uistandalone.o uitest.o -o uitest ${UILIBS} -L../lib  -ldagame
 
 clean:
 	rm uitest *.o

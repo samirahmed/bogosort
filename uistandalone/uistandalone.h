@@ -24,6 +24,7 @@
 
 #include <SDL/SDL.h>   /* All SDL apps need this */
 #include "ui_types.h"
+#include "../lib/game_commons.h"
 typedef enum { 
   TEAMA_S=0, TEAMB_S, FLOOR_S, REDWALL_S, GREENWALL_S, LOGO_S, JACKHAMMER_S, REDFLAG_S, GREENFLAG_S, NUM_S 
 } SPRITE_INDEX;
@@ -57,7 +58,7 @@ struct UI_Struct {
 
 typedef struct UI_Struct UI;
 
-extern int map[201][201];
+char map [201][201];
 
 sval ui_zoom(UI *ui, sval fac);
 sval ui_pan(UI *ui, sval xdir, sval ydir);

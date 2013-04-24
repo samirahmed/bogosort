@@ -25,9 +25,11 @@
 #include <pthread.h>
 #include <assert.h>
 #include "types2.h"
+#include "ui_types.h"
 #include "uistandalone.h"
 #include "../lib/types.h"
 #include "../lib/game_commons.h"
+
 /* A lot of this code comes from http://www.libsdl.org/cgi/docwiki.cgi */
 
 /* Forward declaration of some dummy player code */
@@ -48,8 +50,14 @@ static void dummyPlayer_paint(UI *ui, SDL_Rect *t);
 #define UI_GREENFLAG_BMP "greenflag.bmp"
 #define UI_JACKHAMMER_BMP "shovel.bmp"
 
-int map[201][201];
+
+
+
+
+
 //move this to wherever the shallow copy is located
+//char map [201][201];
+Maze * map_ptr;
 
 int init_mapload = 0;
 typedef enum {UI_SDLEVENT_UPDATE, UI_SDLEVENT_QUIT} UI_SDL_Event;
@@ -359,23 +367,37 @@ static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel){
 static sval
 ui_paintmap(UI *ui) 
 {
-printf("mapload is %d", init_mapload);
+printf("mapload is %d\n", init_mapload);
 int w,h;
 int map_char;
-if(!init_mapload){  
-FILE *fp;
-fp = fopen("../daGame.map", "r");
-int i,j;
+//Cell_Types cell_type;
 
-for(i = 0; i < 201; i++){
-   for(j = 0; j < 201; j++){
-    map_char = fgetc(fp);
-    map[i][j] = map_char;
+Cell_Types type; 
+
+
+if(!init_mapload){  
+Maze * map_ptr;
+//FILE *fp;
+// fp = fopen("../daGame.map", "r");
+maze_init(map_ptr, 201, 201);
+char* filename = "../daGame.map";
+
+maze_build_from_file(map_ptr, filename);
+
+int i,j;
+/*for(i = 0; i < 201; i ++){
+	for(j = 0; j < 201; j++){
+		map_char = fgetc(fp);
+		map[i][j] = map_char;
 	}
 }
+*/
+
 init_mapload = 1;
 }
-  int x,y;
+ 
+
+ int x,y;
   SDL_Rect t;
 
   y = 0; 
@@ -383,27 +405,28 @@ init_mapload = 1;
   int scale_x, scale_y;
   t.x = 0;
   t.y = 0;
-    
+   
   for (x = 0; x < 201; x++) {
     for (y = 0; y < 201; y++) {
-        map_char = map[x][y];
+        type = map_ptr->get[x][y].type;
+	printf("%d", type);
 	scale_x = x * SPRITE_W;
 	scale_y = y * SPRITE_H;
-	if(map_char == ' '){
+	if(type == CELL_FLOOR){
 		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> isle_c);
  			}
-	if(map_char == '#' && y < 100){
+	if(type == CELL_WALL && y < 100){
 		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teama_c);
  			}
-	if(map_char == '#' && y >= 100){ 
+	if(type == CELL_WALL && y >= 100){ 
 		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teamb_c);
 			}
 	//for now paint home areas white and jail areas yellow
-       	if(map_char == 'j' || map_char == 'J'){
+       	if(type == CELL_JAIL){
 		ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c);
 			}
 
-	if(map_char == 'h' || map_char == 'H'){
+	if(type == CELL_HOME){
 		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> white_c);
 			}
 		}
@@ -413,7 +436,8 @@ init_mapload = 1;
   dummyPlayer_paint(ui, &t);
 
   SDL_UpdateRect(ui->screen, 0, 0, ui->screen->w, ui->screen->h);
-  return 1;
+ 
+ return 1;
 }
 
 static sval
@@ -522,6 +546,11 @@ ui_process(UI *ui)
 extern sval
 ui_zoom(UI *ui, sval fac)
 {
+  
+  //zoom the ui by a factor fac
+  //SPRITE_H = SPRITE_H * fac;
+  //SPRITE_W = SPRITE_W * fac; 
+  //init__mapload = 0;
   fprintf(stderr, "%s:\n", __func__);
   return 2;
 }
@@ -639,7 +668,6 @@ dummyPlayer_paint(UI *ui, SDL_Rect *t)
 int
 ui_dummy_left(UI *ui)
 {
-
   dummyPlayer.x--;
 
   return 2;
@@ -650,7 +678,7 @@ ui_dummy_right(UI *ui)
 {
  //send pair of ints to server along with move command
  //if we receive a move player event update then update the dummy player location
-
+ 
   dummyPlayer.x++;
   return 2;
 
