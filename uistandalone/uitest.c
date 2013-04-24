@@ -89,12 +89,11 @@ int
 main(int argc, char **argv)
 {
   pthread_t tid;
-
+ 
   ui_init(&(ui));
 
   pthread_create(&tid, NULL, shell, NULL);
-
-  // WITH OSX ITS IS EASIEST TO KEEP UI ON MAIN THREAD
+   // WITH OSX ITS IS EASIEST TO KEEP UI ON MAIN THREAD
   // SO JUMP THROW HOOPS :-(
   ui_main_loop(ui, 700, 700);
 

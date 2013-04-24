@@ -52,9 +52,6 @@ static void dummyPlayer_paint(UI *ui, SDL_Rect *t);
 
 
 
-
-
-
 //move this to wherever the shallow copy is located
 //char map [201][201];
 Maze * map_ptr;
@@ -372,17 +369,13 @@ int w,h;
 int map_char;
 //Cell_Types cell_type;
 
-Cell_Types type; 
-
-
+int type; 
+printf("cell types set");
+Maze maze;
 if(!init_mapload){  
-Maze * map_ptr;
-//FILE *fp;
-// fp = fopen("../daGame.map", "r");
-maze_init(map_ptr, 201, 201);
-char* filename = "../daGame.map";
 
-maze_build_from_file(map_ptr, filename);
+printf("initializing map");
+maze_build_from_file(&maze, "../daGame.map");
 
 int i,j;
 /*for(i = 0; i < 201; i ++){
@@ -405,12 +398,11 @@ init_mapload = 1;
   int scale_x, scale_y;
   t.x = 0;
   t.y = 0;
-   
-  for (x = 0; x < 201; x++) {
-    for (y = 0; y < 201; y++) {
-        type = map_ptr->get[x][y].type;
-	printf("%d", type);
-	scale_x = x * SPRITE_W;
+  printf("map loaded"); 
+  for (x = 0; x < 200; x++) {
+    for (y = 0; y < 200; y++) {
+        type = maze.get[y][x].type;
+        scale_x = x * SPRITE_W;
 	scale_y = y * SPRITE_H;
 	if(type == CELL_FLOOR){
 		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> isle_c);
