@@ -26,7 +26,7 @@ extern Team_Types opposite_team(Team_Types team)
 
 extern int object_get_index(Team_Types team , Object_Types object)
 {
-    return object+(team*2);
+    return team+(object*2);
 }
 
 extern Object* object_get(Maze*m, Object_Types object,Team_Types team)

@@ -49,12 +49,31 @@ int doUpdateClients(Update *update)
   
   // Copy players/broken walls into update
   hdr.sver.raw = update->timestamp;
-  hdr.pstate.v0.raw = update->game_state_update;
-  hdr.pstate.v1.raw = update->compress_player_a;
-  hdr.pstate.v2.raw = update->compress_player_b;
+  hdr.gstate.v0.raw = update->game_state_update;
+  hdr.gstate.v1.raw = update->compress_player_a;
+  hdr.gstate.v2.raw = update->compress_player_b;
 
-  // Push objects into update
-  server_request_objects(&maze,&hdr.pstate.v2.raw,&hdr.pstate.v0.raw,&hdr.pstate.v3.raw,&hdr.pstate.v1.raw);
+  // Push & compress objects into update
+  int ii;
+  for(ii=0; ii<NUM_OBJECTS; ii++)
+  {
+    Object*object = &update->objects[ii];
+    if (object->cell) // all valid should have cells set
+    {
+      int compress;
+      compress_object(object, &compress);
+      switch(ii)
+      {
+        case 0: hdr.pstate.v0.raw = compress; break;
+        case 1: hdr.pstate.v1.raw = compress; break;
+        case 2: hdr.pstate.v2.raw = compress; break;
+        case 3: hdr.pstate.v3.raw = compress; break;
+        default: break;
+      }
+    }
+  }
+
+  /*server_request_objects(&maze,&hdr.pstate.v2.raw,&hdr.pstate.v0.raw,&hdr.pstate.v3.raw,&hdr.pstate.v1.raw);*/
 
   s = proto_server_event_session();
   hdr.type = PROTO_MT_EVENT_UPDATE;
@@ -85,7 +104,7 @@ int client_lost_handler( Proto_Session * s)
   if (proto_debug()) proto_session_dump(s);
   
   /// EVENT UPDATE GOES HERE
-  doUpdateClients(&update);
+  /*doUpdateClients(&update);*/
 
   return -1;
 }
@@ -114,7 +133,7 @@ int hello_handler( Proto_Session *s)
   put_hdr(s,&h);
 
   /// EVENT UPDATE GOES HERE
-  doUpdateClients(&update);
+  /*doUpdateClients(&update);*/
 
   return reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
 }
@@ -192,7 +211,7 @@ int action_handler( Proto_Session *s)
   if (rc<0) return reply(s,PROTO_MT_REP_ACTION,rc,-1);
 
   /// EVENT UPDATE GOES HERE
-  doUpdateClients(&request.update);
+  /*doUpdateClients(&request.update);*/
 
   return reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
 }
