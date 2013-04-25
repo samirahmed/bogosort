@@ -12,6 +12,15 @@
 #include "protocol_session.h"
 #include "game_server.h"
 
+///////////////
+// HELPERS 
+//////////////
+
+void  update_object_if_possible(Update*update,Object*object)
+{
+  if (update) if (object) update->objects[object_get_index(object->team,object->type)] = *object;
+}
+
 /*******************/
 /* REQUEST METHODS */
 /*******************/
@@ -317,8 +326,7 @@ extern int server_game_action(Maze*maze , GameRequest* request)
       compress_player(&update->player_b,&update->compress_player_b,PLAYER_UNCHANGED);
     if ( !(update->broken_wall.x == 0  && update->broken_wall.y == 0) )
       compress_broken_wall( &update->broken_wall, &update->game_state_update );
-    if (object) 
-      update->objects[object_get_index(object->team,object->type)] = *object;
+    update_object_if_possible(update,object);
   }
 
   // unlock the maze
@@ -334,7 +342,7 @@ extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next, Up
   if (player->state == PLAYER_JAILED && next->type != CELL_WALL) 
   { 
     if (next->type!=CELL_JAIL && cell_is_unoccupied(next))
-    rc = _server_action_move_player(m,current,next);
+    rc = _server_action_move_player(m,current,next,update);
   }
   else if ( next->type == CELL_WALL )
   {
@@ -395,7 +403,7 @@ extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next,
     m->wall[next->pos.x][next->pos.y]=1;
 
     // Move the player into the wall
-    rc = _server_action_move_player(m,current,next);
+    rc = _server_action_move_player(m,current,next,update);
   }
   
   // unlock broken walls
@@ -414,7 +422,7 @@ extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*nex
       _server_action_jailbreak(m, player->team, current, next );
     }
     
-    rc = _server_action_move_player(m, current, next);
+    rc = _server_action_move_player(m, current, next,update);
   }
   else
   {
@@ -428,7 +436,7 @@ extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*nex
     if ( next->player->team != player->team && next->turf == player->team )
     {
       _server_action_jail_player(m,next,update);
-      if(cell_is_unoccupied(next)) rc = _server_action_move_player(m, current, next);
+      if(cell_is_unoccupied(next)) rc = _server_action_move_player(m, current, next,update);
     }
   }
 
@@ -990,7 +998,7 @@ extern int _server_action_drop_flag(Maze*m , Player* player, Update*update)
     cell->object = object;
     player->flag = 0;
 
-    if (update) update->objects[object_get_index(object->team,object->type)] = *object;
+    update_object_if_possible(update,object);
     if ( currentcell != cell ) 
     {
       object_unlock(object);
@@ -1016,7 +1024,7 @@ extern int _server_action_player_reset_shovel(Maze*m, Player*player,Update*updat
   next->object = object;  // link object to cell
 
   // snapshot of object
-  if ( update && rc > 0) update->objects[object_get_index(object->team,object->type)] = *object; 
+  if ( update && rc > 0) update_object_if_possible(update,object);
 
   object_unlock(object); // unlock object
   cell_unlock(next); // unlock this new cell
@@ -1096,13 +1104,17 @@ extern int _server_action_update_player(Maze*m, Player*player, Cell*newcell)
   return 0;
 }
 
-extern int _server_action_move_player(Maze*m, Cell* currentcell , Cell* nextcell )
+extern int _server_action_move_player(Maze*m, Cell* currentcell , Cell* nextcell, Update *update )
 {
    if (!currentcell || !nextcell) return -1;
    if (currentcell == nextcell ) return 1;    // no need to move
    nextcell->player = currentcell->player;
    currentcell->player = 0;
    _server_action_update_player(m, nextcell->player, nextcell);
+    
+   Player*player = nextcell->player;
+   update_object_if_possible(update,player->shovel);
+   update_object_if_possible(update,player->shovel);
    return 0;
 }
 
@@ -1158,7 +1170,7 @@ extern int _server_action_jail_player(Maze*m, Cell* currentcell,Update*update)
   player->state = PLAYER_JAILED;
   if (currentcell != nextcell )
   {
-    _server_action_move_player(m,currentcell, nextcell);
+    _server_action_move_player(m,currentcell, nextcell,update);
   }
 
   // copy player into B

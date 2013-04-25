@@ -408,6 +408,9 @@ void test_pickup_drop_logic(TestContext*tc)
    fd_blue = randint()%1000;
    fd_red = fd_blue+1;
 
+   Object * dummy;
+   Update update;
+
    /////////////////
    // PICKUP SHOVEL
    /////////////////
@@ -425,7 +428,14 @@ void test_pickup_drop_logic(TestContext*tc)
                (blue_shovel->cell->object != blue_shovel) &&
                (player_has_shovel(blue) && !player_has_flag(blue));
    should("be picked up by players correctly",assertion,tc);
-
+    
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_SHOVEL)];
+   assertion = (dummy->cell == blue_shovel->cell) && 
+               (dummy->player == blue_shovel->player) &&
+               (dummy->type == OBJECT_SHOVEL) &&
+               (dummy->team == TEAM_BLUE);
+   should("correctly package the update for Shovel Pickup",assertion,tc);
+   
    ///////////////
    // MOVE WITH OBJECT
    ///////////////
@@ -440,6 +450,12 @@ void test_pickup_drop_logic(TestContext*tc)
                (blue->cell->object!= blue_shovel)&&
                (player_has_shovel(blue));
    should("correctly move with players",assertion,tc);
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_SHOVEL)];
+   assertion = (dummy->cell == blue_shovel->cell) && 
+               (dummy->player == blue_shovel->player) &&
+               (dummy->type == OBJECT_SHOVEL) &&
+               (dummy->team == TEAM_BLUE);
+   should("correctly package the update for moving with an object",assertion,tc);
    
    ////////////////////////////////
    // TRY TO PICKUP ANOTHER SHOVEL
