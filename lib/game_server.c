@@ -305,11 +305,11 @@ extern int server_game_action(Maze*maze , GameRequest* request)
   }
 
   // Compress the update
-  if (update && rc>0)
+  if (update && rc>=0)
   {
-    if (&update->player_a.cell) 
+    if (update->player_a.cell) 
       compress_player(&update->player_a,&update->compress_player_a,PLAYER_UNCHANGED);
-    if (&update->player_b.cell) 
+    if (update->player_b.cell) 
       compress_player(&update->player_b,&update->compress_player_b,PLAYER_UNCHANGED);
     if ( !(update->broken_wall.x == 0  && update->broken_wall.y == 0) )
       compress_broken_wall( &update->broken_wall, &update->game_state_update );

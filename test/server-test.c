@@ -755,18 +755,39 @@ void test_game_move(TestContext*tc)
     maze_build_from_file(&maze,"test.map");
 
     //////////////////
-    // Add a player
+    // Test Variables
     //////////////////
+    
     GameRequest request;
+    Update update;
+    bzero(&update,sizeof(Update));
+    
+    Player_Update_Types type;
+    Player dummy;
+    bzero(&dummy,sizeof(Player));
     Pos  next;
+    
     int assertion,rc,fd,id,team;
     fd   = randint()%9000 + 999;
     team = randint()%2;
     Player*player;
-    server_game_add_player(&maze, fd, &player, NULL );
+   
+    //////////////////
+    // Add a player
+    //////////////////
+    
+    server_game_add_player(&maze, fd, &player,&update);
     assertion = (server_home_count_read(&maze.home[player->team]) == 1) ;
     should("increment home count on spawn",assertion,tc);
 
+    // Unpack Update
+    decompress_player(&dummy, &update.compress_player_a, &type);
+    assertion = (dummy.client_position.x == player->cell->pos.x ) &&
+                (dummy.client_position.y == player->cell->pos.y ) &&
+                (type == PLAYER_ADDED ) &&
+                (dummy.id == player->id ) &&
+                (dummy.team == player->team );
+    should("prepare compressed update for Player ADD properly",assertion,tc);
 
     //////////////////
     // Move a player
@@ -790,6 +811,13 @@ void test_game_move(TestContext*tc)
     assertion = (maze.get[next.x][next.y].player == player && current->player != player);
     should("successfully update the cell's player reference", assertion,tc);
     
+    bzero(&dummy,sizeof(Player));
+    decompress_player( &dummy, &request.update.compress_player_a , &type);
+    assertion = (dummy.client_position.x == next.x) &&
+                (dummy.client_position.y == next.y) &&
+                (type == PLAYER_UNCHANGED);
+    should("successfuly prepare an update for player MOVE actions",assertion,tc);
+
     //////////////////
     // Move into a Wall
     //////////////////
@@ -853,6 +881,13 @@ void test_game_move(TestContext*tc)
                 (player->cell->pos.x == next.x && player->cell->pos.y == next.y);
     should("correctly jail player walking into other on enemy turf",assertion,tc);
     
+    bzero(&dummy,sizeof(Player));
+    decompress_player(&dummy, &request.update.compress_player_b ,&type);
+    assertion = (!decompress_is_ignoreable(&request.update.compress_player_a)) &&
+                (dummy.state == PLAYER_JAILED) && 
+                (type == PLAYER_UNCHANGED );
+    should("correctly process Updates for passive tagging",assertion,tc);
+
     ///////////////////////////////////////////
     // Make 2 new Players for Active tagging
     //////////////////////////////////////////
