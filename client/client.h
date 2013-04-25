@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "client.h"
+#include <pthread.h>
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/protocol_client.h"

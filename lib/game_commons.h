@@ -1,5 +1,5 @@
-#ifndef __DAGAME_PLAYER_OBJECT_H__
-#define __DAGAME_PLAYER_OBJECT_H__
+#ifndef __DAGAME_GAME_COMMONS_H__
+#define __DAGAME_GAME_COMMONS_H__
 /******************************************************************************
 * Copyright (C) 2013 by Katsu Kawakami, Will Seltzer, Samir Ahmed, 
 * Boston University
