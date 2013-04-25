@@ -919,6 +919,20 @@ void test_game_move(TestContext*tc)
     
     should("correctly jail player walking into enemy on home turf",assertion,tc);
 
+    decompress_player( &dummy, &request.update.compress_player_a , &type);
+    assertion = (dummy.client_position.x == 50) && 
+                (dummy.client_position.y == 99) &&
+                (dummy.id == tagger->id) &&
+                (type == PLAYER_UNCHANGED);
+    decompress_player( &dummy, &request.update.compress_player_b , &type);
+    assertion = assertion &&
+                (dummy.client_position.x != 50) && 
+                (dummy.client_position.y != 99) &&
+                (dummy.state == PLAYER_JAILED)  &&
+                (dummy.id == blue->id ) &&
+                (type == PLAYER_UNCHANGED);
+    should("should correctly package updates for Active tagging",assertion,tc);
+
     ////////////////////////
     // Test Freeing 
     ////////////////////////
@@ -939,6 +953,12 @@ void test_game_move(TestContext*tc)
                 ( player->cell->pos.x == maze.jail[opposite_team(player->team)].min.x);
     should("correctly free jailed players when moving into enemy jail cell while free",assertion,tc);
 
+    bzero(&update,sizeof(Update));
+    server_game_drop_player(&maze , player->team , player->id , &update);
+    decompress_player( &dummy, &update.compress_player_a , &type);
+    assertion = (type == PLAYER_DROPPED) && 
+                (dummy.id == player->id) &&
+                (dummy.team = player->team);
 
     maze_destroy(&maze);
 }
