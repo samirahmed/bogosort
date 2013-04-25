@@ -218,7 +218,7 @@ int action_handler( Proto_Session *s)
 
 int init_game(void){
 	int rc;
-  rc = maze_build_from_file(&maze,"../daGame.map");
+  rc = maze_build_from_file(&maze,"./daGame.map");
   if (rc <0) fprintf(stderr, "ERROR: Failed to build map\n");
   
   if (proto_debug()) fprintf(stderr, "Initializing Request Handlers\n");
