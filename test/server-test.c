@@ -1040,7 +1040,7 @@ int main(int argc, char ** argv )
     // ADD TESTS HERE
     run(&test_server_locks,"Server Locks",&tc);
     run(&test_plist,"PLists",&tc);
-    run(&test_find_and_lock,"Find and Lock Empty Routine",&tc);
+    run(&test_find_and_lock,"Find & Lock Empty",&tc);
     run(&test_game_add_drop,"Game Add/Drop",&tc);
     run(&test_game_move,"Basic Movement",&tc);
     run(&test_pickup_drop_logic,"Objects",&tc);
