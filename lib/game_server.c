@@ -34,7 +34,7 @@ extern int* server_request_plist(Maze*m, Team_Types team, int* length)
       if (player->fd != -1)
       {
         player_lock(player);
-        compress_player(player,&list[ii], PLAYER_UNCHANGED);
+        compress_player(player,&list[ii], PLAYER_UNCHANGED );
         player_unlock(player);
       }
     }
@@ -147,7 +147,7 @@ extern int server_fd_to_id_and_team(Maze*m,int fd, int *team_ptr, int*id_ptr)
 // Returns -1 if player exists
 // Returns -2 if player cannot be added to plist for some reason
 // Returns -3 if player spawn in home cell failed
-extern int server_game_add_player(Maze*maze,int fd, Player**player,Pos *pos)
+extern int server_game_add_player(Maze*maze,int fd, Player**player,Update *update)
 {
   int rc,team,id;
   
@@ -177,17 +177,19 @@ extern int server_game_add_player(Maze*maze,int fd, Player**player,Pos *pos)
   // Set the player and spawn position
   *player = &(maze->players[team].at[id]);
   
-  if (pos)
+  if (update)
   {
-    pos->x = spawn_pos.x;
-    pos->y = spawn_pos.y;
+    bzero(update,sizeof(Update));
+    Player copy = *(*player);     // memcpy
+    copy.cell = &maze->get[spawn_pos.x][spawn_pos.y];
+    compress_player( &copy, &update->compress_player_a, PLAYER_ADDED);
   }
 
   return id;
 }
 
 // Removes player from plist, servers connection with players/flags/shovels
-extern void server_game_drop_player(Maze*maze,int team, int id)
+extern void server_game_drop_player(Maze*maze,int team, int id, Update*update)
 {
   Cell* cell;
   int rc;
@@ -204,6 +206,9 @@ extern void server_game_drop_player(Maze*maze,int team, int id)
   // Get Cell Handle
   cell = player->cell;
 
+  // make compression of the player before dropping and mark as dropped
+  if (update) compress_player(player,&update->compress_player_a,PLAYER_DROPPED);
+  
   // drop player, unlock player and player's objects
   _server_drop_handler(maze,player);
   
@@ -227,7 +232,7 @@ extern int server_game_action(Maze*maze , GameRequest* request)
   Pos next    = request->pos;
   int fd      = request->fd;
   Action_Types action  = request->action;
-  EventUpdate* update = &request->update;
+  Update* update = &request->update;
 
   // Get the player 
   Player*player = &(maze->players[team].at[id]);
@@ -299,12 +304,23 @@ extern int server_game_action(Maze*maze , GameRequest* request)
       __FILE__,__LINE__);
   }
 
+  // Compress the update
+  if (update && rc>0)
+  {
+    if (&update->player_a.cell) 
+      compress_player(&update->player_a,&update->compress_player_a,PLAYER_UNCHANGED);
+    if (&update->player_b.cell) 
+      compress_player(&update->player_b,&update->compress_player_b,PLAYER_UNCHANGED);
+    if ( !(update->broken_wall.x == 0  && update->broken_wall.y == 0) )
+      compress_broken_wall( &update->broken_wall, &update->game_state_update );
+  }
+
   // unlock the maze
   server_maze_unlock(maze ,cell->pos, next);
   return rc;
 }
 
-extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next, EventUpdate * update)
+extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next, Update * update)
 {
   int rc = 0;
 
@@ -381,7 +397,7 @@ extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next 
   return rc;
 }
 
-extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next,EventUpdate*update)
+extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next,Update*update)
 {
   int rc = ERR_NOOP;
   if ( cell_is_unoccupied(next) )
@@ -1111,7 +1127,7 @@ extern Cell* _server_action_find_nearby_and_lock(Maze*m, Cell* currentcell)
    return c;
 }
 
-extern int _server_action_jail_player(Maze*m, Cell* currentcell,EventUpdate*update)
+extern int _server_action_jail_player(Maze*m, Cell* currentcell,Update*update)
 {
   if (!currentcell->player) return ERR_NO_PLAYER;
   Player * player = currentcell->player;

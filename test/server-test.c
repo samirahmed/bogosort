@@ -290,7 +290,7 @@ void st_game_add_drop(void*task_ptr)
       if (rc >=0) 
       {
         test_nanosleep();
-        server_game_drop_player( m , player->team , player->id );
+        server_game_drop_player( m , player->team , player->id , NULL);
         if (test_debug()) fprintf(stderr,"%d drop      %d, id=%d ,team=%d \n",rc,*fd,player->id, player->team);
       }
   }
