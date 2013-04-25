@@ -409,7 +409,6 @@ void test_pickup_drop_logic(TestContext*tc)
    fd_red = fd_blue+1;
 
    Object * dummy;
-   Update update;
 
    /////////////////
    // PICKUP SHOVEL
@@ -491,7 +490,13 @@ void test_pickup_drop_logic(TestContext*tc)
                (blue_flag->cell->object != blue_flag) &&
                (player_has_shovel(blue) && player_has_flag(blue));
    should("allow picking up both flag and shovel",assertion,tc);
-  
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_FLAG)];
+   assertion = (dummy->cell == blue_flag->cell) && 
+               (dummy->player == blue_flag->player) &&
+               (dummy->type == OBJECT_FLAG) &&
+               (dummy->team == TEAM_BLUE);
+   should("correctly package the update for pickuping up a flag",assertion,tc);
+
    ////////////////////////
    // MOVE WITH BOTH
    /////////////////////// 
@@ -510,6 +515,19 @@ void test_pickup_drop_logic(TestContext*tc)
                (player_has_shovel(blue) && player_has_flag(blue));
    should("correctly move when a player holds both shovel & flag",assertion,tc);
    
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_FLAG)];
+   assertion = (dummy->cell == blue_flag->cell) && 
+               (dummy->player == blue_flag->player) &&
+               (dummy->type == OBJECT_FLAG) &&
+               (dummy->team == TEAM_BLUE);
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_SHOVEL)];
+   assertion = assertion &&
+               (dummy->cell == blue_shovel->cell) && 
+               (dummy->player == blue_shovel->player) &&
+               (dummy->type == OBJECT_SHOVEL) &&
+               (dummy->team == TEAM_BLUE);
+   should("correctly package the update for moving with two items",assertion,tc);
+   
    //////////////////////////////
    // DROP SHOVEL AND DROP FLAG
    //////////////////////////////
@@ -523,6 +541,13 @@ void test_pickup_drop_logic(TestContext*tc)
                (blue_flag->player != blue ) &&
                (blue->cell->player = blue);
    should("drop correctly",assertion,tc);
+   
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_FLAG)];
+   assertion = (dummy->cell == blue_flag->cell) && 
+               (dummy->player == blue_flag->player) &&
+               (dummy->type == OBJECT_FLAG) &&
+               (dummy->team == TEAM_BLUE);
+   should("correctly package the update for dropping a flag",assertion,tc);
 
    ////////////////////////////
    //  GET TAGGED WITH SHOVEL AND FLAG
@@ -549,6 +574,20 @@ void test_pickup_drop_logic(TestContext*tc)
                ( blue_shovel->cell->object = blue_shovel);
    should("correctly reset and drop when a player is tagged",assertion,tc);
    
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_FLAG)];
+   assertion = (dummy->cell == blue_flag->cell) && 
+               (dummy->player == blue_flag->player) &&
+               (dummy->type == OBJECT_FLAG) &&
+               (dummy->team == TEAM_BLUE);
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_SHOVEL)];
+   assertion = assertion &&
+               (dummy->cell == blue_shovel->cell) && 
+               (dummy->player == blue_shovel->player) &&
+               (dummy->type == OBJECT_SHOVEL) &&
+               (dummy->team == TEAM_BLUE);
+   should("correctly package the update when tagged",assertion,tc);
+   
+
    ////////////////////////////
    // USE SHOVEL TEST ...
    ///////////////////////////
@@ -586,6 +625,18 @@ void test_pickup_drop_logic(TestContext*tc)
                ( red->cell->is_mutable == CELLTYPE_IMMUTABLE) &&
                ( maze.wall[red->cell->pos.x][red->cell->pos.y] == 1);
    should("correctly break wall with shovel",assertion,tc);
+   
+   Pos wall;
+   bzero(&wall,sizeof(Pos));
+   dummy = &request.update.objects[object_get_index(TEAM_RED,OBJECT_SHOVEL)];
+   decompress_broken_wall(&wall,&request.update.game_state_update);
+   assertion = (wall.x == red->cell->pos.x) && 
+               (wall.y == red->cell->pos.y) &&
+               (dummy->cell == red_shovel->cell) && 
+               (dummy->player == red_shovel->player) &&
+               (dummy->type == OBJECT_SHOVEL) &&
+               (dummy->team == TEAM_RED);
+   should("package update for broken wall correctly",assertion,tc);
    maze_destroy(&maze);
 }
 

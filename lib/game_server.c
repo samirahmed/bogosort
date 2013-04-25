@@ -1023,11 +1023,9 @@ extern int _server_action_player_reset_shovel(Maze*m, Player*player,Update*updat
   _server_action_update_cell_and_player(m,object,next,0);  // move object and kill player link
   next->object = object;  // link object to cell
 
-  // snapshot of object
-  if ( update && rc > 0) update_object_if_possible(update,object);
-
-  object_unlock(object); // unlock object
-  cell_unlock(next); // unlock this new cell
+  update_object_if_possible(update,object); // snapshot
+  object_unlock(object);                    // unlock object
+  cell_unlock(next);                        // unlock this new cell
 
   // drop my shovel
   cell->object=0;
@@ -1111,10 +1109,12 @@ extern int _server_action_move_player(Maze*m, Cell* currentcell , Cell* nextcell
    nextcell->player = currentcell->player;
    currentcell->player = 0;
    _server_action_update_player(m, nextcell->player, nextcell);
-    
-   Player*player = nextcell->player;
-   update_object_if_possible(update,player->shovel);
-   update_object_if_possible(update,player->shovel);
+   
+   if (nextcell->player)
+   {
+     update_object_if_possible(update,nextcell->player->shovel);
+     update_object_if_possible(update,nextcell->player->flag);
+   }
    return 0;
 }
 
