@@ -366,37 +366,36 @@ proto_server_init(void)
   return 0;
 }
 
-extern void
-put_int(Proto_Session* s, int value)
+extern void put_int(Proto_Session* s, int value)
 {
   proto_session_body_marshall_int(s, value);
 }
 
-extern void
-put_hdr(Proto_Session*s, Proto_Msg_Hdr *hdr)
+extern void put_hdr(Proto_Session*s, Proto_Msg_Hdr *hdr)
 {
   proto_session_hdr_marshall(s,hdr);
 }
 
-extern int
-reply( Proto_Session * s, Proto_Msg_Types mt , int response)
+extern int reply( Proto_Session * s, unsigned int  mt , int response, int timestamp)
 {
   int rc=1;
   Proto_Msg_Hdr h;
-  if (proto_debug()) proto_session_dump(s);
 
-  // setup dummy reply header : set correct reply message type and 
-  // everything else empty
-  bzero(&h, sizeof(s));
-  
-  if (mt != NULL)
+  // setup  reply header : set correct reply message type and everything else empty
+  if ( (void*)(size_t) mt != NULL)
   {
-    h.type = mt;
+    bzero(&h, sizeof(s));
+    h.type = (Proto_Msg_Types) mt;
+    if ( (void*)(size_t)response != NULL) h.gstate.v1.raw = response;
     proto_session_hdr_marshall(s, &h);
   }
 
+  if ((void*)(size_t) timestamp != NULL ) proto_session_body_marshall_int(s,timestamp);
+
   // setup a dummy body that just has a return code 
-  if (response != NULL) proto_session_body_marshall_int(s, response);
   rc=proto_session_send_msg(s,1);
+  
+  if (proto_debug()) proto_session_dump(s);
+  
   return rc;
 }

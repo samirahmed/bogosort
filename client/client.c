@@ -24,77 +24,21 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "client.h"
 #include "../lib/types.h"
 #include "../lib/protocol.h"
-#include "../lib/maze.h"
 #include "../lib/protocol_client.h"
 #include "../lib/protocol_utils.h"
+#include "../lib/game_client.h"
 
-#define STRLEN 81
-
-//Function Headers
-void initGlobals(int argc, char argv[][STRLEN]);//Had to Change function header to make this work
-
-struct Globals {
-  char host[STRLEN];
-  PortType port;
-} globals;
-
-typedef struct ClientState  {
-  int data;
-  Proto_Client_Handle ph;
-} Client;
-
-struct Request{
-  Client * client;
-  Proto_Msg_Types type;
-  int x;
-  int y;
-  Team_Types turf;
-  Cell_Types cell_type;
-} request;
-
-static int connected;
+//Global Variables
+Globals globals;         //Host string and port
 static char MenuString[] = "\n?> ";
 
-static int update_handler(Proto_Session *s )
-{
-    return 0;
-}
+static int update_handler(Proto_Session *s ){return 0;}
+static int update_event_handler(Proto_Session *s){return 0;}
 
-static int
-clientInit(Client *C)
-{
-  // Zero global scope
-  bzero(C, sizeof(Client));
-
-  // Set connected state to zero
-  connected = 0; 
-  
-  // initialize the client protocol subsystem
-  if (proto_client_init(&(C->ph))<0) {
-    fprintf(stderr, "client: main: ERROR initializing proto system\n");
-    return -1;
-  }
- 
-  // Specify the event channel handlers
-  proto_client_set_event_handler(C->ph, PROTO_MT_EVENT_BASE_UPDATE, update_handler );
-  return 1;
-}
-
-
-static int
-update_event_handler(Proto_Session *s)
-{
-  /*Client *C = proto_session_get_data(s);*/
-
-  fprintf(stderr, "%s: called", __func__);
-  return 1;
-}
-
-
-int 
-startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
+int startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
 {
   if (globals.host[0]!=0 && globals.port!=0) {
     int res;
@@ -114,8 +58,7 @@ startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
   return 0;
 }
 
-char*
-prompt(int menu) 
+char* prompt(int menu) 
 {
   if (menu) printf("%s", MenuString);
   fflush(stdout);
@@ -133,106 +76,6 @@ prompt(int menu)
 
 }
 
-int 
-doRPCCmd() 
-{
-  int rc=-1;
- 
-  // Unpack the request
-  Client *C;
-  Proto_Msg_Hdr hdr;
-  bzero(&hdr,sizeof(Proto_Msg_Hdr));
-
-  C = request.client;
-
-  switch (request.type) {
-  case PROTO_MT_REQ_BASE_HELLO:  
-    {
-     fprintf(stderr,"HELLO COMMAND ISSUED");
-     hdr.type = request.type;
-     rc = do_void_rpc(C->ph,&hdr);
-     /*rc = proto_client_hello(C->ph);*/
-     /*if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);*/
-     /*if (rc < 0) fprintf(stderr, "Unable to connect");*/
-    }
-    break;
-  case PROTO_MT_REQ_BASE_CINFO:
-      fprintf(stderr,"CINFO command issued x = %d, y= %d",request.x,request.y);
-      hdr.type= request.type;
-      hdr.gstate.v0.raw = request.x;
-      hdr.gstate.v1.raw = request.y;
-      rc = do_void_rpc(C->ph,&hdr);
-      if (rc > 0)
-      {
-        int is_valid;
-        get_int(C->ph,0,&is_valid);
-        if (is_valid <= 0)
-        {
-          fprintf(stderr,"Invalid cell address x = %d, y= %d\n", 
-            request.x,request.y);
-          fprintf(stderr,"Please use the 'dim' command to find dimensions");
-          rc = -1;
-        }
-        else
-        {
-          Cell cell;
-          Proto_Msg_Hdr rhdr;
-          bzero(&cell, sizeof(Cell));
-          bzero(&rhdr, sizeof(Proto_Msg_Hdr));
-          
-          get_hdr(C->ph,&rhdr);
-          cell_unmarshall_from_header(&cell,&rhdr);
-          cell_dump(&cell);
-        }
-      }
-    break;
-  case PROTO_MT_REQ_BASE_DIM:
-     fprintf(stderr,"Dimension COMMAND ISSUED");
-     hdr.type= request.type;
-     rc = do_void_rpc(C->ph,&hdr);
-     if (rc > 0)
-     {
-        int col,row;
-        get_int(C->ph,0,&col);
-        get_int(C->ph,sizeof(int),&row);
-        fprintf(stderr,"%d columns(x) by %d rows(y)",col,row);
-     }
-    break;
-  case PROTO_MT_REQ_BASE_NUM:
-     fprintf(stderr,"Number request for team %d\n",request.turf+1);
-     Cell cell;
-     cell_init(&cell,0,0,request.turf,request.cell_type,0);
-     cell_marshall_into_header(&cell,&hdr);
-     hdr.type=request.type;
-     rc = do_void_rpc(C->ph,&hdr);
-     if (rc > 0)
-     {
-        int num;
-        get_int(C->ph,0,&num);
-        fprintf(stderr,"%d total\n",num);
-     }
-    break;
-  case PROTO_MT_REQ_BASE_DUMP:
-     fprintf(stderr,"Dump server map issued");
-     hdr.type = request.type;
-     rc = do_void_rpc(C->ph,&hdr);
-    break;
-  case PROTO_MT_REQ_BASE_GOODBYE:
-     fprintf(stderr,"Goodbye COMMAND ISSUED");
-     hdr.type = request.type;
-     rc = do_void_rpc(C->ph,&hdr);
-    /*rc = proto_client_goodbye(C->ph);*/
-    /*printf("Game Over - You Quit");*/
-    break;
-  default:
-    printf("%s: unknown command %d\n", __func__, request.type);
-  }
-  // NULL MT OVERRIDE ;-)
-  if(proto_debug()) fprintf(stderr,"%s: rc=0x%x\n", __func__, rc);
-  if (rc == 0xdeadbeef) rc=1;
-  printf("rc=1\n");
-  return rc;
-}
 
 void disconnect (Client *C)
 {
@@ -246,7 +89,8 @@ void disconnect (Client *C)
 int doConnect(Client *C, char* cmd)
 {
   int rc;
-
+  Request request;
+  request_sync_init(&request,C);
   char address[2][STRLEN]; 
 
   char* token;
@@ -266,7 +110,7 @@ int doConnect(Client *C, char* cmd)
   }
   strcpy(address[1],token);   //put port number into address
 
-  initGlobals(2,address);
+  globals_init(2,address);
 
   // ok startup our connection to the server
   connected = 1;      //Change connected state to true
@@ -278,8 +122,7 @@ int doConnect(Client *C, char* cmd)
   }
 
   // configure request parameters
-  request.type = PROTO_MT_REQ_BASE_HELLO;
-  rc = doRPCCmd();
+  rc = doRPCCmd(&request);
 
   return rc;
 }
@@ -287,127 +130,76 @@ int doConnect(Client *C, char* cmd)
 int docmd(Client *C, char* cmd)
 {
   int rc = 1;                      // Set up return code var
-  bzero(&request,sizeof(request)); // Set up request
-  request.client = C;
 
   if(strncmp(cmd,"quit",sizeof("quit")-1)==0) return -2;
 
   if(!connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
   {
     rc = doConnect(C, cmd);
+    return process_RPC_message(C);
   }
   else if(strncmp(cmd,"where",sizeof("where")-1)==0)
   {
     if (connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
-  else printf("Not connected\n");
+    else printf("Not connected\n");
   }
+  /*else if(strncmp(cmd,"load",sizeof("load")-1)==0)*/
+    /*{*/
+        /*char* pch;*/
+        /*pch = strtok(cmd+5," \n\0");*/
+        /*client_map_init(C,pch);*/
+    /*}*/
   else if( connected )
   {
+    Request request;
+
     if( strncmp(cmd,"disconnect",sizeof("disconnect")-1)==0)
     {  
-    
-    request.type = PROTO_MT_REQ_BASE_GOODBYE;
-    rc=doRPCCmd();
-    
-    disconnect(C);
-    }
-    else if( strncmp(cmd,"numhome",sizeof("numhome")-1)==0)
-    {
-      int team;
-      char* token;
-      
-      token = strtok(cmd+(sizeof("numhome")-1),":i \n\0");
-      if (token == NULL )
-      {
-        fprintf(stderr,"Please specify team number 1 or 2 e.g '>numhome 2'"); 
-        return rc=-1;
-      }
-      
-      team = atoi(token);
-      if ( team!=1 && team!=2 )
-      {
-        fprintf(stderr, "Please specify team number 1 or 2 e.g '>numhome 2'");
-        return -1;
-      }
+        request_goodbye_init(&request,C);
+        rc=doRPCCmd(&request);
 
-      request.type = PROTO_MT_REQ_BASE_NUM;
-      request.cell_type = CELL_HOME;
-      request.turf = (Team_Types)(team-1);
-      rc=doRPCCmd();
+        disconnect(C);
     }
-    else if( strncmp(cmd,"numjail",sizeof("numjail")-1)==0)
+    else if(strncmp(cmd,"move",sizeof("move")-1)==0)
     {
-      int team;
-      char* token;
-      
-      token = strtok(cmd+(sizeof("numjail")-1),":i \n\0");
-      if (token == NULL )
-      {
-        fprintf(stderr,"Please specify team number 1 or 2 e.g '>numhome 2'"); 
-        return rc=-1;
-      }
-      
-      team = atoi(token);
-      if ( team!=1 && team!=2 )
-      {
-        fprintf(stderr, "Please specify team number 1 or 2 e.g '>numhome 2'");
-        return -1;
-      }
+        char* pch;
+        Pos next;
+        pch = strtok(cmd+5," ");
+        next.x = atoi(pch);
+        pch = strtok(NULL," ");
+        next.y = atoi(pch);
+        request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        rc = doRPCCmd(&request);
 
-      request.type = PROTO_MT_REQ_BASE_NUM;
-      request.cell_type = CELL_JAIL;
-      request.turf = (Team_Types)(team-1);
-      rc=doRPCCmd(); 
     }
-    else if( strncmp(cmd,"numwall",sizeof("numwall")-1)==0)
+    else if(strncmp(cmd,"pickup flag",sizeof("pickup flag")-1)==0)
     {
-      request.type = PROTO_MT_REQ_BASE_NUM;
-      request.cell_type = CELL_WALL;
-      rc=doRPCCmd(); 
-    }
-    else if( strncmp(cmd,"numfloor",sizeof("numfloor")-1)==0)
-    {
-      request.type = PROTO_MT_REQ_BASE_NUM;
-      request.cell_type = CELL_FLOOR;
-      rc=doRPCCmd();  
-    }
-    else if( strncmp(cmd,"dim",sizeof("dim")-1)==0)
-    {
-      request.type = PROTO_MT_REQ_BASE_DIM;
-      rc=doRPCCmd(); 
-    }
-    else if( strncmp(cmd,"cinfo",sizeof("cinfo")-1)==0)
-    {
-      int x;
-      int y;
-      char * token;
-      
-      token = strtok(cmd+(sizeof("cinfo")-1), ":i, \n\0");
-      if (token == NULL )
-      {
-        fprintf(stderr, "Please specify cell x and y e.g '>cinfo 25,125'");
-        return -1;
-      }
-     
-      x = atoi(token);
-      token = strtok(NULL, ":i, \n\0");
-      if (token == NULL)
-      {
-        fprintf(stderr, "Please specify cell x and y e.g '>cinfo 25,125'");
-        return -1;
-      }
-      y = atoi(token);
+        request_action_init(&request,C,ACTION_PICKUP_FLAG,NULL,NULL);
+        rc = doRPCCmd(&request);
 
-      request.type = PROTO_MT_REQ_BASE_CINFO;
-      request.x = x;
-      request.y = y;
-      rc=doRPCCmd();
     }
-    else if( strncmp(cmd,"dump",sizeof("dump")-1)==0)
+    else if(strncmp(cmd,"drop flag",sizeof("drop flag")-1)==0)
     {
-      request.type = PROTO_MT_REQ_BASE_DUMP;
-      rc=doRPCCmd();
+        request_action_init(&request,C,ACTION_DROP_FLAG,NULL,NULL);
+        rc = doRPCCmd(&request);
     }
+    else if(strncmp(cmd,"pickup shovel",sizeof("pickup shovel")-1)==0)
+    {
+        request_action_init(&request,C,ACTION_PICKUP_SHOVEL,NULL,NULL);
+        rc = doRPCCmd(&request);
+
+    }
+    else if(strncmp(cmd,"drop shovel",sizeof("drop shovel")-1)==0)
+    {
+        request_action_init(&request,C,ACTION_DROP_SHOVEL,NULL,NULL);
+        rc = doRPCCmd(&request);
+    }
+    else if(strncmp(cmd,"hello",sizeof("hello")-1)==0)
+    {
+        request_hello_init(&request,C);
+        rc = doRPCCmd(&request);
+    }
+    return process_RPC_message(C);
   }
   else
   {
@@ -417,10 +209,10 @@ int docmd(Client *C, char* cmd)
   return rc;
 }
 
-void *
-shell(void *arg)
+void* shell(void *arg)
 {
   Client *C = arg;
+ client_map_init(C,"daGame.map"); 
   char *c;
   int rc;
   int menu=1;
@@ -438,8 +230,7 @@ shell(void *arg)
   return NULL;
 }
 
-void 
-usage(char *pgm)
+void usage(char *pgm)
 {
   fprintf(stderr, "USAGE: %s <port|<<host port> [shell] [gui]>>\n"
            "  port     : rpc port of a game server if this is only argument\n"
@@ -453,8 +244,7 @@ usage(char *pgm)
  
 }
 
-void
-initGlobals(int argc, char argv[][STRLEN])
+void globals_init(int argc, char argv[][STRLEN])
 {
   bzero(&globals, sizeof(globals));
 
@@ -475,12 +265,10 @@ initGlobals(int argc, char argv[][STRLEN])
   
 }
 
-int 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
   Client c;
-  
-  if (clientInit(&c) < 0) {
+  if (client_init(&c) < 0) {
     fprintf(stderr, "ERROR: clientInit failed\n");
     return -1;
   }    

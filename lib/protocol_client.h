@@ -25,6 +25,8 @@
 #include "net.h"
 #include "protocol.h"
 #include "protocol_session.h"
+#include "types.h"
+#include "game_commons.h"
 
 typedef void * Proto_Client_Handle;
 
@@ -44,7 +46,8 @@ extern int proto_client_set_event_handler(Proto_Client_Handle ch,
 // client side protocol rpc's
 extern int get_int(Proto_Client_Handle ch, int offset, int* result);
 extern void get_hdr(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr);
-extern int do_void_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h);
-extern int proto_client_hello(Proto_Client_Handle ch);
-extern int proto_client_goodbye(Proto_Client_Handle ch);
+extern void get_pos(Proto_Client_Handle ch, Pos* current);
+extern int get_compress_from_body(Proto_Client_Handle ch,int offset ,int num_elements,int* alloc_pointer);
+extern int do_no_body_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h);
+extern int do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h,Pos curent,Pos next);
 #endif

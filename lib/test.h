@@ -1,3 +1,6 @@
+#ifndef __DAGAME_UNIT_TEST_H__
+#define __DAGAME_UNIT_TEST_H__
+
 #include <signal.h>
 
 #define COLOR_HEADER  "\033[95m" 
@@ -10,7 +13,7 @@
 #define SYMBOL_TICK "\xe2\x9c\x94"
 #define SYMBOL_CROSS "\xe2\x9c\x97"
 
-#define BREAKPOINT() raise(SIGINFO);    // should be caught in gdb - is ignorable (unix only)
+#define BREAKPOINT() raise(SIGUSR1);    // should be caught in gdb - is ignorable (unix only)
 #define SUICIDE() raise(SIGUSR1);
 
 typedef void(*Proc)(void*);
@@ -54,3 +57,5 @@ extern void parallelize(Task task[], int num_tasks, int num_threads );
 extern int  test_debug(void);
 extern int  randint(void);
 extern void test_task_init(Task *task, Proc func, int reps, void* a0,void*a1, void*a2, void*a3,void*a4,void*a5);
+
+#endif

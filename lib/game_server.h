@@ -1,5 +1,5 @@
-#ifndef __DAGAME_MAZE_H__
-#define __DAGAME_MAZE_H__
+#ifndef __DAGAME_GAME_SERVER_H__
+#define __DAGAME_GAME_SERVER_H__
 /******************************************************************************
 * Copyright (C) 2013 by Katsu Kawakami, Will Seltzer, Samir Ahmed, 
 * Boston University
@@ -26,13 +26,15 @@
 #include "./game_commons.h" 
 
 typedef struct{
-  Player player_a;
-  Player player_b;
-  int    compress_player_a;
-  int    compress_player_b;
-  Pos    broken_wall;
-  int    wall_break;
-} EventUpdate;
+  Player   player_a;
+  Player   player_b;
+  int      compress_player_a;
+  int      compress_player_b;
+  Pos      broken_wall;
+  int      game_state_update;
+  int      timestamp;
+  Object  objects[NUM_OBJECTS];
+} Update;
 
 typedef struct{
   Pos          pos; 
@@ -41,7 +43,7 @@ typedef struct{
   int          fd; 
   Action_Types action;
   int          test_mode;
-  EventUpdate  update;
+  Update  update;
 } GameRequest;
 
 // Request Methods
@@ -53,14 +55,14 @@ extern void server_request_objects(Maze*m,int*rshovel,int*rflag,int*bshovel,int*
 extern int* server_request_walls(Maze*m, int* length);
 
 // Game Methods
-extern int  server_game_add_player(Maze*maze,int fd, Player**player);
-extern void server_game_drop_player(Maze*maze,int team, int id);
+extern int  server_game_add_player(Maze*maze,int fd, Player**player,Update*update);
+extern void server_game_drop_player(Maze*maze,int team, int id, Update*update);
 extern int  server_game_action(Maze*maze , GameRequest* request);
 extern int  server_validate_player( Maze*m, Team_Types team, int id , int fd );
-extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next);
-extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next);
+extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next, Update*update);
+extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next, Update*update);
 extern int _server_game_state_update(Maze*m, Player*player, Cell*current, Cell*next);
-extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next);
+extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next, Update*update);
 
 // Locking Methods
 extern void server_maze_property_unlock(Maze*m);
@@ -93,7 +95,6 @@ extern void maze_update_object_player( Maze*m, Object* object, Player* player );
 extern void maze_move_player( Maze*m, Cell* current, Cell* next);
 extern void maze_use_shovel( Maze*m, Cell* current, Cell* next);
 extern void maze_object_drop_pickup( Maze*m, Action_Types action, Cell* current, Cell* next);
-extern void maze_spawn_player(Maze* m, Player* p);
 extern void maze_reset_shovel(Maze* m, Object* object);
 
 // JAIL METHODS
@@ -109,7 +110,7 @@ extern void player_lock(Player*player);
 extern void player_unlock(Player*player);
 extern int  player_has_shovel(Player * player);
 extern int  player_has_flag(Player * player);
-extern int  server_player_spawn(Maze*m, Player * player);
+extern int  server_player_spawn(Maze* m, Player* player, Pos*pos);
 
 // HOME METHODS
 extern void server_home_hash( Maze* m, int key, Cell** cell, Team_Types team);
@@ -133,19 +134,20 @@ extern void server_plist_drop_player_by_id(Maze*m, Plist* plist, int id );
 
 // ACTION METHODS
 
-extern int _server_action_drop_flag(Maze*m , Player* player);
 extern int _server_action_drop_shovel(Maze*m , Player*player);
-extern int _server_action_player_reset_shovel(Maze*m, Player*player);
+extern int _server_action_drop_flag(Maze*m , Player* player, Update*update);
+extern int _server_action_player_reset_shovel(Maze*m, Player*player,Update*update);
 extern int _server_action_pickup_object(Maze*m, Player* player);
 extern int _server_action_update_cell(Maze*m, Object* object, Cell* newcell );
 extern int _server_action_update_cell_and_player(Maze*m, Object* object, Cell* newcell, Player* player);
 extern int _server_action_update_player(Maze*m, Player*player, Cell*newcell);
-extern int _server_action_move_player(Maze*m, Cell* currentcell , Cell* nextcell );
+extern int _server_action_move_player(Maze*m, Cell* currentcell , Cell* nextcell,Update*update);
 extern int _server_action_jailbreak( Maze*m, Team_Types team, Cell*current, Cell*next );
-extern int _server_action_jail_player(Maze*m, Cell* currentcell);
+extern int _server_action_jail_player(Maze*m, Cell* currentcell, Update*update);
 
 // OTHERS 
-extern void _server_drop_handler(Maze*m, Player*player);
+extern void _server_drop_handler(Maze*m, Player*player, Update*update);
 extern void _server_validate_request(Maze*m, Player*player);
+extern Cell* _server_action_find_nearby_and_lock(Maze*m, Cell* currentcell);
 
 #endif

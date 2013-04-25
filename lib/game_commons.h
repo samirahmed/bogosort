@@ -1,5 +1,5 @@
-#ifndef __DAGAME_PLAYER_OBJECT_H__
-#define __DAGAME_PLAYER_OBJECT_H__
+#ifndef __DAGAME_GAME_COMMONS_H__
+#define __DAGAME_GAME_COMMONS_H__
 /******************************************************************************
 * Copyright (C) 2013 by Katsu Kawakami, Will Seltzer, Samir Ahmed, 
 * Boston University
@@ -57,6 +57,7 @@ typedef struct{
     Team_Types      client_player_team;
     int             client_has_player;
     pthread_mutex_t lock;
+    unsigned int    thread;
 } Object;
 
 typedef struct PlayerStruct{
@@ -69,6 +70,7 @@ typedef struct PlayerStruct{
     int                 fd;
     Pos                 client_position;
     pthread_mutex_t     lock;
+    unsigned int        thread;
 } Player;
 
 typedef struct CellStruct{
@@ -80,6 +82,7 @@ typedef struct CellStruct{
     Player*          player;
     Object*          object;
     pthread_mutex_t  lock;
+    unsigned int     thread;
 } Cell;
 
 typedef struct{
@@ -144,6 +147,7 @@ extern void maze_set_state(Maze*m,Game_State_Types state);
 extern Game_State_Types  maze_get_state(Maze*m);
 
 // PLAYER METHODS
+extern void player_init(Player* player);
 extern int player_get_position(Player * player, Pos*pos);
 
 // CELL METHODS

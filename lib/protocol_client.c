@@ -29,11 +29,9 @@
 #include <pthread.h>
 
 #include "protocol.h"
+#include "protocol_session.h"
 #include "protocol_utils.h"
 #include "protocol_client.h"
-
-
-
 #include "assert.h"
 #define NOT_IMPL assert(0)
 
@@ -204,10 +202,39 @@ extern void get_hdr(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr)
   proto_session_hdr_unmarshall(s,hdr);
 }
 
-// all rpc's are assume to only reply only with a return code in the body
-// eg.  like the null_mes
+extern void get_pos(Proto_Client_Handle ch, Pos* current)
+{
+  Proto_Session *s;
+  Proto_Client *c = ch;
+  s = &(c->rpc_session);
+  proto_session_body_unmarshall_bytes(s,0,sizeof(Pos),(char*)current);
+}
+
+extern int get_compress_from_body(Proto_Client_Handle ch,int offset ,int num_elements,int* alloc_pointer)
+{
+  int ii, current_offset;
+  int* ptr_to_array;
+  current_offset = offset;
+  ptr_to_array = alloc_pointer;
+  
+  Proto_Session *s;
+  Proto_Client *c = ch;
+  s = &(c->rpc_session);
+  
+  for(ii = 0; ii<num_elements;ii++)
+  {
+      current_offset = proto_session_body_unmarshall_int(s,current_offset,ptr_to_array);
+      ptr_to_array++;
+  }
+  return current_offset;
+}
+
+//This function is used for RPC's that do not contain anything in the body
+//Parameter: Proto_Msg_Hdr ch - that contains all necessary information for the RPC
+//           Proto_Client_Handle *h - Handle to the Proto_Client 
+//Returns:   Return Code - as specified in Game_Error_Types in types.h
 extern int 
-do_void_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
+do_no_body_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
 {
   int rc;
   Proto_Session *s;
@@ -224,16 +251,33 @@ do_void_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * h)
   return rc;
 }
 
+//This function is used for RPC's that do not contain anything in the body
+//Parameter: Proto_Msg_Hdr *h - that contains all necessary information for the RPC
+//           Proto_Client_Handle ch - Handle to the Proto_Client 
+//           Pos current - current position of the player
+//           Pos next - next position that the players wants to move to
+//Returns:   Return Code - as specified in Game_Error_Types in types.h
 extern int 
-proto_client_hello(Proto_Client_Handle ch)
+do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr,Pos current, Pos next)
 {
-  return -1;
+  int rc;
+  Proto_Session *s;
+  Proto_Client *c = ch;
+  
+  s = &(c->rpc_session);
+  proto_session_hdr_marshall(s,hdr);
+  if(hdr->gstate.v1.raw == ACTION_MOVE)
+  {
+      proto_session_body_marshall_bytes(s,sizeof(Pos),(char*)&current);
+      proto_session_body_marshall_bytes(s,sizeof(Pos),(char*)&next);
+  }
+  
+  rc = proto_session_send_msg(s,1);
+  rc = proto_session_rcv_msg(s);
+  
+  if(rc<=0) rc =-1;
+  return rc;
 }
 
-extern int 
-proto_client_goodbye(Proto_Client_Handle ch)
-{
-  return -1;
-}
 
 
