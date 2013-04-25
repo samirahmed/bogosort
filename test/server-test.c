@@ -971,12 +971,12 @@ int main(int argc, char ** argv )
     test_init(argc, argv, &tc);
     
     // ADD TESTS HERE
-    run(&test_pickup_drop_logic,"Objects",&tc);
     run(&test_server_locks,"Server Locks",&tc);
     run(&test_plist,"PLists",&tc);
     run(&test_find_and_lock,"Find and Lock Empty Routine",&tc);
     run(&test_game_add_drop,"Game Add/Drop",&tc);
     run(&test_game_move,"Basic Movement",&tc);
+    run(&test_pickup_drop_logic,"Objects",&tc);
     run(&test_parallelize_movement,"Concurrent Movement",&tc);
     /*run(&test_event_updates,"Event Updates",&tc);*/
 
