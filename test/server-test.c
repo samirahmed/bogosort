@@ -284,19 +284,19 @@ void st_game_add_drop(void*task_ptr)
   for (ii = 0; ii<10;ii++)
   {
       test_nanosleep();
-      rc = server_game_add_player( m ,*fd, &player );
+      rc = server_game_add_player( m ,*fd, &player , NULL);
       if (test_debug()) fprintf(stderr,"%d add       %d, id=%d ,team=%d \n",rc,*fd,player->id, player->team);
       
       if (rc >=0) 
       {
         test_nanosleep();
-        server_game_drop_player( m , player->team , player->id );
+        server_game_drop_player( m , player->team , player->id , NULL);
         if (test_debug()) fprintf(stderr,"%d drop      %d, id=%d ,team=%d \n",rc,*fd,player->id, player->team);
       }
   }
 
   test_nanosleep();
-  rc =  server_game_add_player( m ,*fd , &player);
+  rc =  server_game_add_player( m ,*fd , &player, NULL);
   if (test_debug()) fprintf(stderr,"%d finally add  %d, id=%d ,team=%d\n",rc,*fd,player->id,player->team);
 
 }
@@ -408,11 +408,13 @@ void test_pickup_drop_logic(TestContext*tc)
    fd_blue = randint()%1000;
    fd_red = fd_blue+1;
 
+   Object * dummy;
+
    /////////////////
    // PICKUP SHOVEL
    /////////////////
    Object* blue_shovel = object_get(&maze, OBJECT_SHOVEL , TEAM_BLUE);
-   server_game_add_player(&maze,fd_blue,&blue);
+   server_game_add_player(&maze,fd_blue,&blue, NULL);
    server_request_init(&maze,&request,fd_blue,ACTION_MOVE,blue_shovel->cell->pos.x,blue_shovel->cell->pos.y);
    request.test_mode = 1; //  teleport
    server_game_action(&maze,&request);
@@ -425,7 +427,14 @@ void test_pickup_drop_logic(TestContext*tc)
                (blue_shovel->cell->object != blue_shovel) &&
                (player_has_shovel(blue) && !player_has_flag(blue));
    should("be picked up by players correctly",assertion,tc);
-
+    
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_SHOVEL)];
+   assertion = (dummy->cell == blue_shovel->cell) && 
+               (dummy->player == blue_shovel->player) &&
+               (dummy->type == OBJECT_SHOVEL) &&
+               (dummy->team == TEAM_BLUE);
+   should("correctly package the update for Shovel Pickup",assertion,tc);
+   
    ///////////////
    // MOVE WITH OBJECT
    ///////////////
@@ -440,6 +449,12 @@ void test_pickup_drop_logic(TestContext*tc)
                (blue->cell->object!= blue_shovel)&&
                (player_has_shovel(blue));
    should("correctly move with players",assertion,tc);
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_SHOVEL)];
+   assertion = (dummy->cell == blue_shovel->cell) && 
+               (dummy->player == blue_shovel->player) &&
+               (dummy->type == OBJECT_SHOVEL) &&
+               (dummy->team == TEAM_BLUE);
+   should("correctly package the update for moving with an object",assertion,tc);
    
    ////////////////////////////////
    // TRY TO PICKUP ANOTHER SHOVEL
@@ -475,7 +490,13 @@ void test_pickup_drop_logic(TestContext*tc)
                (blue_flag->cell->object != blue_flag) &&
                (player_has_shovel(blue) && player_has_flag(blue));
    should("allow picking up both flag and shovel",assertion,tc);
-  
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_FLAG)];
+   assertion = (dummy->cell == blue_flag->cell) && 
+               (dummy->player == blue_flag->player) &&
+               (dummy->type == OBJECT_FLAG) &&
+               (dummy->team == TEAM_BLUE);
+   should("correctly package the update for pickuping up a flag",assertion,tc);
+
    ////////////////////////
    // MOVE WITH BOTH
    /////////////////////// 
@@ -494,6 +515,19 @@ void test_pickup_drop_logic(TestContext*tc)
                (player_has_shovel(blue) && player_has_flag(blue));
    should("correctly move when a player holds both shovel & flag",assertion,tc);
    
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_FLAG)];
+   assertion = (dummy->cell == blue_flag->cell) && 
+               (dummy->player == blue_flag->player) &&
+               (dummy->type == OBJECT_FLAG) &&
+               (dummy->team == TEAM_BLUE);
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_SHOVEL)];
+   assertion = assertion &&
+               (dummy->cell == blue_shovel->cell) && 
+               (dummy->player == blue_shovel->player) &&
+               (dummy->type == OBJECT_SHOVEL) &&
+               (dummy->team == TEAM_BLUE);
+   should("correctly package the update for moving with two items",assertion,tc);
+   
    //////////////////////////////
    // DROP SHOVEL AND DROP FLAG
    //////////////////////////////
@@ -507,6 +541,13 @@ void test_pickup_drop_logic(TestContext*tc)
                (blue_flag->player != blue ) &&
                (blue->cell->player = blue);
    should("drop correctly",assertion,tc);
+   
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_FLAG)];
+   assertion = (dummy->cell == blue_flag->cell) && 
+               (dummy->player == blue_flag->player) &&
+               (dummy->type == OBJECT_FLAG) &&
+               (dummy->team == TEAM_BLUE);
+   should("correctly package the update for dropping a flag",assertion,tc);
 
    ////////////////////////////
    //  GET TAGGED WITH SHOVEL AND FLAG
@@ -514,7 +555,7 @@ void test_pickup_drop_logic(TestContext*tc)
    server_request_init(&maze,&request,fd_blue,ACTION_PICKUP_FLAG,blue->cell->pos.x,blue->cell->pos.y);
    rc = server_game_action(&maze,&request);
    
-   server_game_add_player(&maze,fd_red,&red);
+   server_game_add_player(&maze,fd_red,&red, NULL);
    server_request_init(&maze,&request,fd_blue,ACTION_MOVE,red->cell->pos.x+1,red->cell->pos.y);
    request.test_mode = 1; //  teleport
    server_game_action(&maze,&request);
@@ -533,6 +574,20 @@ void test_pickup_drop_logic(TestContext*tc)
                ( blue_shovel->cell->object = blue_shovel);
    should("correctly reset and drop when a player is tagged",assertion,tc);
    
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_FLAG)];
+   assertion = (dummy->cell == blue_flag->cell) && 
+               (dummy->player == blue_flag->player) &&
+               (dummy->type == OBJECT_FLAG) &&
+               (dummy->team == TEAM_BLUE);
+   dummy = &request.update.objects[object_get_index(TEAM_BLUE,OBJECT_SHOVEL)];
+   assertion = assertion &&
+               (dummy->cell == blue_shovel->cell) && 
+               (dummy->player == blue_shovel->player) &&
+               (dummy->type == OBJECT_SHOVEL) &&
+               (dummy->team == TEAM_BLUE);
+   should("correctly package the update when tagged",assertion,tc);
+   
+
    ////////////////////////////
    // USE SHOVEL TEST ...
    ///////////////////////////
@@ -570,6 +625,18 @@ void test_pickup_drop_logic(TestContext*tc)
                ( red->cell->is_mutable == CELLTYPE_IMMUTABLE) &&
                ( maze.wall[red->cell->pos.x][red->cell->pos.y] == 1);
    should("correctly break wall with shovel",assertion,tc);
+   
+   Pos wall;
+   bzero(&wall,sizeof(Pos));
+   dummy = &request.update.objects[object_get_index(TEAM_RED,OBJECT_SHOVEL)];
+   decompress_broken_wall(&wall,&request.update.game_state_update);
+   assertion = (wall.x == red->cell->pos.x) && 
+               (wall.y == red->cell->pos.y) &&
+               (dummy->cell == red_shovel->cell) && 
+               (dummy->player == red_shovel->player) &&
+               (dummy->type == OBJECT_SHOVEL) &&
+               (dummy->team == TEAM_RED);
+   should("package update for broken wall correctly",assertion,tc);
    maze_destroy(&maze);
 }
 
@@ -584,13 +651,14 @@ void st_zombie(void* task_ptr)
   int*  fd   = (int*)  task->arg1;
   int*  reps = (int*)  task->arg2;
   int rc, ii,team,found,next_x,next_y;
-  unsigned int seed = (unsigned int) pthread_self();
+  unsigned int seed = (unsigned int)(size_t) pthread_self();
+  int pickup;
   Player*player;
   Cell* current;
 
   test_nanosleep();
   GameRequest request;
-  rc = server_game_add_player( m ,*fd, &player );
+  rc = server_game_add_player( m ,*fd, &player , NULL);
   if (test_debug()) fprintf(stderr,"%d add       %d, id=%d ,team=%d \n",rc,*fd,player->id, player->team);
   team = player->team ;
 
@@ -598,9 +666,36 @@ void st_zombie(void* task_ptr)
   {
     test_nanosleep();
     found = 0;
+    pickup = 0;
     current = player->cell; // This is test SAFE ONLY
     Pos next;
-    
+   
+    // Pick up an object if there is one
+    if ( current->object)
+    {
+        test_nanosleep();
+        if (current->object->type == OBJECT_FLAG)
+          server_request_init(m,&request,*fd,ACTION_PICKUP_FLAG,current->pos.x,current->pos.y);
+        else
+          server_request_init(m,&request,*fd,ACTION_PICKUP_SHOVEL,current->pos.x,current->pos.y);
+         
+        server_game_action(m,&request);  
+        pickup = 1;
+    }
+
+    if (!pickup && player->shovel)
+    {
+          test_nanosleep();
+          server_request_init(m,&request,*fd,ACTION_DROP_SHOVEL,current->pos.x,current->pos.y);
+          server_game_action(m,&request);  
+    }
+    else if (!pickup && player->flag)
+    {
+          test_nanosleep();
+          server_request_init(m,&request,*fd,ACTION_DROP_FLAG,current->pos.x,current->pos.y);
+          server_game_action(m,&request);  
+    }
+
     // find a home cell to try to walk into
     while(!found)
     {
@@ -624,8 +719,33 @@ void test_parallelize_movement(TestContext*tc)
 {
     Maze maze;
     maze_build_from_file(&maze,"test.map");
-
+    
     int ii,assertion,reps,team,xx,yy;
+
+    /// MOVE SHOVEL AND FLAGS INTO HOME... 
+    for ( team=0; team< NUM_TEAMS;team++)
+    { 
+      Object* flag = object_get(&maze , OBJECT_FLAG, team );
+      Object* shovel= object_get(&maze , OBJECT_SHOVEL, team );
+
+      // orphan objects
+      flag->cell->object =0;
+      shovel->cell->object =0;
+
+      Cell* fcell = &maze.get[ maze.home[team].min.x+1 ][maze.home[team].min.y+1 ];
+      Cell* scell = &maze.get[ maze.home[team].min.x+2 ][maze.home[team].min.y+1 ];
+      
+      // set new cell to own object
+      fcell->object = flag;
+      scell->object = shovel;
+     
+      // link object to new cell
+      flag->cell = fcell;
+      shovel->cell = scell;
+      
+    }
+
+    /// PARALLEL ZOMBIE TASKS
     int num_tasks = (maze.players[TEAM_RED].max);
     Task* tasks = malloc(sizeof(Task)*num_tasks);
     int*  fds = malloc(sizeof(int)*num_tasks);
@@ -663,11 +783,25 @@ void test_parallelize_movement(TestContext*tc)
               assertion = assertion && (cell->player->flag->player == cell->player);
               assertion = assertion && (cell->player->flag->cell == cell);
              }
+             if (!assertion) BREAKPOINT();
            }
         }
       }
-      should("maintain referential integrity with parallelized requests",assertion,tc);
+      should("maintain referential integrity down cell heirarchy",assertion,tc);
+    
+      assertion =1;
+      for (ii=0;ii<maze.players[team].max;ii++)
+      {
+        Player*player = &maze.players[team].at[ii];
+        if (player->fd != -1)
+        {
+          assertion = assertion && (player->cell) && (player->cell->player == player);
+        }
+      }
+      should("maintain referential integrity between players and their cells",assertion,tc);
+
     }
+
 
     free(fds);
     free(tasks);
@@ -688,18 +822,39 @@ void test_game_move(TestContext*tc)
     maze_build_from_file(&maze,"test.map");
 
     //////////////////
-    // Add a player
+    // Test Variables
     //////////////////
+    
     GameRequest request;
+    Update update;
+    bzero(&update,sizeof(Update));
+    
+    Player_Update_Types type;
+    Player dummy;
+    bzero(&dummy,sizeof(Player));
     Pos  next;
+    
     int assertion,rc,fd,id,team;
     fd   = randint()%9000 + 999;
     team = randint()%2;
     Player*player;
-    server_game_add_player(&maze, fd, &player );
+   
+    //////////////////
+    // Add a player
+    //////////////////
+    
+    server_game_add_player(&maze, fd, &player,&update);
     assertion = (server_home_count_read(&maze.home[player->team]) == 1) ;
     should("increment home count on spawn",assertion,tc);
 
+    // Unpack Update
+    decompress_player(&dummy, &update.compress_player_a, &type);
+    assertion = (dummy.client_position.x == player->cell->pos.x ) &&
+                (dummy.client_position.y == player->cell->pos.y ) &&
+                (type == PLAYER_ADDED ) &&
+                (dummy.id == player->id ) &&
+                (dummy.team == player->team );
+    should("prepare compressed update for Player ADD properly",assertion,tc);
 
     //////////////////
     // Move a player
@@ -723,6 +878,13 @@ void test_game_move(TestContext*tc)
     assertion = (maze.get[next.x][next.y].player == player && current->player != player);
     should("successfully update the cell's player reference", assertion,tc);
     
+    bzero(&dummy,sizeof(Player));
+    decompress_player( &dummy, &request.update.compress_player_a , &type);
+    assertion = (dummy.client_position.x == next.x) &&
+                (dummy.client_position.y == next.y) &&
+                (type == PLAYER_UNCHANGED);
+    should("successfuly prepare an update for player MOVE actions",assertion,tc);
+
     //////////////////
     // Move into a Wall
     //////////////////
@@ -760,7 +922,7 @@ void test_game_move(TestContext*tc)
     /////////////////
     int fd_red = fd+1;
     Player*other ;
-    rc = server_game_add_player(&maze,fd_red,&other);
+    rc = server_game_add_player(&maze,fd_red,&other,NULL);
     
     server_request_init(&maze,&request,fd_red,ACTION_MOVE,149,99);
     request.test_mode = 1;
@@ -786,20 +948,27 @@ void test_game_move(TestContext*tc)
                 (player->cell->pos.x == next.x && player->cell->pos.y == next.y);
     should("correctly jail player walking into other on enemy turf",assertion,tc);
     
+    bzero(&dummy,sizeof(Player));
+    decompress_player(&dummy, &request.update.compress_player_b ,&type);
+    assertion = (!decompress_is_ignoreable(&request.update.compress_player_a)) &&
+                (dummy.state == PLAYER_JAILED) && 
+                (type == PLAYER_UNCHANGED );
+    should("correctly process Updates for passive tagging",assertion,tc);
+
     ///////////////////////////////////////////
     // Make 2 new Players for Active tagging
     //////////////////////////////////////////
     
     int fd_blue = fd+2;
     Player*blue;
-    server_game_add_player(&maze,fd_blue,&blue);
+    server_game_add_player(&maze,fd_blue,&blue,NULL);
     server_request_init(&maze,&request,fd_blue,ACTION_MOVE,50,99);
     request.test_mode = 1;
     server_game_action(&maze,&request);
     
     int fd_tagger = fd+3;
     Player*tagger;
-    server_game_add_player(&maze,fd_tagger,&tagger);
+    server_game_add_player(&maze,fd_tagger,&tagger,NULL);
     server_request_init(&maze,&request,fd_tagger,ACTION_MOVE,49,99);
     request.test_mode = 1;
     server_game_action(&maze,&request);
@@ -816,6 +985,20 @@ void test_game_move(TestContext*tc)
                 ( tagger->cell->pos.x == 50 && tagger->cell->pos.y == 99);
     
     should("correctly jail player walking into enemy on home turf",assertion,tc);
+
+    decompress_player( &dummy, &request.update.compress_player_a , &type);
+    assertion = (dummy.client_position.x == 50) && 
+                (dummy.client_position.y == 99) &&
+                (dummy.id == tagger->id) &&
+                (type == PLAYER_UNCHANGED);
+    decompress_player( &dummy, &request.update.compress_player_b , &type);
+    assertion = assertion &&
+                (dummy.client_position.x != 50) && 
+                (dummy.client_position.y != 99) &&
+                (dummy.state == PLAYER_JAILED)  &&
+                (dummy.id == blue->id ) &&
+                (type == PLAYER_UNCHANGED);
+    should("should correctly package updates for Active tagging",assertion,tc);
 
     ////////////////////////
     // Test Freeing 
@@ -837,9 +1020,17 @@ void test_game_move(TestContext*tc)
                 ( player->cell->pos.x == maze.jail[opposite_team(player->team)].min.x);
     should("correctly free jailed players when moving into enemy jail cell while free",assertion,tc);
 
+    bzero(&update,sizeof(Update));
+    server_game_drop_player(&maze , player->team , player->id , &update);
+    decompress_player( &dummy, &update.compress_player_a , &type);
+    assertion = (type == PLAYER_DROPPED) && 
+                (dummy.id == player->id) &&
+                (dummy.team = player->team);
 
     maze_destroy(&maze);
 }
+
+/*void test_event_updates()*/
 
 int main(int argc, char ** argv )
 {
@@ -847,14 +1038,15 @@ int main(int argc, char ** argv )
     test_init(argc, argv, &tc);
     
     // ADD TESTS HERE
-    run(&test_pickup_drop_logic,"Objects",&tc);
     run(&test_server_locks,"Server Locks",&tc);
     run(&test_plist,"PLists",&tc);
-    run(&test_find_and_lock,"Find and Lock Empty Routine",&tc);
+    run(&test_find_and_lock,"Find & Lock Empty",&tc);
     run(&test_game_add_drop,"Game Add/Drop",&tc);
     run(&test_game_move,"Basic Movement",&tc);
+    run(&test_pickup_drop_logic,"Objects",&tc);
     run(&test_parallelize_movement,"Concurrent Movement",&tc);
-    
+    /*run(&test_event_updates,"Event Updates",&tc);*/
+
     // TEST END HERE
     
     test_summary(&tc);

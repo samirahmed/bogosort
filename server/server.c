@@ -42,7 +42,7 @@ static Maze maze;
 //  EVENT CODE   //
 ///////////////////
 
-int doUpdateClients(Maze*m,EventUpdate *update)
+int doUpdateClients(Update *update)
 {
   Proto_Session *s;
   Proto_Msg_Hdr hdr;
@@ -54,7 +54,7 @@ int doUpdateClients(Maze*m,EventUpdate *update)
   hdr.pstate.v2.raw = update->compress_player_b;
 
   // Push objects into update
-  server_request_objects(m,&hdr.pstate.v2.raw,&hdr.pstate.v0.raw,&hdr.pstate.v3.raw,&hdr.pstate.v1.raw);
+  server_request_objects(&maze,&hdr.pstate.v2.raw,&hdr.pstate.v0.raw,&hdr.pstate.v3.raw,&hdr.pstate.v1.raw);
 
   s = proto_server_event_session();
   hdr.type = PROTO_MT_EVENT_UPDATE;
@@ -78,16 +78,21 @@ int client_lost_handler( Proto_Session * s)
     return -1;
   }
 
-  server_game_drop_player(&maze, team, id);
+  Update update;  
+  server_game_drop_player(&maze, team, id, &update);
 	fprintf(stdout, "Client Lost fd%d\n",(int)s->fd);
-  
+
   if (proto_debug()) proto_session_dump(s);
-	return -1;
+  
+  /// EVENT UPDATE GOES HERE
+  doUpdateClients(&update);
+
+  return -1;
 }
 
-///////////////////
-// HANDLER CODE ///
-///////////////////
+///////////////////////
+// RPC HANDLER CODE  //
+///////////////////////
 
 int hello_handler( Proto_Session *s)
 {
@@ -95,12 +100,11 @@ int hello_handler( Proto_Session *s)
 
   int rc;
   Player*player;
+  Update update;
   
-  rc = server_game_add_player(&maze,s->fd,&player);
+  rc = server_game_add_player(&maze,s->fd,&player,&update);
   if(rc<0) reply(s,PROTO_MT_REP_HELLO,rc,(size_t)NULL);
   
-  /// EVENT UPDATE GOES HERE
-
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr));
   h.type = PROTO_MT_REP_HELLO;
@@ -109,6 +113,9 @@ int hello_handler( Proto_Session *s)
   h.gstate.v0.raw = rc;
   put_hdr(s,&h);
 
+  /// EVENT UPDATE GOES HERE
+  doUpdateClients(&update);
+
   return reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
 }
 
@@ -116,8 +123,6 @@ int goodbye_handler( Proto_Session *s)
 {
   if(proto_debug()) fprintf(stderr,"Drop Request Received");
   client_lost_handler(s);
-  
-  /// EVENT UPDATE GOES HERE
   return reply(s,PROTO_MT_REP_GOODBYE,0,(size_t)NULL);
 }
 
@@ -125,7 +130,8 @@ int sync_handler( Proto_Session *s)
 {
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr));
-  int *walls, *rlist, *blist, blen, rlen, wlen, rshovel, bshovel, bflag, rflag, rc,ii;
+  int *walls, *rlist, *blist, blen, rlen, wlen, 
+      rshovel, bshovel, bflag, rflag, rc,ii;
   rc = 0;
 
   // Get the walls + rlist
@@ -186,7 +192,8 @@ int action_handler( Proto_Session *s)
   if (rc<0) return reply(s,PROTO_MT_REP_ACTION,rc,-1);
 
   /// EVENT UPDATE GOES HERE
-  
+  doUpdateClients(&request.update);
+
   return reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
 }
 
