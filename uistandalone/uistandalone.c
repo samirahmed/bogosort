@@ -367,44 +367,43 @@ ui_paintmap(UI *ui)
 printf("mapload is %d\n", init_mapload);
 int w,h;
 int map_char;
-//Cell_Types cell_type;
 
 int type; 
 printf("cell types set");
 Maze maze;
+map_ptr = &maze;
 if(!init_mapload){  
 
 printf("initializing map");
 maze_build_from_file(&maze, "../daGame.map");
 
 int i,j;
-/*for(i = 0; i < 201; i ++){
-	for(j = 0; j < 201; j++){
-		map_char = fgetc(fp);
-		map[i][j] = map_char;
-	}
-}
-*/
-
 init_mapload = 1;
 }
- 
-
- int x,y;
-  SDL_Rect t;
+//init the player list here now for testing 
+Cell cur_cell;
+int cell_state;
+int x,y;
+SDL_Rect t;
 
   y = 0; 
   x = 0;
   int scale_x, scale_y;
   t.x = 0;
   t.y = 0;
-  printf("map loaded"); 
+
   for (x = 0; x < 200; x++) {
     for (y = 0; y < 200; y++) {
-        type = maze.get[y][x].type;
+        cur_cell = maze.get[y][x];
+        // get the cell
+               
         scale_x = x * SPRITE_W;
 	scale_y = y * SPRITE_H;
-	if(type == CELL_FLOOR){
+        printf("cell state is %d\n", cur_cell.cell_state);
+	type = cur_cell.type;	
+if(cur_cell.cell_state == CELLSTATE_EMPTY){
+
+        if(type == CELL_FLOOR){
 		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> isle_c);
  			}
 	if(type == CELL_WALL && y < 100){
@@ -421,8 +420,25 @@ init_mapload = 1;
 	if(type == CELL_HOME){
 		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> white_c);
 			}
+	}
+	else{
+		
+		if(cur_cell.cell_state ==  CELLSTATE_OCCUPIED){
+		//PRINT PLAYER
+			}else{
+			if(cur_cell.cell_state == CELLSTATE_HOLDING){
+				//PRINT OBJECT
+				}
+				else{
+				//PRINT PLAYER HOLDING
+
+
+					}
+
+				}		
+			}
 		}
-	}	
+	}
 
 
   dummyPlayer_paint(ui, &t);
@@ -660,7 +676,7 @@ dummyPlayer_paint(UI *ui, SDL_Rect *t)
 int
 ui_dummy_left(UI *ui)
 {
-  dummyPlayer.x--;
+  map_ptr->Plist[0].Pos.x--; // 0 for now eventually need to have the client's id
 
   return 2;
 }
@@ -671,7 +687,7 @@ ui_dummy_right(UI *ui)
  //send pair of ints to server along with move command
  //if we receive a move player event update then update the dummy player location
  
-  dummyPlayer.x++;
+  map_ptr->Plist[0].Pos.x++;
   return 2;
 
 }
@@ -681,7 +697,7 @@ int
 ui_dummy_down(UI *ui)
 {
 //send pair of ints to
-  dummyPlayer.y++;
+  map_ptr->Plist[0].Pos.y++;
 
   return 2;
 }
@@ -694,7 +710,7 @@ ui_dummy_down(UI *ui)
 int
 ui_dummy_up(UI *ui)
 {
-  dummyPlayer.y--;
+  map_ptr->Plist[0].Pos.y--;
 //}  
 return 2;
 }
