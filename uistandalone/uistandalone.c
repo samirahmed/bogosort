@@ -371,16 +371,25 @@ int map_char;
 int type; 
 printf("cell types set");
 Maze maze;
+Plist pl;
+Player p;
 map_ptr = &maze;
 if(!init_mapload){  
-
-printf("initializing map");
-maze_build_from_file(&maze, "../daGame.map");
-
-int i,j;
-init_mapload = 1;
+	player_init(&p);
+	pl.at[0] = p;
+	printf("initializing map");
+	maze_build_from_file(&maze, "../daGame.map");
+	plist_init(&pl, TEAM_BLUE,2);
+	maze.players[0] = pl;
+	int i,j;
+	init_mapload = 1;
 }
 //init the player list here now for testing 
+
+
+//init player at location 0
+
+
 Cell cur_cell;
 int cell_state;
 int x,y;
@@ -676,7 +685,7 @@ dummyPlayer_paint(UI *ui, SDL_Rect *t)
 int
 ui_dummy_left(UI *ui)
 {
-  map_ptr->Plist[0].Pos.x--; // 0 for now eventually need to have the client's id
+  map_ptr->players[0].at[0].client_position.x--; // 0 for now eventually need to have the client's id
 
   return 2;
 }
@@ -687,7 +696,7 @@ ui_dummy_right(UI *ui)
  //send pair of ints to server along with move command
  //if we receive a move player event update then update the dummy player location
  
-  map_ptr->Plist[0].Pos.x++;
+  map_ptr->players[0].at[0].client_position.x++;
   return 2;
 
 }
@@ -697,7 +706,7 @@ int
 ui_dummy_down(UI *ui)
 {
 //send pair of ints to
-  map_ptr->Plist[0].Pos.y++;
+  map_ptr->players[0].at[0].client_position.y++;
 
   return 2;
 }
@@ -710,7 +719,7 @@ ui_dummy_down(UI *ui)
 int
 ui_dummy_up(UI *ui)
 {
-  map_ptr->Plist[0].Pos.y--;
+  map_ptr->players[0].at[0].client_position.y--;
 //}  
 return 2;
 }
