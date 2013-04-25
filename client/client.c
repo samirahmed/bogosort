@@ -66,7 +66,7 @@ char* prompt(int menu)
   // Pull in input from stdin
   int bytes_read;
   size_t nbytes = 0;
-  char *my_string;
+  char *my_string = (char*)malloc(1);
   bytes_read = getline(&my_string, &nbytes, stdin);
 
   if(bytes_read>0)
