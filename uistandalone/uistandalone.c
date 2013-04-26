@@ -389,7 +389,7 @@ if(!init_mapload){
 	plist_init(&blue_players, TEAM_BLUE, 2);
 	maze.players[0] = red_players;
 	maze.players[1] = blue_players;
-	maze.get[10][10].player = &p;
+        maze.get[10][10].player = &p;
 	maze.get[10][10].cell_state = CELLSTATE_OCCUPIED;	
         int i,j;
 	init_mapload = 1;
@@ -464,7 +464,7 @@ if(cur_cell.cell_state == CELLSTATE_EMPTY){
 	}
 
 
-  //dummyPlayer_paint(ui, &t);
+  dummyPlayer_paint(ui, &t);
 
   SDL_UpdateRect(ui->screen, 0, 0, ui->screen->w, ui->screen->h);
  
@@ -702,13 +702,13 @@ ui_dummy_left(UI *ui)
    int x,y;
    x = map_ptr->players[0].at[0].client_position.x;
    y = map_ptr->players[0].at[0].client_position.y;
+   printf("player at %d, %d\n", x,y);
    map_ptr->players[0].at[0].client_position.x--;
    *(maze.get[y][x--].player) = *(maze.get[y][x].player);
    (maze.get[y][x].player) = NULL;
    maze.get[y][x].cell_state = CELLSTATE_EMPTY;
-   maze.get[y][x--].cell_state = CELLSTATE_OCCUPIED;	
-// 0 for now eventually need to have the client's id
-
+   maze.get[y][x--].cell_state = CELLSTATE_OCCUPIED;
+  dummyPlayer.x--; 
   return 2;
 }
 
@@ -718,7 +718,8 @@ ui_dummy_right(UI *ui)
  //send pair of ints to server along with move command
  //if we receive a move player event update then update the dummy player location
  
-  map_ptr->players[0].at[0].client_position.x++;
+ printf("moving right"); 
+ map_ptr->players[0].at[0].client_position.x++;
   return 2;
 
 }
