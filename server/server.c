@@ -239,14 +239,40 @@ int init_game(void){
 //  SHELL CODE  //
 //////////////////
 
-char MenuString[] =
-  "Usage: d/D-debug on/off\n\tu-update clients\n\tq-quit\n\tload <filename> - Loads a Map file\n\tdump - dump contents of map data structure\n";
+char MenuString[] = "Usage:\t d/D-debug on/off\n\t \
+u-update clients\n\t \
+q-quit\n\t \
+asciidump - dump an ascii reprentation of whole maze\n\t \
+textdump - dump player/object/cell/state into readable text file\n\n";
 
 int docmd(char* cmd)
 {
   int rc = 1;
 
-  if((strncmp(cmd,"dump",4))==0) { maze_dump(&maze); return rc; }
+  if((strncmp(cmd,"textdump",sizeof("textdump")-1))==0) 
+  { 
+    char* token;
+    token = strtok(cmd+sizeof("textdump")-1,":i \n\0");
+    if (token == NULL )
+    {
+      fprintf(stderr,"Please specify filename dump <filename>\n");
+      return rc;
+    }
+    maze_text_dump(&maze,token); 
+    return rc; 
+  }
+  else if((strncmp(cmd,"asciidump",sizeof("asciidump")-1))==0) 
+  { 
+    char* token;
+    token = strtok(cmd+sizeof("asciidump")-1,":i \n\0");
+    if (token == NULL )
+    {
+      fprintf(stderr,"Please specify filename dump <filename>\n");
+      return rc;
+    }
+    maze_ascii_dump(&maze,token); 
+    return rc; 
+  }
 
   switch (*cmd) {
   case 'd':
@@ -276,7 +302,7 @@ char* prompt(int menu)
   // Pull in input from stdin
   int bytes_read;
   size_t nbytes = 0;
-  char *my_string;
+  char *my_string = (char*) malloc(1);
   bytes_read = getline (&my_string, &nbytes, stdin);
   
   char* pch;
@@ -299,10 +325,11 @@ void * shell(void *arg)
     if ((c=prompt(menu))!=0) rc=docmd(c);
     if (rc<0) break;
     if (rc==1) menu=1; else menu=0;
+	  free(c);
   }
   if(c!=0)//If this variable was allocated in prompt(menu) please free memory
-	free(c);
 
+	free(c);
   fprintf(stderr, "terminating\n");
   fflush(stdout);
   return NULL;

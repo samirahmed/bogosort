@@ -486,10 +486,13 @@ extern void maze_text_dump(Maze*m, char* filename)
   {
 		for( x = m->min.y; x < m->max.x; x++ )
     {
-      maze_cell_dump(&(m->get[x][y]), fd);
+      Cell*cell= &m->get[x][y];
+      if ( cell->player || cell->object )
+      maze_cell_dump(cell, fd);
     }
   }
-  fprintf(stderr,"Server Full File Dump Completed");
+  fprintf(fd,"\n");
+  fprintf(stderr,"Server Text Dump Completed\n");
   close((int)(size_t)fd);
 }
 
@@ -541,6 +544,7 @@ extern void maze_ascii_dump(Maze*map, char* filename)
     }
 		fprintf(dumpfp,"\n");
 	}
+  fprintf(stderr,"Server ASCII dump completed\n");
 	close((int)(size_t)dumpfp);
 }
 
