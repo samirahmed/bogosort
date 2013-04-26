@@ -55,11 +55,6 @@ static void dummyPlayer_paint(UI *ui, SDL_Rect *t);
 //move this to wherever the shallow copy is located
 //char map [201][201];
 Maze * map_ptr;
-Maze maze;
-Plist red_players;
-Plist blue_players;
-Player p;
-
 
 int init_mapload = 0;
 typedef enum {UI_SDLEVENT_UPDATE, UI_SDLEVENT_QUIT} UI_SDL_Event;
@@ -375,23 +370,18 @@ int map_char;
 
 int type; 
 printf("cell types set");
-
+Maze maze;
+Plist pl;
+Player p;
+map_ptr = &maze;
 if(!init_mapload){  
-	map_ptr = &maze;
 	player_init(&p);
-
-	p.client_position.x = 10; //initialize the client position
-        p.client_position.y = 10;
-        red_players.at[0] = p;
-        printf("initializing map");
+	pl.at[0] = p;
+	printf("initializing map");
 	maze_build_from_file(&maze, "../daGame.map");
-	plist_init(&red_players, TEAM_RED,2);
-	plist_init(&blue_players, TEAM_BLUE, 2);
-	maze.players[0] = red_players;
-	maze.players[1] = blue_players;
-	maze.get[10][10].player = &p;
-	maze.get[10][10].cell_state = CELLSTATE_OCCUPIED;	
-        int i,j;
+	plist_init(&pl, TEAM_BLUE,2);
+	maze.players[0] = pl;
+	int i,j;
 	init_mapload = 1;
 }
 //init the player list here now for testing 
@@ -418,7 +408,8 @@ SDL_Rect t;
                
         scale_x = x * SPRITE_W;
 	scale_y = y * SPRITE_H;
-        type = cur_cell.type;	
+        printf("cell state is %d\n", cur_cell.cell_state);
+	type = cur_cell.type;	
 if(cur_cell.cell_state == CELLSTATE_EMPTY){
 
         if(type == CELL_FLOOR){
@@ -442,12 +433,7 @@ if(cur_cell.cell_state == CELLSTATE_EMPTY){
 	else{
 		
 		if(cur_cell.cell_state ==  CELLSTATE_OCCUPIED){
-			if((*(cur_cell.player)).team == TEAM_RED){
-			  ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c); // paint yellow for now -- will have to change colors	
-				}else{
-				//on the blue team
-				
-				}
+		//PRINT PLAYER
 			}else{
 			if(cur_cell.cell_state == CELLSTATE_HOLDING){
 				//PRINT OBJECT
@@ -464,7 +450,7 @@ if(cur_cell.cell_state == CELLSTATE_EMPTY){
 	}
 
 
-  //dummyPlayer_paint(ui, &t);
+  dummyPlayer_paint(ui, &t);
 
   SDL_UpdateRect(ui->screen, 0, 0, ui->screen->w, ui->screen->h);
  
@@ -699,15 +685,7 @@ dummyPlayer_paint(UI *ui, SDL_Rect *t)
 int
 ui_dummy_left(UI *ui)
 {
-   int x,y;
-   x = map_ptr->players[0].at[0].client_position.x;
-   y = map_ptr->players[0].at[0].client_position.y;
-   map_ptr->players[0].at[0].client_position.x--;
-   *(maze.get[y][x--].player) = *(maze.get[y][x].player);
-   (maze.get[y][x].player) = NULL;
-   maze.get[y][x].cell_state = CELLSTATE_EMPTY;
-   maze.get[y][x--].cell_state = CELLSTATE_OCCUPIED;	
-// 0 for now eventually need to have the client's id
+  map_ptr->players[0].at[0].client_position.x--; // 0 for now eventually need to have the client's id
 
   return 2;
 }
