@@ -100,7 +100,7 @@ def console()
   puts "Recipe Saved to test/#{name}.recipe".green
 end
 
-def test()
+def test(arguments)
   # setup paths
   client  = File.join(FileUtils.pwd,'client/client')
   server  = File.join(FileUtils.pwd,'server/server')
@@ -114,7 +114,7 @@ def test()
   pids,fds = [],[]
   debug,client_only,verbose, checksum = false,false,false,false
 
-  ARGV.each do |arg|
+  arguments.each do |arg|
     if  arg == "--verbose" || arg == "-v"
       verbose = true
     elsif arg == "--checksum" || arg == "-x"
@@ -201,8 +201,7 @@ def test()
       end
     end
 
-    # issue dumps to errbody
-
+    puts "Issuing Quit Commands" 
     # connect all clients 
     clients.each{|stdin| stdin.puts "quit"}
     
@@ -227,4 +226,17 @@ def test()
   end
 end
 
-ARGV.select{|arg| arg == "console" }.any? ? console() : test()
+def main
+  if ARGV.include?("console")
+    console()
+  elsif ARGV.include?("ALL") || ARGV.include?("--all") || ARGV.include?("-a")
+    arguments = Array.new(ARGV)
+    arguments -= ["--all","ALL","-a"]
+    Dir.glob("./test/*.recipe").map{|r| test(arguments+[r])}
+  else
+    test(ARGV)
+  end
+end
+
+main
+
