@@ -377,25 +377,22 @@ int type;
 printf("cell types set");
 
 if(!init_mapload){  
-	map_ptr = &maze;
 	player_init(&p);
 
 	p.client_position.x = 10; //initialize the client position
         p.client_position.y = 10;
-        red_players.at[0] = p;
-        printf("initializing map");
-	maze_build_from_file(&maze, "../daGame.map");
+        maze_build_from_file(&maze, "../daGame.map");
 	plist_init(&red_players, TEAM_RED,2);
-	plist_init(&blue_players, TEAM_BLUE, 2);
-	maze.players[0] = red_players;
+        plist_init(&blue_players, TEAM_BLUE, 2);
+	red_players.at[0] = p;
+	maze.players[0] = red_players;	
 	maze.players[1] = blue_players;
-        maze.get[10][10].player = &p;
+       	maze.get[10][10].player = &p;
 	maze.get[10][10].cell_state = CELLSTATE_OCCUPIED;	
         int i,j;
+	map_ptr = &maze;
 	init_mapload = 1;
 }
-//init the player list here now for testing 
-
 
 //init player at location 0
 
@@ -702,14 +699,15 @@ ui_dummy_left(UI *ui)
    int x,y;
    x = map_ptr->players[0].at[0].client_position.x;
    y = map_ptr->players[0].at[0].client_position.y;
-   printf("player at %d, %d\n", x,y);
+//NOTE TO SELF:
+//IF THE FOLLOWING ISN"T PRINTING ON RUN MAKE SURE YOURE RUNNING XMONAD 
+   printf("player at %d, %d\n", x,y); 
    map_ptr->players[0].at[0].client_position.x--;
-   *(maze.get[y][x--].player) = *(maze.get[y][x].player);
-   (maze.get[y][x].player) = NULL;
-   maze.get[y][x].cell_state = CELLSTATE_EMPTY;
-   maze.get[y][x--].cell_state = CELLSTATE_OCCUPIED;
-  dummyPlayer.x--; 
-  return 2;
+   (maze.get[y][x--].player) = (maze.get[y][x].player);
+   //(maze.get[y][x].player) = NULL;
+   //maze.get[y][x].cell_state = CELLSTATE_EMPTY;
+   //maze.get[y][x--].cell_state = CELLSTATE_OCCUPIED;
+   return 2;
 }
 
 int

@@ -108,6 +108,7 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e)
 
   if (e->type == SDL_KEYDOWN) {
     if (sym == SDLK_LEFT && mod == KMOD_NONE) {
+      printf("move left\n");
       fprintf(stderr, "%s: move left\n", __func__);
       return ui_dummy_left(ui);
     }
