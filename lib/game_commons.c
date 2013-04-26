@@ -452,50 +452,96 @@ extern void maze_destroy(Maze*maze)
      bzero(maze,sizeof(Maze)); 
 }
 
-extern void maze_dump(Maze*map)
+extern void maze_object_dump(Object*object,FILE*fd,int indent)
+{
+  fprintf(fd,"\n\t");
+  if( indent>1 ) fprintf(fd,"\t");
+  fprintf(fd,"[object team:%1d type:%1d]",object->team,object->type);
+}
+
+extern void maze_player_dump(Player*player,FILE*fd)
+{
+  fprintf(fd,"\n\t[player team:%1d id:%03d]",player->team,player->id);
+  if (player->shovel) maze_object_dump(player->shovel,fd,2);
+  if (player->flag) maze_object_dump(player->flag,fd,2);
+}
+
+extern void maze_cell_dump(Cell*c, FILE*fd)
+{
+    fprintf(fd,"[cell %03d,%03d type:%1d]",c->pos.x,c->pos.y,c->type);
+    if (c->object) maze_object_dump(c->object,fd,1);
+    if (c->player) maze_player_dump(c->player,fd);
+    fprintf(fd,"\n");
+}
+
+extern void maze_text_dump(Maze*m, char* filename)
+{
+	int x,y;
+	FILE* fd;
+	fd = fopen(filename,"w");
+
+  fprintf(fd,"[MAZE STATE:%1d]\n",m->current_game_state);
+
+  for( y = m->min.x; y < m->max.y; y++ )
+  {
+		for( x = m->min.y; x < m->max.x; x++ )
+    {
+      maze_cell_dump(&(m->get[x][y]), fd);
+    }
+  }
+  fprintf(stderr,"Server Full File Dump Completed");
+  close((int)(size_t)fd);
+}
+
+extern void maze_ascii_dump(Maze*map, char* filename)
 {
 	int x,y;
 	FILE* dumpfp;
-	dumpfp = fopen("dumpfile.text","w");
+	dumpfp = fopen(filename,"w");
 	for( y = map->min.x; y < map->max.y; y++ )
   {
 		for( x = map->min.y; x < map->max.x; x++ )
     {
-      if(map->get[x][y].type==CELL_WALL)
+      if(map->get[x][y].player)
+      {
+        Player*player = map->get[x][y].player;
+        if (player->team == TEAM_RED)
+        {
+				  fprintf(dumpfp,"R");
+        }
+        else
+        {
+				  fprintf(dumpfp,"B");
+        }
+      }
+      else if(map->get[x][y].type==CELL_WALL)
 			{
-				fprintf(stdout,"#");
 				fprintf(dumpfp,"#");
 			}
 			else if(map->get[x][y].type==CELL_FLOOR)
 			{
-				fprintf(stdout," ");
 				fprintf(dumpfp," ");
 			}
 			else if(map->get[x][y].type==CELL_JAIL && map->get[x][y].turf==TEAM_RED)
 			{
-				fprintf(stdout,"j");
 				fprintf(dumpfp,"j");
 			}
 			else if(map->get[x][y].type==CELL_HOME && map->get[x][y].turf==TEAM_RED)
 			{
-				fprintf(stdout,"h");
 				fprintf(dumpfp,"h");
 			}
 			else if(map->get[x][y].type==CELL_JAIL && map->get[x][y].turf==TEAM_BLUE)
 			{
-				fprintf(stdout,"J");
 				fprintf(dumpfp,"J");
 			}
 			else if(map->get[x][y].type==CELL_HOME && map->get[x][y].turf==TEAM_BLUE)
 			{
-				fprintf(stdout,"H");
 				fprintf(dumpfp,"H");
 			}
     }
-		fprintf(stdout,"\n");
 		fprintf(dumpfp,"\n");
 	}
-	close((int)dumpfp);
+	close((int)(size_t)dumpfp);
 }
 
 /****************************/
