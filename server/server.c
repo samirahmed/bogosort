@@ -255,7 +255,7 @@ int docmd(char* cmd)
     token = strtok(cmd+sizeof("textdump")-1,":i \n\0");
     if (token == NULL )
     {
-      fprintf(stderr,"Please specify filename dump <filename>\n");
+      fprintf(stderr,"Please specify filename $textdump <filename>\n");
       return rc;
     }
     maze_text_dump(&maze,token); 
@@ -267,7 +267,7 @@ int docmd(char* cmd)
     token = strtok(cmd+sizeof("asciidump")-1,":i \n\0");
     if (token == NULL )
     {
-      fprintf(stderr,"Please specify filename dump <filename>\n");
+      fprintf(stderr,"Please specify filename $asciidump <filename>\n");
       return rc;
     }
     maze_ascii_dump(&maze,token); 
@@ -321,15 +321,15 @@ void * shell(void *arg)
   int rc=1;
   int menu=1;
 
-  while (1) {
+  while (1) 
+  {
     if ((c=prompt(menu))!=0) rc=docmd(c);
     if (rc<0) break;
     if (rc==1) menu=1; else menu=0;
-	  free(c);
+    if(c!=0)	free(c);
   }
-  if(c!=0)//If this variable was allocated in prompt(menu) please free memory
-
-	free(c);
+  
+  if(c!=0)	free(c);
   fprintf(stderr, "terminating\n");
   fflush(stdout);
   return NULL;

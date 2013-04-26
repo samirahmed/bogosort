@@ -199,6 +199,30 @@ int docmd(Client *C, char* cmd)
         request_hello_init(&request,C);
         rc = doRPCCmd(&request);
     }
+    else if(strncmp(cmd,"textdump",sizeof("textdump")-1)==0)
+    {
+        char* token;
+        token = strtok(cmd+sizeof("textdump")-1,":i \n\0");
+        if (token == NULL )
+        {
+          fprintf(stderr,"Please specify filename $textdump <filename>\n");
+          return -1;
+        }
+        maze_text_dump(&C->maze ,token); 
+        return 1; 
+    }
+    else if(strncmp(cmd,"asciidump",sizeof("asciidump")-1)==0)
+    {
+        char* token;
+        token = strtok(cmd+sizeof("asciidump")-1,":i \n\0");
+        if (token == NULL )
+        {
+          fprintf(stderr,"Please specify filename $asciidump <filename>\n");
+          return -1;
+        }
+        maze_ascii_dump(&C->maze, token);
+        return 1;
+    }
     return process_RPC_message(C);
   }
   else
@@ -212,17 +236,16 @@ int docmd(Client *C, char* cmd)
 void* shell(void *arg)
 {
   Client *C = arg;
- client_map_init(C,"daGame.map"); 
+  client_map_init(C,"daGame.map"); 
   char *c;
   int rc;
   int menu=1;
 
-  while (1) {
+  while (1) 
+  {
     if ((c = prompt(menu))!=0) rc=docmd(C, c);
     if (rc == -2) break; //only terminate when client issues 'q'
-  
-  //If this variable was allocated in prompt(menu) please free memory
-  if(c!=0) free(c);
+    if (c!=0) free(c);
   }
   
   fprintf(stderr, "terminating\n");
@@ -241,7 +264,6 @@ void usage(char *pgm)
            " %s 12345 : starts client connecting to localhost:12345\n"
          " %s localhost 12345 : starts client connecting to locaalhost:12345\n",
      pgm, pgm, pgm);
- 
 }
 
 void globals_init(int argc, char argv[][STRLEN])
