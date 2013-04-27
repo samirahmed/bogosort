@@ -132,6 +132,30 @@ int docmd(Client *C, char* cmd)
   int rc = 1;                      // Set up return code var
 
   if(strncmp(cmd,"quit",sizeof("quit")-1)==0) return -2;
+  else if(strncmp(cmd,"textdump",sizeof("textdump")-1)==0)
+  {
+    char* token;
+    token = strtok(cmd+sizeof("textdump")-1,": \n\0");
+    if (token == NULL )
+    {
+      fprintf(stderr,"Please specify filename $textdump <filename>\n");
+      return -1;
+    }
+    maze_text_dump(&C->maze ,token); 
+    return 1; 
+  }
+  else if(strncmp(cmd,"asciidump",sizeof("asciidump")-1)==0)
+  {
+    char* token;
+    token = strtok(cmd+sizeof("asciidump")-1,": \n\0");
+    if (token == NULL )
+    {
+      fprintf(stderr,"Please specify filename $asciidump <filename>\n");
+      return -1;
+    }
+    maze_ascii_dump(&C->maze, token);
+    return 1;
+  }
 
   if(!connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
   {
@@ -198,30 +222,6 @@ int docmd(Client *C, char* cmd)
     {
         request_hello_init(&request,C);
         rc = doRPCCmd(&request);
-    }
-    else if(strncmp(cmd,"textdump",sizeof("textdump")-1)==0)
-    {
-        char* token;
-        token = strtok(cmd+sizeof("textdump")-1,":i \n\0");
-        if (token == NULL )
-        {
-          fprintf(stderr,"Please specify filename $textdump <filename>\n");
-          return -1;
-        }
-        maze_text_dump(&C->maze ,token); 
-        return 1; 
-    }
-    else if(strncmp(cmd,"asciidump",sizeof("asciidump")-1)==0)
-    {
-        char* token;
-        token = strtok(cmd+sizeof("asciidump")-1,":i \n\0");
-        if (token == NULL )
-        {
-          fprintf(stderr,"Please specify filename $asciidump <filename>\n");
-          return -1;
-        }
-        maze_ascii_dump(&C->maze, token);
-        return 1;
     }
     return process_RPC_message(C);
   }

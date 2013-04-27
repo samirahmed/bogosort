@@ -2,6 +2,9 @@
 require 'csv'
 require 'fileutils'
 require 'digest/md5'
+    
+SYMBOL_TICK="\xe2\x9c\x94"
+SYMBOL_CROSS="\xe2\x9c\x97"
 
 # monkey patch string for color
 class String
@@ -10,8 +13,12 @@ class String
     "\e[#{color_code}m#{self}\e[0m"
   end
 
+  def blue
+    colorize(34)
+  end
+
   def red
-    colorize(31)
+    colorize(91)
   end
 
   def green
@@ -136,10 +143,12 @@ def test(arguments)
   abort("Error! Can't find recipe ".red) unless File.exists?(recipe)
 
   # prepare log files
-  log_dir = File.join(FileUtils.pwd,'log/')
-  slog    = File.join(log_dir,File.basename(recipe,".*")+'-server.log');
-  clog    = File.join(log_dir,File.basename(recipe,".*")+'-client.log');
-  tlog    = File.join(log_dir,File.basename(recipe,".*")+'-test.log');
+  log_dir = File.join(FileUtils.pwd,"log/#{File.basename(recipe,".*")}")
+  FileUtils.rm_rf File.join(log_dir), :verbose=>true
+  FileUtils.mkdir_p log_dir,:verbose=>true
+  slog = File.join log_dir,'server.log'
+  clog = File.join log_dir,'client.log'
+  tlog = File.join log_dir,'test.log'
 
   begin
 
@@ -150,8 +159,9 @@ def test(arguments)
     # start a server
     if not client_only
       fd  =  File.open(slog,'w')
-      sread,sinput = IO.pipe
-      pids << Process.spawn(server, :err=>fd , :out=>fd, :in=>sread )
+      sread, swrite = IO.pipe
+      spid = Process.spawn(server, :err=>fd , :out=>fd, :in=>sread )
+      pids << spid
       fds  << fd
        
       puts "Launching Local Server pid=#{pids.first}"
@@ -161,12 +171,12 @@ def test(arguments)
       port_str = File.readlines("#{slog}")
                      .join("\n").scan(/RPC Port: \d{4,5}/).first;
       port = port_str.scan(/\d+/).first if port_str
-      raise "Error! Can't parse server log: #{port_str}".red unless port && port_str
+      raise "Error! Can't parse port: #{port_str}".red unless port && port_str
     end
    
     # read the port
     raise "Error! Can't find port".red unless port
-    puts "Server on #{ip}:#{port}"
+    puts "Server on #{ip.blue}:#{port.blue}"
     
     # read the recipe file
     instructions = CSV.readlines(recipe);
@@ -176,14 +186,21 @@ def test(arguments)
 
     # create clients
     ios = count.times.map{ IO.pipe }
+    
+    cpids,clients,io_pids = [],[],[]
     ios.each do |io|
       fd = File.open(clog,'w');
-      pids << Process.spawn("#{client}",:in=>io.first,:err=>fd,:out=>fd)
+      pid = Process.spawn("#{client}",:in=>io.first,:err=>[fd,"a"],:out=>[fd,"a"])
+      cpids << pid
+      pids << pid
       fds << fd
+      clients << io.last  
+      io_pids << [io.last,pid]
     end
-    puts "Clients #{pids[1..-1].inspect}"
-    clients = ios.map{|io| io.last}
     
+    puts "Clients #{cpids.inspect}"
+    #clients = ios.map{|io| io.last}
+
     # connect all clients 
     clients.each{|stdin| stdin.puts "connect #{ip}:#{port}"}
     
@@ -201,14 +218,51 @@ def test(arguments)
       end
     end
 
-    puts "Issuing Quit Commands" 
-    # connect all clients 
-    clients.each{|stdin| stdin.puts "quit"}
-    
-    sinput.puts "quit" if sinput
+    puts "---------------" 
+   
+    # terminate clients
+    thash,ahash = [],[]
+    (io_pids | [[swrite,spid]]).each do |stdin,pid| 
+      return unless stdin and pid
 
-    # Wait for children to finish
-    Process.waitall
+      # dump logs
+      textdump  = File.join log_dir,"#{pid}.text.dump"
+      asciidump = File.join log_dir,"#{pid}.ascii.dump"
+     
+      # if server, wait for all clients to die
+      if !client_only && spid == pid
+        textdump.gsub! /(#{pid})/, "server"  if spid && spid == pid
+        asciidump.gsub! /(#{pid})/, "server" if spid && spid == pid
+        cpids.each{|cpid| Process.waitpid(cpid) }
+      end
+
+      # issue dumps and quit
+      stdin.puts "textdump #{textdump}"
+      stdin.puts "asciidump #{asciidump}"
+      stdin.puts "quit"
+
+      thash << textdump
+      ahash << asciidump
+    end
+    
+
+    # hash
+    thash.map!{|fname| Digest::MD5.hexdigest(File.read(fname))}
+    ahash.map!{|fname| Digest::MD5.hexdigest(File.read(fname))}
+      
+    if thash.sort.uniq.size == 1
+      puts  "#{SYMBOL_TICK.green} Text-Dump Checksum Match"
+    else
+      puts "#{SYMBOL_CROSS.red} Text-Dump Checksum DO NOT Match "
+    end
+    
+    if ahash.sort.uniq.size ==  1
+      puts  "#{SYMBOL_TICK.green} ASCII-Dump Checksum Match"
+    else
+      puts "#{SYMBOL_CROSS.red} ASCII-Dump Checksum DO NOT Match "
+    end
+
+
   rescue 
     puts "Error! Suspending Execution and killing children"
     puts  $!, $@

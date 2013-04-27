@@ -274,10 +274,14 @@ int docmd(char* cmd)
 {
   int rc = 1;
 
-  if((strncmp(cmd,"textdump",sizeof("textdump")-1))==0) 
+  if ((strncmp(cmd,"quit",sizeof("quit")-1))==0)
+  {
+    return -1;
+  }
+  else if((strncmp(cmd,"textdump",sizeof("textdump")-1))==0) 
   { 
     char* token;
-    token = strtok(cmd+sizeof("textdump")-1,":i \n\0");
+    token = strtok(cmd+sizeof("textdump")-1,": \n\0");
     if (token == NULL )
     {
       fprintf(stderr,"Please specify filename $textdump <filename>\n");
@@ -289,7 +293,7 @@ int docmd(char* cmd)
   else if((strncmp(cmd,"asciidump",sizeof("asciidump")-1))==0) 
   { 
     char* token;
-    token = strtok(cmd+sizeof("asciidump")-1,":i \n\0");
+    token = strtok(cmd+sizeof("asciidump")-1,": \n\0");
     if (token == NULL )
     {
       fprintf(stderr,"Please specify filename $asciidump <filename>\n");
