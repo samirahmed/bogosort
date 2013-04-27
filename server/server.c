@@ -38,6 +38,23 @@
 
 static Maze maze; 		
 
+//////////////////
+// HELPER CODE  //
+//////////////////
+
+void slog(char*cmd,int*action,int fd,int* team,int* id,int rc)
+{
+  if (team && id && action)
+	fprintf(stdout,"%s\t[%1d]\tfd:%05d\tteam:%1d\tid:%03d\trc:%d\n",
+    cmd,*action,fd,*team,*id,rc);
+  else if (team && id)
+	fprintf(stdout,"%s\t\tfd:%05d\tteam:%1d\tid:%03d\trc:%d\n",cmd,fd,*team,*id,rc);
+  else
+	fprintf(stdout,"%s\t\tfd:%05d\tteam:_\tid:___\trc:%d\n",cmd,fd,rc);
+    
+  fflush(stdout);
+}
+
 ///////////////////
 //  EVENT CODE   //
 ///////////////////
@@ -93,13 +110,13 @@ int client_lost_handler( Proto_Session * s)
   rc =server_fd_to_id_and_team(&maze,fd,&team,&id);
   if (rc <0) 
   {
-    fprintf(stderr,"Client Lost but FD doesn't match existing player\n");
+    if (proto_debug() ) fprintf(stdout,"DIS\t\tfd:%05d\n",fd);
     return -1;
   }
 
+	slog("DRP",NULL,fd,&team,&id,0);
   Update update;  
   server_game_drop_player(&maze, team, id, &update);
-	fprintf(stdout, "Client Lost fd%d\n",(int)s->fd);
 
   if (proto_debug()) proto_session_dump(s);
   
@@ -115,8 +132,6 @@ int client_lost_handler( Proto_Session * s)
 
 int hello_handler( Proto_Session *s)
 {
-  if (proto_debug()) fprintf(stderr,"Hello received\n");
-
   int rc;
   Player*player;
   Update update;
@@ -135,18 +150,20 @@ int hello_handler( Proto_Session *s)
   /// EVENT UPDATE GOES HERE
   /*doUpdateClients(&update);*/
 
+	slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc);
+
   return reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
 }
 
 int goodbye_handler( Proto_Session *s)
 {
-  if(proto_debug()) fprintf(stderr,"Drop Request Received");
   client_lost_handler(s);
   return reply(s,PROTO_MT_REP_GOODBYE,0,(size_t)NULL);
 }
 
 int sync_handler( Proto_Session *s)
 {
+  
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr));
   int *walls, *rlist, *blist, blen, rlen, wlen, 
@@ -180,14 +197,13 @@ int sync_handler( Proto_Session *s)
   h.pstate.v2.raw = wlen;
   h.pstate.v3.raw = rlen+blen;
   put_hdr(s,&h);
- 
+	
+  slog("SYN",NULL,s->fd,NULL,NULL,0);
   return reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
 }
 
 int action_handler( Proto_Session *s)
 {
-  if (proto_debug()) fprintf(stderr,"Action Request Received from\n");
-
   Proto_Msg_Hdr h;
   int rc,id,team,action,fd;
   Pos current,next;
@@ -205,14 +221,23 @@ int action_handler( Proto_Session *s)
   proto_session_body_unmarshall_bytes(s, sizeof(Pos), sizeof(Pos), (char*)&next);
 
   rc = server_request_init(&maze,&request,fd,action,next.x,next.y);
-  if (rc<0) return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+  if (rc<0)
+  {
+    slog("ACT",&action,fd,&team,&id,rc);
+    return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+  }
   
   rc = server_game_action(&maze, &request);
-  if (rc<0) return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+  if (rc<0)
+  {
+    slog("ACT",&action,fd,&team,&id,rc);
+    return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+  }
 
   /// EVENT UPDATE GOES HERE
   /*doUpdateClients(&request.update);*/
-
+  
+  slog("ACT",&action,fd,&team,&id,rc);
   return reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
 }
 
@@ -296,7 +321,7 @@ int docmd(char* cmd)
 
 char* prompt(int menu) 
 {
-  if (menu) printf("%sSERVER_SHELL$ ", MenuString);
+  if (menu) fprintf(stdout,"%sSERVER_SHELL$\n", MenuString);
   fflush(stdout);
   
   // Pull in input from stdin
@@ -330,8 +355,8 @@ void * shell(void *arg)
   }
   
   if(c!=0)	free(c);
-  fprintf(stderr, "terminating\n");
   fflush(stdout);
+  fprintf(stderr, "terminating\n");
   return NULL;
 }
 
