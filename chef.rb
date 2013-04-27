@@ -222,7 +222,7 @@ def test(arguments)
    
     # terminate clients
     thash,ahash = [],[]
-    (io_pids | [[swrite,spid]]).each do |stdin,pid| 
+    io_pids.push([swrite,spid]).each do |stdin,pid| 
       return unless stdin and pid
 
       # dump logs
@@ -233,19 +233,18 @@ def test(arguments)
       if !client_only && spid == pid
         textdump.gsub! /(#{pid})/, "server"  if spid && spid == pid
         asciidump.gsub! /(#{pid})/, "server" if spid && spid == pid
-        cpids.each{|cpid| Process.waitpid(cpid) }
       end
 
       # issue dumps and quit
       stdin.puts "textdump #{textdump}"
       stdin.puts "asciidump #{asciidump}"
-      stdin.puts "quit"
 
       thash << textdump
       ahash << asciidump
     end
-    
 
+    io_pids.each{|stdin,pid| stdin.puts "quit" ; Process.waitpid(pid);}
+    
     # hash
     thash.map!{|fname| Digest::MD5.hexdigest(File.read(fname))}
     ahash.map!{|fname| Digest::MD5.hexdigest(File.read(fname))}
