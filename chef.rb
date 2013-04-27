@@ -12,7 +12,11 @@ class String
   def colorize(color_code)
     "\e[#{color_code}m#{self}\e[0m"
   end
-
+  
+  def alt_blue
+    colorize(94)
+  end
+  
   def blue
     colorize(34)
   end
@@ -144,14 +148,15 @@ def test(arguments)
 
   # prepare log files
   log_dir = File.join(FileUtils.pwd,"log/#{File.basename(recipe,".*")}")
-  FileUtils.rm_rf File.join(log_dir), :verbose=>true
-  FileUtils.mkdir_p log_dir,:verbose=>true
+  FileUtils.rm_rf File.join(log_dir), :verbose=>debug
+  FileUtils.mkdir_p log_dir,:verbose=>debug
   slog = File.join log_dir,'server.log'
   clog = File.join log_dir,'client.log'
   tlog = File.join log_dir,'test.log'
 
   begin
-
+    
+    puts "Test #{File.basename(recipe).upcase.yellow}"
     fds << File.open(tlog,'w')
     
     trap("INT"){ puts "Hold your horses".yellow; raise "SIGINT";}
@@ -164,19 +169,19 @@ def test(arguments)
       pids << spid
       fds  << fd
        
-      puts "Launching Local Server pid=#{pids.first}"
+      puts "Launching local server ... " if debug
       sleep 0.5
       
       puts "sh -c #{server}" if (debug) 
-      port_str = File.readlines("#{slog}")
-                     .join("\n").scan(/RPC Port: \d{4,5}/).first;
-      port = port_str.scan(/\d+/).first if port_str
-      raise "Error! Can't parse port: #{port_str}".red unless port && port_str
+      port = File.readlines("#{slog}")
+                 .join("\n").scan(/RPC Port: \d{4,5}/).first
+                 .scan(/\d+/).first
+
+      raise "Error! Can't parse port: #{port}".red unless port
     end
    
-    # read the port
     raise "Error! Can't find port".red unless port
-    puts "Server on #{ip.blue}:#{port.blue}"
+    puts "#{ip.alt_blue}:#{port.blue}"
     
     # read the recipe file
     instructions = CSV.readlines(recipe);
@@ -199,10 +204,11 @@ def test(arguments)
     end
     
     puts "Clients #{cpids.inspect}"
-    #clients = ios.map{|io| io.last}
 
     # connect all clients 
     clients.each{|stdin| stdin.puts "connect #{ip}:#{port}"}
+    
+    puts "-"*50 if verbose 
     
     # exec instructions
     instructions.each do |instruction|
@@ -218,24 +224,25 @@ def test(arguments)
       end
     end
 
-    puts "---------------" 
-   
+    puts "-"*50 if verbose
+  
+    puts "Dumping and hashing" if verbose 
     # terminate clients
     thash,ahash = [],[]
-    io_pids.push([swrite,spid]).each do |stdin,pid| 
-      return unless stdin and pid
-
+    io_pids.push([swrite,spid]) unless client_only
+    io_pids.each do |stdin,pid| 
+      
+      is_server = !client_only && spid == pid
+    
       # dump logs
       textdump  = File.join log_dir,"#{pid}.text.dump"
       asciidump = File.join log_dir,"#{pid}.ascii.dump"
      
-      # if server, wait for all clients to die
-      if !client_only && spid == pid
-        textdump.gsub! /(#{pid})/, "server"  if spid && spid == pid
-        asciidump.gsub! /(#{pid})/, "server" if spid && spid == pid
-      end
-
-      # issue dumps and quit
+      # if server, give it a seconds the continue
+      textdump.gsub! /(#{pid})/, "server"  if is_server
+      asciidump.gsub! /(#{pid})/, "server" if is_server
+      sleep 1 if is_server
+      
       stdin.puts "textdump #{textdump}"
       stdin.puts "asciidump #{asciidump}"
 
@@ -261,7 +268,6 @@ def test(arguments)
       puts "#{SYMBOL_CROSS.red} ASCII-Dump Checksum DO NOT Match "
     end
 
-
   rescue 
     puts "Error! Suspending Execution and killing children"
     puts  $!, $@
@@ -276,6 +282,7 @@ def test(arguments)
       end
     end
     fds.each{|file| file.close }
+    puts ""
   end
 end
 
