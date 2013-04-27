@@ -19,5 +19,13 @@ clean:
 	cd test; make clean;
 
 test:
+	ruby chef.rb ALL -v; cd test; make test;
+
+utest:
 	cd test; make test;
 
+itest:
+	ruby chef.rb ALL -v;
+
+clean-log:
+	cd log; rm -rf *;
