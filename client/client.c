@@ -50,6 +50,7 @@ static int update_handler(Proto_Session *s ){
     if(proto_debug())
     {
         fprintf(stderr,"Client position x:%d y:%d\n",c.my_player->client_position.x,c.my_player->client_position.y);
+        fprintf(stderr,"Client id:%d\n",c.my_player->id);
     }
     return hdr.version;
 }

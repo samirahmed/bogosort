@@ -48,8 +48,7 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
            maze->get[x][y].player = player_ptr; 
            if(proto_debug())
            {
-               
-               
+                fprintf(stderr,"Player Location Update x:%d y:%d\n",player_ptr->client_position.x,player_ptr->client_position.y);
            }
         }
     }
@@ -97,6 +96,12 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
                 cell->object = object_ptr;
             }
 
+
+            if(proto_debug())
+            {
+                fprintf(stderr,"Object Update x:%d y:%d\n",object_ptr->client_position.x,object_ptr->client_position.y);
+            }
+
         }
     }
     
@@ -124,6 +129,10 @@ void update_walls(int num_elements,int* game_compress, Maze* maze)
            x = pos.x;
            y = pos.y; 
            maze->get[x][y].type = CELL_FLOOR;
+            if(proto_debug())
+            {
+                fprintf(stderr,"Broken Wall Update x:%d y:%d\n",x,y);
+            }
         }
     }
     
