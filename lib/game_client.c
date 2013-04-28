@@ -46,6 +46,11 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
 
            //Set the player pointer at cell position x,y to my player
            maze->get[x][y].player = player_ptr; 
+           if(proto_debug())
+           {
+               
+               
+           }
         }
     }
 }
@@ -311,7 +316,7 @@ int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
     free(player_compress);
     free(object_compress);
 
-    if(proto_debug)
+    if(proto_debug())
     {
     }
 

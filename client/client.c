@@ -47,7 +47,7 @@ static int update_handler(Proto_Session *s ){
     update_objects(1,&hdr.pstate.v1.raw,maze);
     update_objects(1,&hdr.pstate.v2.raw,maze);
     update_objects(1,&hdr.pstate.v3.raw,maze);
-    if(proto_debug)
+    if(proto_debug())
     {
         fprintf(stderr,"Client position x:%d y:%d\n",c.my_player->client_position.x,c.my_player->client_position.y);
     }
