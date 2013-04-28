@@ -39,6 +39,7 @@
 
 static Maze maze; 		
 static char timestr[9];
+static int  teleport;
 //////////////////
 // HELPER CODE  //
 //////////////////
@@ -146,7 +147,7 @@ int client_lost_handler( Proto_Session * s)
   if (proto_debug()) proto_session_dump(s);
   
   /// EVENT UPDATE GOES HERE
-  /*doUpdateClients(&update);*/
+  doUpdateClients(&update);
 
   return -1;
 }
@@ -173,7 +174,7 @@ int hello_handler( Proto_Session *s)
   put_hdr(s,&h);
 
   /// EVENT UPDATE GOES HERE
-  /*doUpdateClients(&update);*/
+  doUpdateClients(&update);
 
 	slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc);
 
@@ -246,6 +247,8 @@ int action_handler( Proto_Session *s)
   proto_session_body_unmarshall_bytes(s, sizeof(Pos), sizeof(Pos), (char*)&next);
 
   rc = server_request_init(&maze,&request,fd,action,next.x,next.y);
+  request.test_mode = teleport; // allow server to enable teleport
+
   if (rc<0)
   {
     slog("ACT",&action,fd,&team,&id,rc);
@@ -260,7 +263,7 @@ int action_handler( Proto_Session *s)
   }
 
   /// EVENT UPDATE GOES HERE
-  /*doUpdateClients(&request.update);*/
+  doUpdateClients(&request.update);
   
   slog("ACT",&action,fd,&team,&id,rc);
   return reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
@@ -268,6 +271,7 @@ int action_handler( Proto_Session *s)
 
 int init_game(void){
 	int rc;
+  teleport = 0;
   rc = maze_build_from_file(&maze,"./daGame.map");
   if (rc <0) fprintf(stderr, "ERROR: Failed to build map\n");
   
@@ -302,6 +306,17 @@ int docmd(char* cmd)
   if ((strncmp(cmd,"quit",sizeof("quit")-1))==0)
   {
     return -1;
+  }
+  else if ((strncmp(cmd,"teleport",sizeof("quit")-1))==0)
+  {
+    teleport = !teleport;
+    if (teleport) 
+      fprintf(stdout,"Teleportation " COLOR_BLUE "ENABLED" COLOR_END "\n");
+    else
+      fprintf(stdout,"Teleportation " COLOR_RED "DISABLED" COLOR_END "\n");
+
+    fflush(stdout);
+    return 0;
   }
   else if((strncmp(cmd,"textdump",sizeof("textdump")-1))==0) 
   { 
