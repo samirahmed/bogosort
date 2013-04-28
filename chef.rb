@@ -39,10 +39,11 @@ class String
 end
 
 ## Logging helper
-def log(id,cmdstr,verbose,fd)
-  time = Time.now.to_s
-  puts "#{id}".pink+"\t| #{time}"+"\t| #{cmdstr}".yellow if (verbose)
-  fd.write("#{id}\t| #{time}\t| #{cmdstr}\n")
+def log(id,delay,cmdstr,verbose,fd)
+  time = Time.now.strftime("%X:%L")
+  dstr = (delay.to_f*1000).to_i.to_s.blue
+  puts "#{id}".pink+"\t| #{dstr} \t| #{time}"+"\t| #{cmdstr}".yellow if (verbose)
+  fd.puts "#{id}".pink+"\t| #{dstr} \t| #{time}"+"\t| #{cmdstr}".yellow 
 end
 
 ## Command parser
@@ -231,7 +232,7 @@ def test(arguments)
       if ( id && delay && cmd)
         sleep delay.to_f
         cmdstr = mkcmd(cmd,args)
-        log(id,cmdstr,verbose,fds.first)
+        log(id,delay,cmdstr,verbose,fds.first)
         clients[id.to_i].puts cmdstr
         raise "Bad recipe" unless cmdstr
       end
@@ -241,7 +242,7 @@ def test(arguments)
   
     puts "Dumping and hashing" if verbose 
     # wait 50 ms per client 
-    sleep count*0.05  
+    sleep 1.0+(count.to_f*0.05)
 
     # Dump and Hash after a brief pause
     thash,ahash = [],[]
