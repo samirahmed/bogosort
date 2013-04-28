@@ -310,6 +310,11 @@ int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
     free(broken_walls_compress);
     free(player_compress);
     free(object_compress);
+
+    if(proto_debug)
+    {
+    }
+
     return hdr->gstate.v0.raw;    
 }
 

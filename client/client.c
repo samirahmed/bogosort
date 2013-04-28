@@ -47,6 +47,10 @@ static int update_handler(Proto_Session *s ){
     update_objects(1,&hdr.pstate.v1.raw,maze);
     update_objects(1,&hdr.pstate.v2.raw,maze);
     update_objects(1,&hdr.pstate.v3.raw,maze);
+    if(proto_debug)
+    {
+        fprintf(stderr,"Client position x:%d y:%d\n",c.my_player->client_position.x,c.my_player->client_position.y);
+    }
     return hdr.version;
 }
 static int update_event_handler(Proto_Session *s){return 0;}
@@ -162,6 +166,14 @@ int docmd(Client *C, char* cmd)
         /*pch = strtok(cmd+5," \n\0");*/
         /*client_map_init(C,pch);*/
     /*}*/
+  else if(strncmp(cmd,"debug on",sizeof("debug on")-1)==0)
+  {
+    proto_debug_on();    
+  }
+  else if(strncmp(cmd,"debug off",sizeof("debug off")-1)==0)
+  {
+    proto_debug_off();    
+  }
   else if( C->connected )
   {
     Request request;
