@@ -211,6 +211,38 @@ int docmd(Client *C, char* cmd)
 
         disconnect(C);
     }
+    else if(strncmp(cmd,"right",sizeof("right")-1)==0)
+    {
+        Pos next;
+        next.x = C->my_player->client_position.x+1;
+        next.y = C->my_player->client_position.y;
+        request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        rc = doRPCCmd(&request);
+    }
+    else if(strncmp(cmd,"left",sizeof("left")-1)==0)
+    {
+        Pos next;
+        next.x = C->my_player->client_position.x-1;
+        next.y = C->my_player->client_position.y;
+        request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        rc = doRPCCmd(&request);
+    }
+    else if(strncmp(cmd,"up",sizeof("up")-1)==0)
+    {
+        Pos next;
+        next.x = C->my_player->client_position.x;
+        next.y = C->my_player->client_position.y-1;
+        request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        rc = doRPCCmd(&request);
+    }
+    else if(strncmp(cmd,"down",sizeof("down")-1)==0)
+    {
+        Pos next;
+        next.x = C->my_player->client_position.x;
+        next.y = C->my_player->client_position.y+1;
+        request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        rc = doRPCCmd(&request);
+    }
     else if(strncmp(cmd,"move",sizeof("move")-1)==0)
     {
         char* pch;
