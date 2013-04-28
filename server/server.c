@@ -89,7 +89,8 @@ int doUpdateClients(Update *update)
 {
   Proto_Session *s;
   Proto_Msg_Hdr hdr;
-  
+  bzero(&hdr, sizeof(Proto_Msg_Hdr));
+
   // Copy players/broken walls into update
   hdr.sver.raw = update->timestamp;
   hdr.gstate.v0.raw = update->game_state_update;
