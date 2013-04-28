@@ -69,6 +69,7 @@ char* prompt(int menu)
   char *my_string = (char*)malloc(1);
   bytes_read = getline(&my_string, &nbytes, stdin);
 
+  if(bytes_read==-1)return NULL;
   if(bytes_read>0)
     return my_string;
   else
@@ -243,9 +244,14 @@ void* shell(void *arg)
 
   while (1) 
   {
-    if ((c = prompt(menu))!=0) rc=docmd(C, c);
+    c = prompt(menu);
+    if (c==NULL) break;
+    if (c!=0) 
+    { 
+      rc=docmd(C, c);
+      free(c);
+    }
     if (rc == -2) break; //only terminate when client issues 'q'
-    if (c!=0) free(c);
   }
   
   fprintf(stderr, "terminating\n");
