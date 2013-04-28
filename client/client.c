@@ -34,6 +34,7 @@
 //Global Variables
 Globals globals;         //Host string and port
 static char MenuString[] = "\n?> ";
+static Client c;
 
 static int update_handler(Proto_Session *s ){return 0;}
 static int update_event_handler(Proto_Session *s){return 0;}
@@ -79,7 +80,7 @@ char* prompt(int menu)
 
 void disconnect (Client *C)
 {
-  connected = 0;
+  C->connected = 0;
   Proto_Session *event = proto_client_event_session(C->ph);
   Proto_Session *rpc = proto_client_rpc_session(C->ph);
   close(event->fd);
@@ -113,11 +114,11 @@ int doConnect(Client *C, char* cmd)
   globals_init(2,address);
 
   // ok startup our connection to the server
-  connected = 1;      //Change connected state to true
+  C->connected = 1;      //Change connected state to true
   if (startConnection(C, globals.host, globals.port, update_event_handler)<0) 
   {
     fprintf(stderr, "ERROR: Not able to connect to %s:%d\n",globals.host,(int)globals.port);
-    connected =0;
+    C->connected =0;
     return -2;
   }
 
@@ -133,14 +134,14 @@ int docmd(Client *C, char* cmd)
 
   if(strncmp(cmd,"quit",sizeof("quit")-1)==0) return -2;
 
-  if(!connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
+  if(!C->connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
   {
     rc = doConnect(C, cmd);
     return process_RPC_message(C);
   }
   else if(strncmp(cmd,"where",sizeof("where")-1)==0)
   {
-    if (connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
+    if (C->connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
     else printf("Not connected\n");
   }
   /*else if(strncmp(cmd,"load",sizeof("load")-1)==0)*/
@@ -149,7 +150,7 @@ int docmd(Client *C, char* cmd)
         /*pch = strtok(cmd+5," \n\0");*/
         /*client_map_init(C,pch);*/
     /*}*/
-  else if( connected )
+  else if( C->connected )
   {
     Request request;
 
@@ -267,7 +268,6 @@ void globals_init(int argc, char argv[][STRLEN])
 
 int main(int argc, char **argv)
 {
-  Client c;
   if (client_init(&c) < 0) {
     fprintf(stderr, "ERROR: clientInit failed\n");
     return -1;

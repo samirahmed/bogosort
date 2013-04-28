@@ -29,7 +29,6 @@
 #include <pthread.h>
 #define STRLEN 81
 
-static int connected;
 
 typedef struct ClientBlockingStruct{
     Maze *maze;    
@@ -42,6 +41,7 @@ typedef struct ClientState  {
   Maze maze;
   Blocking_Helper bh;
   Player* my_player;
+  int connected;
 } Client;
 
 typedef struct RequestHandler{
