@@ -240,7 +240,8 @@ def test(arguments)
     puts "-"*50 if verbose
   
     puts "Dumping and hashing" if verbose 
-    sleep 1 
+    # wait 50 ms per client 
+    sleep count*0.05  
 
     # Dump and Hash after a brief pause
     thash,ahash = [],[]
