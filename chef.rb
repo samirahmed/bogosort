@@ -80,6 +80,24 @@ def mkcmd(cmd,arg)
   end
 end
 
+def hash_files( thash, ahash ,client_only)
+    
+    thash.map!{|fname| Digest::MD5.hexdigest(File.read(fname))}
+    ahash.map!{|fname| Digest::MD5.hexdigest(File.read(fname))}
+      
+    if thash.sort.uniq.size == 1
+      puts  "#{SYMBOL_TICK.green} Text-Dump Checksum Match"
+    else
+      puts "#{SYMBOL_CROSS.red} Text-Dump Checksum DO NOT Match "
+    end
+    
+    if ahash.sort.uniq.size ==  1
+      puts  "#{SYMBOL_TICK.green} ASCII-Dump Checksum Match"
+    else
+      puts "#{SYMBOL_CROSS.red} ASCII-Dump Checksum DO NOT Match "
+    end
+end
+
 def console()
   puts "Welcome to the chef console"
   puts "How many clients? ".yellow
@@ -128,13 +146,13 @@ def test(arguments)
   ip = 'localhost'
   port, recipe = nil,nil
   pids,fds = [],[]
-  debug,client_only,verbose, checksum = false,false,false,false
+  kill, debug,client_only,verbose, pause= false,false,false,false
 
   arguments.each do |arg|
     if  arg == "--verbose" || arg == "-v"
       verbose = true
-    elsif arg == "--checksum" || arg == "-x"
-      checksum = true
+    elsif arg == "--pause" || arg == "-p"
+      pause = true
     elsif arg == "--client" || arg == "-c"
       client_only = true 
     elsif (arg == "--debug" || arg == "-d")
@@ -163,10 +181,13 @@ def test(arguments)
 
   begin
     
+    trap("INT") do 
+      kill = true
+      raise "SAFE SHUTDOWN TRIGGERED".yellow
+    end
+    
     puts "Test #{File.basename(recipe).upcase.yellow}"
     fds << File.open(tlog,'w')
-    
-    trap("INT"){ puts "Hold your horses".yellow; raise "SIGINT";}
 
     # start a server
     if not client_only
@@ -240,7 +261,7 @@ def test(arguments)
 
     puts "-"*50 if verbose
   
-    puts "Dumping and hashing" if verbose 
+    puts "DUMP".blue if verbose 
     # wait 50 ms per client 
     sleep 1.0+(count.to_f*0.05)
 
@@ -268,23 +289,17 @@ def test(arguments)
       ahash << asciidump
     end
 
+    if pause
+       puts "PAUSING".blue + ": Recipe completed"
+       puts "(hit enter to terminate clients)"
+       $stdin.gets
+    end
+
+    # quit everything 
     io_pids.each{|stdin,pid| stdin.puts "quit" ; Process.waitpid(pid);}
     
-    # hash
-    thash.map!{|fname| Digest::MD5.hexdigest(File.read(fname))}
-    ahash.map!{|fname| Digest::MD5.hexdigest(File.read(fname))}
-      
-    if thash.sort.uniq.size == 1
-      puts  "#{SYMBOL_TICK.green} Text-Dump Checksum Match"
-    else
-      puts "#{SYMBOL_CROSS.red} Text-Dump Checksum DO NOT Match "
-    end
+    hash_files(thash,ahash,client_only);
     
-    if ahash.sort.uniq.size ==  1
-      puts  "#{SYMBOL_TICK.green} ASCII-Dump Checksum Match"
-    else
-      puts "#{SYMBOL_CROSS.red} ASCII-Dump Checksum DO NOT Match "
-    end
 
   rescue 
     puts "Error! Suspending Execution and killing children"
@@ -301,6 +316,7 @@ def test(arguments)
     end
     fds.each{|file| file.close }
     puts ""
+    abort() if kill
   end
 end
 
