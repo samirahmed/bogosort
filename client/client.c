@@ -36,7 +36,19 @@ Globals globals;         //Host string and port
 static char MenuString[] = "\n?> ";
 static Client c;
 
-static int update_handler(Proto_Session *s ){return 0;}
+static int update_handler(Proto_Session *s ){
+    Proto_Msg_Hdr hdr;
+    proto_session_hdr_unmarshall(s,&hdr);
+    Maze* maze = &c.maze;
+    update_walls(1,&hdr.gstate.v0.raw,maze);
+    update_players(1,&hdr.gstate.v1.raw,maze);
+    update_players(1,&hdr.gstate.v2.raw,maze);
+    update_objects(1,&hdr.pstate.v0.raw,maze);
+    update_objects(1,&hdr.pstate.v1.raw,maze);
+    update_objects(1,&hdr.pstate.v2.raw,maze);
+    update_objects(1,&hdr.pstate.v3.raw,maze);
+    return hdr.version;
+}
 static int update_event_handler(Proto_Session *s){return 0;}
 
 int startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
@@ -268,7 +280,7 @@ void globals_init(int argc, char argv[][STRLEN])
 
 int main(int argc, char **argv)
 {
-  if (client_init(&c) < 0) {
+  if (client_init(&c,update_handler) < 0) {
     fprintf(stderr, "ERROR: clientInit failed\n");
     return -1;
   }    

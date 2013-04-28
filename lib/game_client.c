@@ -351,10 +351,6 @@ int process_RPC_message(Client *C)
 }
 
 
-static int update_handler(Proto_Session *s )
-{
-    return 0;
-}
 
 /*  client_init
     Initialize the client data structure
@@ -362,7 +358,7 @@ static int update_handler(Proto_Session *s )
     parameter: C            pointer client data structure
     return:    int          1 or -1 for success or failure respectively
 */
-int client_init(Client *C)
+int client_init(Client *C,Proto_MT_Handler update_handler)
 {
   // Zero global scope
   bzero(C, sizeof(Client));

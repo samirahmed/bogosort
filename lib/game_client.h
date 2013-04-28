@@ -63,7 +63,7 @@ typedef struct GlobalsInfo {
 
 //Initilization Functions
 extern void globals_init(int argc, char argv[][STRLEN]);//Had to Change function header to make this work
-extern int client_init(Client *C);
+extern int client_init(Client *C,Proto_MT_Handler update_handler);
 extern int client_map_init(Client *C,char* filename);
 
 //RPC calls based on request information
