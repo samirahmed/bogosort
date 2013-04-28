@@ -27,6 +27,7 @@
 #include <poll.h>
 #include <pthread.h>
 #include <string.h>
+#include <time.h>
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/net.h"
@@ -37,20 +38,44 @@
 #include "../lib/protocol_utils.h"
 
 static Maze maze; 		
-
+static char timestr[9];
 //////////////////
 // HELPER CODE  //
 //////////////////
 
 void slog(char*cmd,int*action,int fd,int* team,int* id,int rc)
 {
-  if (team && id && action)
-	fprintf(stdout,"%s\t[%1d]\tfd:%05d\tteam:%1d\tid:%03d\trc:%d\n",
-    cmd,*action,fd,*team,*id,rc);
-  else if (team && id)
-	fprintf(stdout,"%s\t\tfd:%05d\tteam:%1d\tid:%03d\trc:%d\n",cmd,fd,*team,*id,rc);
+  time_t raw;
+  struct tm * tt;
+  char rcstr[25];
+  
+  time(&raw); 
+  tt = localtime(&raw);
+  sprintf(timestr,"%.2d:%.2d:%.2d",tt->tm_hour,tt->tm_min,tt->tm_sec);
+  
+  if (rc >= 0)
+    sprintf(rcstr,COLOR_OKGREEN "%d" COLOR_END , rc); 
   else
-	fprintf(stdout,"%s\t\tfd:%05d\tteam:_\tid:___\trc:%d\n",cmd,fd,rc);
+    sprintf(rcstr,COLOR_FAIL "%d" COLOR_END , rc);
+
+  if (team && id && action )
+	fprintf(stdout,
+    "%s\t"COLOR_YELLOW"%s"COLOR_END
+    "\t[%1d]\tfd:%05d\tteam:"
+    COLOR_BLUE"%1d"COLOR_END"\tid:"
+    COLOR_BLUE"%03d"COLOR_END"\trc:%s\n",
+   timestr,cmd,*action,fd,*team,*id,rcstr);
+  else if (team && id)
+	fprintf(stdout,
+    "%s\t"COLOR_YELLOW"%s"COLOR_END
+    "\t\tfd:%05d\tteam:"
+    COLOR_BLUE"%1d"COLOR_END"\tid:"
+    COLOR_BLUE"%03d"COLOR_END"\trc:%s\n",
+    timestr,cmd,fd,*team,*id,rcstr);
+  else
+	fprintf(stdout,
+    "%s\t"COLOR_YELLOW"%s"COLOR_END"\t\tfd:%05d\tteam:_\tid:___\trc:%s\n",
+    timestr,cmd,fd,rcstr);
     
   fflush(stdout);
 }

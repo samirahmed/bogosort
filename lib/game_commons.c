@@ -456,12 +456,14 @@ extern void maze_object_dump(Object*object,FILE*fd,int indent)
 {
   fprintf(fd,"\n\t");
   if( indent>1 ) fprintf(fd,"\t");
-  fprintf(fd,"[object team:%1d type:%1d]",object->team,object->type);
+  fprintf(fd,"[" COLOR_OKPINK "object" COLOR_END " team:%1d type:%1d]",
+          object->team,object->type);
 }
 
 extern void maze_player_dump(Player*player,FILE*fd)
 {
-  fprintf(fd,"\n\t[player team:%1d id:%03d]",player->team,player->id);
+  fprintf(fd,"\n\t["COLOR_OKGREEN"player "COLOR_END"team:%1d id:%03d]",
+          player->team,player->id);
   if (player->shovel) maze_object_dump(player->shovel,fd,2);
   if (player->flag) maze_object_dump(player->flag,fd,2);
 }
