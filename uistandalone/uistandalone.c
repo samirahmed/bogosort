@@ -32,10 +32,6 @@
 
 /* A lot of this code comes from http://www.libsdl.org/cgi/docwiki.cgi */
 
-/* Forward declaration of some dummy player code */
-static void dummyPlayer_init(UI *ui);
-static void dummyPlayer_paint(UI *ui, SDL_Rect *t);
-
 
 #define SPRITE_H 3
 #define SPRITE_W 3
