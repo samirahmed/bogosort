@@ -54,12 +54,13 @@ def mkcmd(cmd,arg)
     when "BYE" then "disconnect"
     when "CDP" then "clientdump"
     when "SDP" then "serverdump"
+    when "TEL" then "move #{arg.strip}"
     when "MOV" then
       case arg.strip
-        when "0" then "move up"
-        when "1" then "move right"
-        when "2" then "move down"
-        when "3" then "move left"
+        when "0" then "up"
+        when "1" then "right"
+        when "2" then "down"
+        when "3" then "left"
         else nil
       end
     when "DRP" then
@@ -84,10 +85,13 @@ def console()
   clients = $stdin.gets.strip.to_i
   puts "How many moves per client?".yellow
   moves =  $stdin.gets.strip.to_i
-  puts "min delay between requests?".yellow
+  puts "Min delay between requests?".yellow
   mindelay = $stdin.gets.strip.to_i
-  puts "max delay between requests?".yellow
+  puts "Max delay between requests?".yellow
   maxdelay = $stdin.gets.strip.to_i
+  puts "Issue goodbye for clients? [y/n]".yellow + 
+       "\n(Server will looses Player Position info)"
+  goodbyes = $stdin.gets.strip.downcase[0] == "y"
   puts "What do you want to call this recipe?".yellow
   name = $stdin.gets.strip
   
@@ -106,7 +110,7 @@ def console()
   fd.puts "#{clients}";
   cids.shuffle.each{|id| fd.puts "#{id},\t#{delay.call()},\tHEL"}
   (cids*moves).shuffle.each{|id| fd.puts "#{id},\t#{delay.call()},\tMOV,\t#{rand(4)}"}
-  cids.shuffle.each{|id| fd.puts "#{id},\t#{delay.call()},\tBYE"}
+  cids.shuffle.each{|id| fd.puts "#{id},\t#{delay.call()},\tBYE"} if goodbyes
   fd.close
   puts "Recipe Saved to test/#{name}.recipe".green
 end
@@ -136,8 +140,10 @@ def test(arguments)
       debug = true 
     elsif (iparg = arg.scan(/(?:[0-9]{1,3}\.){3}[0-9]{1,3}/).first)
       ip = iparg
+      client_only = true 
     elsif (portarg = arg.scan(/\d{4,5}/).first)
       port = portarg
+      client_only = true 
     else
       recipe = arg
     end 
@@ -184,9 +190,16 @@ def test(arguments)
     puts "#{ip.alt_blue}:#{port.blue}"
     
     # read the recipe file
-    instructions = CSV.readlines(recipe);
-    count = instructions.shift.first.to_i;
-    
+    instructions = CSV.readlines(recipe)
+    params = instructions.shift.map!(&:strip)
+    count = params.first.to_i;
+    teleport = true if params.include?("teleport")
+   
+    if teleport && swrite
+      swrite.puts "teleport"
+      sleep 0.1
+    end
+
     verbose = true if instructions.length < 10
 
     # create clients
@@ -227,7 +240,9 @@ def test(arguments)
     puts "-"*50 if verbose
   
     puts "Dumping and hashing" if verbose 
-    # terminate clients
+    sleep 1 
+
+    # Dump and Hash after a brief pause
     thash,ahash = [],[]
     io_pids.push([swrite,spid]) unless client_only
     io_pids.each do |stdin,pid| 
@@ -239,12 +254,13 @@ def test(arguments)
       asciidump = File.join log_dir,"#{pid}.ascii.dump"
      
       # if server, give it a seconds the continue
-      textdump.gsub! /(#{pid})/, "server"  if is_server
-      asciidump.gsub! /(#{pid})/, "server" if is_server
+      textdump.gsub!( /(#{pid})/, "server")  if is_server
+      asciidump.gsub!(/(#{pid})/, "server") if is_server
       sleep 1 if is_server
       
       stdin.puts "textdump #{textdump}"
       stdin.puts "asciidump #{asciidump}"
+      sleep 0.2 if is_server
 
       thash << textdump
       ahash << asciidump
