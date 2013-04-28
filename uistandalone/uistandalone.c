@@ -460,10 +460,7 @@ if(cur_cell.cell_state == CELLSTATE_EMPTY){
 			}
 		}
 	}
-
-
-  dummyPlayer_paint(ui, &t);
-
+ 
   SDL_UpdateRect(ui->screen, 0, 0, ui->screen->w, ui->screen->h);
  
  return 1;
@@ -630,8 +627,7 @@ ui_main_loop(UI *ui, uval h, uval w)
 
   ui_init_sdl(ui, h, w, 32);
 
- //dummyPlayer_init(ui);
-    ui_paintmap(ui);
+  ui_paintmap(ui);
    
   
   while (1) {
@@ -656,44 +652,6 @@ ui_init(UI **ui)
 }
 
 
-// Kludgy dummy player for testing purposes
-struct DummyPlayerDesc {
-  UI_Player *uip;
-  int id;
-  int x, y;
-  int team;
-  int state;
-} dummyPlayer;
-
-/*static void 
-dummyPlayer_init(UI *ui) 
-{
-  dummyPlayer.id = 0;
-  dummyPlayer.x = 5; dummyPlayer.y = 5; dummyPlayer.team = 0; dummyPlayer.state = 0;
-  ui_uip_init(ui, &dummyPlayer.uip, dummyPlayer.id, dummyPlayer.team); 
-}*/
-
-static void 
-dummyPlayer_paint(UI *ui, SDL_Rect *t)
-{
-  //t -> y = 1;
-  //t -> x = 1;
-  //printf("y is %d\n", t->y);
-  //printf("x is %d\n", t->x); 
-  //printf("dummyplayer y is %d\n", dummyPlayer.y);
-  //printf("dummyplayer x is %d\n", dummyPlayer.x);
-  
-
-  ui_putnpixel(ui->screen, dummyPlayer.y, dummyPlayer.x, ui-> jackhammer_c);
-  //t->y = dummyPlayer.y * t->h; 
-  //t->x = dummyPlayer.x * t->w;
-  SDL_UpdateRect(ui->screen, 0, 0, ui->screen->w, ui->screen->h);
- 
-  //dummyPlayer.uip->clip.x = dummyPlayer.uip->base_clip_x +
-   // pxSpriteOffSet(dummyPlayer.team, dummyPlayer.state);
-  //SDL_BlitSurface(dummyPlayer.uip->img, &(dummyPlayer.uip->clip), ui->screen, t);
-}
-
 int
 ui_dummy_left(UI *ui)
 { 
@@ -715,7 +673,7 @@ ui_dummy_left(UI *ui)
    printf("x is %d, new_x is %d\n", x, new_x);
    printf("cell state is %d\n", maze.get[new_x][y].cell_state);
    maze.get[new_x][y].cell_state = CELLSTATE_OCCUPIED;
-}   
+	}   
 return 2;
 }
 
@@ -738,12 +696,8 @@ ui_dummy_right(UI *ui)
    printf("x is %d, new_x is %d\n", x, new_x);
    printf("cell state is %d\n", maze.get[new_x][y].cell_state);
    maze.get[new_x][y].cell_state = CELLSTATE_OCCUPIED;
-}   
+	}   
 
-
-//send pair of ints to server along with move command
- //if we receive a move player event update then update the dummy player location
- 
  return 2;
 
 }
@@ -768,15 +722,11 @@ ui_dummy_down(UI *ui)
    printf("y is %d, new_y is %d\n", y, new_y);
    printf("cell state is %d\n", maze.get[x][new_y].cell_state);
    maze.get[x][new_y].cell_state = CELLSTATE_OCCUPIED;
-}   
+	}   
 
  return 2;
 
 }
-
-
-
-
 
 
 int
@@ -809,21 +759,21 @@ ui_dummy_up(UI *ui)
 int
 ui_dummy_normal(UI *ui)
 {
-  dummyPlayer.state = 0;
+  //state = 0;
   return 2;
 }
 
 int
 ui_dummy_pickup_red(UI *ui)
 {
-  dummyPlayer.state = 1;
+ // state = 1;
   return 2;
 }
 
 int
 ui_dummy_pickup_green(UI *ui)
 {
-  dummyPlayer.state = 2;
+  // state = 2;
   return 2;
 }
 
@@ -831,25 +781,8 @@ ui_dummy_pickup_green(UI *ui)
 int
 ui_dummy_jail(UI *ui)
 {
-  dummyPlayer.state = 3;
+  // state = 3;
   return 2;
 }
 
-int
-ui_dummy_toggle_team(UI *ui)
-{
-  if (dummyPlayer.uip) free(dummyPlayer.uip);
-  dummyPlayer.team = (dummyPlayer.team) ? 0 : 1;
-  ui_uip_init(ui, &dummyPlayer.uip, dummyPlayer.id, dummyPlayer.team);
-  return 2;
-}
 
-int
-ui_dummy_inc_id(UI *ui)
-{
-  if (dummyPlayer.uip) free(dummyPlayer.uip);
-  dummyPlayer.id++;
-  if (dummyPlayer.id>=100) dummyPlayer.id = 0;
-  ui_uip_init(ui, &dummyPlayer.uip, dummyPlayer.id, dummyPlayer.team);
-  return 2;
-}

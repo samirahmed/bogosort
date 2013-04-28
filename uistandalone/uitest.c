@@ -142,11 +142,11 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e)
     }
     if (sym == SDLK_t && mod == KMOD_NONE)  {   
       fprintf(stderr, "%s: dummy toggle team\n", __func__);
-      return ui_dummy_toggle_team(ui);
+      //return ui_dummy_toggle_team(ui);
     }
     if (sym == SDLK_i && mod == KMOD_NONE)  {   
       fprintf(stderr, "%s: dummy inc player id \n", __func__);
-      return ui_dummy_inc_id(ui);
+      //return ui_dummy_inc_id(ui);
     }
     if (sym == SDLK_q) return -1;
     if (sym == SDLK_z && mod == KMOD_NONE) return ui_zoom(ui, 1);
