@@ -27,6 +27,7 @@
 #include <poll.h>
 #include <pthread.h>
 #include <string.h>
+#include <time.h>
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/net.h"
@@ -37,6 +38,47 @@
 #include "../lib/protocol_utils.h"
 
 static Maze maze; 		
+static char timestr[9];
+//////////////////
+// HELPER CODE  //
+//////////////////
+
+void slog(char*cmd,int*action,int fd,int* team,int* id,int rc)
+{
+  time_t raw;
+  struct tm * tt;
+  char rcstr[25];
+  
+  time(&raw); 
+  tt = localtime(&raw);
+  sprintf(timestr,"%.2d:%.2d:%.2d",tt->tm_hour,tt->tm_min,tt->tm_sec);
+  
+  if (rc >= 0)
+    sprintf(rcstr,COLOR_OKGREEN "%d" COLOR_END , rc); 
+  else
+    sprintf(rcstr,COLOR_FAIL "%d" COLOR_END , rc);
+
+  if (team && id && action )
+	fprintf(stdout,
+    "%s\t"COLOR_YELLOW"%s"COLOR_END
+    "\t[%1d]\tfd:%05d\tteam:"
+    COLOR_BLUE"%1d"COLOR_END"\tid:"
+    COLOR_BLUE"%03d"COLOR_END"\trc:%s\n",
+   timestr,cmd,*action,fd,*team,*id,rcstr);
+  else if (team && id)
+	fprintf(stdout,
+    "%s\t"COLOR_YELLOW"%s"COLOR_END
+    "\t\tfd:%05d\tteam:"
+    COLOR_BLUE"%1d"COLOR_END"\tid:"
+    COLOR_BLUE"%03d"COLOR_END"\trc:%s\n",
+    timestr,cmd,fd,*team,*id,rcstr);
+  else
+	fprintf(stdout,
+    "%s\t"COLOR_YELLOW"%s"COLOR_END"\t\tfd:%05d\tteam:_\tid:___\trc:%s\n",
+    timestr,cmd,fd,rcstr);
+    
+  fflush(stdout);
+}
 
 ///////////////////
 //  EVENT CODE   //
@@ -93,13 +135,13 @@ int client_lost_handler( Proto_Session * s)
   rc =server_fd_to_id_and_team(&maze,fd,&team,&id);
   if (rc <0) 
   {
-    fprintf(stderr,"Client Lost but FD doesn't match existing player\n");
+    if (proto_debug() ) fprintf(stdout,"DIS\t\tfd:%05d\n",fd);
     return -1;
   }
 
+	slog("DRP",NULL,fd,&team,&id,0);
   Update update;  
   server_game_drop_player(&maze, team, id, &update);
-	fprintf(stdout, "Client Lost fd%d\n",(int)s->fd);
 
   if (proto_debug()) proto_session_dump(s);
   
@@ -115,8 +157,6 @@ int client_lost_handler( Proto_Session * s)
 
 int hello_handler( Proto_Session *s)
 {
-  if (proto_debug()) fprintf(stderr,"Hello received\n");
-
   int rc;
   Player*player;
   Update update;
@@ -135,18 +175,20 @@ int hello_handler( Proto_Session *s)
   /// EVENT UPDATE GOES HERE
   /*doUpdateClients(&update);*/
 
+	slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc);
+
   return reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
 }
 
 int goodbye_handler( Proto_Session *s)
 {
-  if(proto_debug()) fprintf(stderr,"Drop Request Received");
   client_lost_handler(s);
   return reply(s,PROTO_MT_REP_GOODBYE,0,(size_t)NULL);
 }
 
 int sync_handler( Proto_Session *s)
 {
+  
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr));
   int *walls, *rlist, *blist, blen, rlen, wlen, 
@@ -180,14 +222,13 @@ int sync_handler( Proto_Session *s)
   h.pstate.v2.raw = wlen;
   h.pstate.v3.raw = rlen+blen;
   put_hdr(s,&h);
- 
+	
+  slog("SYN",NULL,s->fd,NULL,NULL,0);
   return reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
 }
 
 int action_handler( Proto_Session *s)
 {
-  if (proto_debug()) fprintf(stderr,"Action Request Received from\n");
-
   Proto_Msg_Hdr h;
   int rc,id,team,action,fd;
   Pos current,next;
@@ -205,14 +246,23 @@ int action_handler( Proto_Session *s)
   proto_session_body_unmarshall_bytes(s, sizeof(Pos), sizeof(Pos), (char*)&next);
 
   rc = server_request_init(&maze,&request,fd,action,next.x,next.y);
-  if (rc<0) return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+  if (rc<0)
+  {
+    slog("ACT",&action,fd,&team,&id,rc);
+    return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+  }
   
   rc = server_game_action(&maze, &request);
-  if (rc<0) return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+  if (rc<0)
+  {
+    slog("ACT",&action,fd,&team,&id,rc);
+    return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+  }
 
   /// EVENT UPDATE GOES HERE
   /*doUpdateClients(&request.update);*/
-
+  
+  slog("ACT",&action,fd,&team,&id,rc);
   return reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
 }
 
@@ -239,14 +289,44 @@ int init_game(void){
 //  SHELL CODE  //
 //////////////////
 
-char MenuString[] =
-  "Usage: d/D-debug on/off\n\tu-update clients\n\tq-quit\n\tload <filename> - Loads a Map file\n\tdump - dump contents of map data structure\n";
+char MenuString[] = "Usage:\t d/D-debug on/off\n\t \
+u-update clients\n\t \
+q-quit\n\t \
+asciidump - dump an ascii reprentation of whole maze\n\t \
+textdump - dump player/object/cell/state into readable text file\n\n";
 
 int docmd(char* cmd)
 {
   int rc = 1;
 
-  if((strncmp(cmd,"dump",4))==0) { maze_dump(&maze); return rc; }
+  if ((strncmp(cmd,"quit",sizeof("quit")-1))==0)
+  {
+    return -1;
+  }
+  else if((strncmp(cmd,"textdump",sizeof("textdump")-1))==0) 
+  { 
+    char* token;
+    token = strtok(cmd+sizeof("textdump")-1,": \n\0");
+    if (token == NULL )
+    {
+      fprintf(stderr,"Please specify filename $textdump <filename>\n");
+      return rc;
+    }
+    maze_text_dump(&maze,token); 
+    return rc; 
+  }
+  else if((strncmp(cmd,"asciidump",sizeof("asciidump")-1))==0) 
+  { 
+    char* token;
+    token = strtok(cmd+sizeof("asciidump")-1,": \n\0");
+    if (token == NULL )
+    {
+      fprintf(stderr,"Please specify filename $asciidump <filename>\n");
+      return rc;
+    }
+    maze_ascii_dump(&maze,token); 
+    return rc; 
+  }
 
   switch (*cmd) {
   case 'd':
@@ -270,13 +350,13 @@ int docmd(char* cmd)
 
 char* prompt(int menu) 
 {
-  if (menu) printf("%sSERVER_SHELL$ ", MenuString);
+  if (menu) fprintf(stdout,"%sSERVER_SHELL$\n", MenuString);
   fflush(stdout);
   
   // Pull in input from stdin
   int bytes_read;
   size_t nbytes = 0;
-  char *my_string;
+  char *my_string = (char*) malloc(1);
   bytes_read = getline (&my_string, &nbytes, stdin);
   
   char* pch;
@@ -295,16 +375,17 @@ void * shell(void *arg)
   int rc=1;
   int menu=1;
 
-  while (1) {
+  while (1) 
+  {
     if ((c=prompt(menu))!=0) rc=docmd(c);
     if (rc<0) break;
     if (rc==1) menu=1; else menu=0;
+    if(c!=0)	free(c);
   }
-  if(c!=0)//If this variable was allocated in prompt(menu) please free memory
-	free(c);
-
-  fprintf(stderr, "terminating\n");
+  
+  if(c!=0)	free(c);
   fflush(stdout);
+  fprintf(stderr, "terminating\n");
   return NULL;
 }
 

@@ -148,12 +148,12 @@ proto_server_event_listen(void *arg)
       fprintf(stderr, "Error: EventListen accept failed (%d)\n", errno);
     } else {
       int i;
-      fprintf(stderr, "EventListen: connfd=%d -> ", connfd);
+      if (proto_debug()) fprintf(stderr, "EventListen: connfd=%d -> ", connfd);
 	  if ( proto_server_record_event_subscriber( connfd, &i )<0) { //ADD CODE
 	fprintf(stderr, "oops no space for any more event subscribers\n");
 	close(connfd);
       } else {
-	fprintf(stderr, "subscriber num %d\n", i);
+	if ( proto_debug() ) fprintf(stderr, "subscriber num %d\n", i);
       }
     } 
   }
@@ -215,14 +215,14 @@ proto_server_req_dispatcher(void * arg)
 
   s.fd = (FDType) arg_value;
 
-  fprintf(stderr, "proto_rpc_dispatcher: %p: Started: fd=%d\n", 
+  if(proto_debug()) fprintf(stderr, "proto_rpc_dispatcher: %p: Started: fd=%d\n", 
 	  (void *)pthread_self(), s.fd);
 
   for (;;) {
     if (proto_session_rcv_msg(&s)==1) {
  		mt = (Proto_Msg_Types) proto_session_hdr_unmarshall_type(&s);
-		fprintf(stderr,"proto_rpc_dispatcher: mt=%d ",mt);
-		fprintf(stderr,"proto_rpc_dispatcher: type=%d ", proto_session_hdr_unmarshall_type(&s));
+		if (proto_debug() ) fprintf(stderr,"proto_rpc_dispatcher: mt=%d \n",mt);
+		if (proto_debug() ) fprintf(stderr,"proto_rpc_dispatcher: type=%d \n", proto_session_hdr_unmarshall_type(&s));
 		if ( PROTO_MT_REQ_BASE_RESERVED_FIRST < mt && mt < PROTO_MT_REQ_BASE_RESERVED_LAST )
 		{ 
 		  hdlr = Proto_Server.base_req_handlers[mt-PROTO_MT_REQ_BASE_RESERVED_FIRST-1];
