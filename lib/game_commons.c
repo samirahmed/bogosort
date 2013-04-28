@@ -480,7 +480,8 @@ extern void maze_text_dump(Maze*m, char* filename)
 {
 	int x,y;
 	FILE* fd;
-	fd = fopen(filename,"w");
+  if (strncmp(filename,"console",sizeof("console")-1)==0) fd = stderr;
+  else fd =fopen(filename,"w");
 
   fprintf(fd,"[MAZE STATE:%1d]\n",m->current_game_state);
 
@@ -495,6 +496,7 @@ extern void maze_text_dump(Maze*m, char* filename)
   }
   fprintf(fd,"\n");
   fprintf(stderr,"Server Text Dump Completed\n");
+  fflush(fd);
   close((int)(size_t)fd);
 }
 
@@ -502,8 +504,10 @@ extern void maze_ascii_dump(Maze*map, char* filename)
 {
 	int x,y;
 	FILE* dumpfp;
-	dumpfp = fopen(filename,"w");
-	for( y = map->min.x; y < map->max.y; y++ )
+  if (strncmp(filename,"console",sizeof("console")-1)==0) dumpfp = stderr; 
+  else dumpfp =fopen(filename,"w");
+
+  for( y = map->min.x; y < map->max.y; y++ )
   {
 		for( x = map->min.y; x < map->max.x; x++ )
     {
@@ -547,6 +551,7 @@ extern void maze_ascii_dump(Maze*map, char* filename)
 		fprintf(dumpfp,"\n");
 	}
   fprintf(stderr,"Server ASCII dump completed\n");
+  fflush(dumpfp);
 	close((int)(size_t)dumpfp);
 }
 
