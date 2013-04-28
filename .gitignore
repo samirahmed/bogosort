@@ -1,5 +1,6 @@
 # dumpfile
 dumpfile.txt
+*.dump
 
 # vim swap files
 *.swp
@@ -53,6 +54,7 @@ test/*-test
 
 # Logs and databases #
 ######################
+log/
 *.log
 *.sql
 *.sqlite

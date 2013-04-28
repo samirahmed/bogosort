@@ -161,7 +161,11 @@ extern int cell_is_near(Cell* current, Cell* next);
 
 // Maze Construction
 extern void maze_init(Maze * m,int max_x, int max_y);
-extern void maze_dump(Maze*map);
+extern void maze_object_dump(Object*object,FILE*fd,int indent);
+extern void maze_player_dump(Player*player,FILE*fd);
+extern void maze_cell_dump(Cell*c, FILE*fd);
+extern void maze_text_dump(Maze*map,char*filename);
+extern void maze_ascii_dump(Maze*map,char*filename);
 extern void maze_destroy(Maze*map);
 extern int  maze_build_from_file(Maze*map, char* filename);
 

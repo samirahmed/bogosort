@@ -2,7 +2,7 @@
 #define __DAGAME_UNIT_TEST_H__
 
 #include <signal.h>
-
+#include "types.h"
 #define COLOR_HEADER  "\033[95m" 
 #define COLOR_OKBLUE  "\033[94m"
 #define COLOR_WARNING "\033[93m"
