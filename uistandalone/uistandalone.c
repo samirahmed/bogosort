@@ -439,13 +439,14 @@ if(cur_cell.cell_state == CELLSTATE_EMPTY){
 	else{
 		
 		if(cur_cell.cell_state ==  CELLSTATE_OCCUPIED){
-			if((*(cur_cell.player)).team == TEAM_RED){
+			//if((*(cur_cell.player)).team == TEAM_RED){
 			  ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c); // paint yellow for now -- will have to change colors	
-				}else{
+				}//else{
 				//on the blue team
 				
-				}
-			}else{
+				//}
+			//}
+			else{
 			if(cur_cell.cell_state == CELLSTATE_HOLDING){
 				//PRINT OBJECT
 				}
@@ -629,7 +630,7 @@ ui_main_loop(UI *ui, uval h, uval w)
 
   ui_init_sdl(ui, h, w, 32);
 
-  dummyPlayer_init(ui);
+ //dummyPlayer_init(ui);
     ui_paintmap(ui);
    
   
@@ -664,13 +665,13 @@ struct DummyPlayerDesc {
   int state;
 } dummyPlayer;
 
-static void 
+/*static void 
 dummyPlayer_init(UI *ui) 
 {
   dummyPlayer.id = 0;
   dummyPlayer.x = 5; dummyPlayer.y = 5; dummyPlayer.team = 0; dummyPlayer.state = 0;
   ui_uip_init(ui, &dummyPlayer.uip, dummyPlayer.id, dummyPlayer.team); 
-}
+}*/
 
 static void 
 dummyPlayer_paint(UI *ui, SDL_Rect *t)
@@ -695,30 +696,55 @@ dummyPlayer_paint(UI *ui, SDL_Rect *t)
 
 int
 ui_dummy_left(UI *ui)
-{
-   int x,y;
-   x = map_ptr->players[0].at[0].client_position.x;
-   y = map_ptr->players[0].at[0].client_position.y;
+{ 
 //NOTE TO SELF:
 //IF THE FOLLOWING ISN"T PRINTING ON RUN MAKE SURE YOURE RUNNING XMONAD 
-   printf("player at %d, %d\n", x,y); 
-   map_ptr->players[0].at[0].client_position.x--;
-   (maze.get[y][x--].player) = (maze.get[y][x].player);
-   //(maze.get[y][x].player) = NULL;
-   //maze.get[y][x].cell_state = CELLSTATE_EMPTY;
-   //maze.get[y][x--].cell_state = CELLSTATE_OCCUPIED;
-   return 2;
+   int x,y, new_x;
+   x = map_ptr->players[0].at[0].client_position.x;
+   y = map_ptr->players[0].at[0].client_position.y;
+   new_x = x-1;
+   if(maze.get[new_x][y].type == CELL_WALL){
+	printf("Cell wall, cannot move in that direction\n");
+	}
+   else{
+   printf("player after moving at %d, %d\n", new_x,y); 
+   map_ptr->players[0].at[0].client_position.x = new_x;
+   (maze.get[new_x][y].player) = (maze.get[y][x].player);
+   maze.get[x][y].player = NULL;
+   maze.get[x][y].cell_state = CELLSTATE_EMPTY;
+   printf("x is %d, new_x is %d\n", x, new_x);
+   printf("cell state is %d\n", maze.get[new_x][y].cell_state);
+   maze.get[new_x][y].cell_state = CELLSTATE_OCCUPIED;
+}   
+return 2;
 }
 
 int
 ui_dummy_right(UI *ui)
 {
- //send pair of ints to server along with move command
+    int x,y, new_x;
+   x = map_ptr->players[0].at[0].client_position.x;
+   y = map_ptr->players[0].at[0].client_position.y;
+   new_x = x+1;
+   if(maze.get[new_x][y].type == CELL_WALL){
+	printf("Cell wall, cannot move in that direction\n");
+	}
+   else{
+   printf("player after moving at %d, %d\n", new_x,y); 
+   map_ptr->players[0].at[0].client_position.x = new_x;
+   (maze.get[new_x][y].player) = (maze.get[y][x].player);
+   maze.get[x][y].player = NULL;
+   maze.get[x][y].cell_state = CELLSTATE_EMPTY;
+   printf("x is %d, new_x is %d\n", x, new_x);
+   printf("cell state is %d\n", maze.get[new_x][y].cell_state);
+   maze.get[new_x][y].cell_state = CELLSTATE_OCCUPIED;
+}   
+
+
+//send pair of ints to server along with move command
  //if we receive a move player event update then update the dummy player location
  
- printf("moving right"); 
- map_ptr->players[0].at[0].client_position.x++;
-  return 2;
+ return 2;
 
 }
 
@@ -726,10 +752,26 @@ ui_dummy_right(UI *ui)
 int
 ui_dummy_down(UI *ui)
 {
-//send pair of ints to
-  map_ptr->players[0].at[0].client_position.y++;
+    int x,y, new_y;
+   x = map_ptr->players[0].at[0].client_position.x;
+   y = map_ptr->players[0].at[0].client_position.y;
+   new_y = y+1;
+   if(maze.get[x][new_y].type == CELL_WALL){
+	printf("Cell wall, cannot move in that direction\n");
+	}
+   else{
+   printf("player after moving at %d, %d\n", x,new_y); 
+   map_ptr->players[0].at[0].client_position.y = new_y;
+   (maze.get[x][new_y].player) = (maze.get[y][x].player);
+   maze.get[x][y].player = NULL;
+   maze.get[x][y].cell_state = CELLSTATE_EMPTY;
+   printf("y is %d, new_y is %d\n", y, new_y);
+   printf("cell state is %d\n", maze.get[x][new_y].cell_state);
+   maze.get[x][new_y].cell_state = CELLSTATE_OCCUPIED;
+}   
 
-  return 2;
+ return 2;
+
 }
 
 
@@ -740,9 +782,25 @@ ui_dummy_down(UI *ui)
 int
 ui_dummy_up(UI *ui)
 {
-  map_ptr->players[0].at[0].client_position.y--;
-//}  
-return 2;
+   int x,y, new_y;
+   x = map_ptr->players[0].at[0].client_position.x;
+   y = map_ptr->players[0].at[0].client_position.y;
+   new_y = y-1;
+   if(maze.get[x][new_y].type == CELL_WALL){
+	printf("Cell wall, cannot move in that direction\n");
+	}
+   else{
+   printf("player after moving at %d, %d\n", x,new_y); 
+   map_ptr->players[0].at[0].client_position.y = new_y;
+   (maze.get[x][new_y].player) = (maze.get[y][x].player);
+   maze.get[x][y].player = NULL;
+   maze.get[x][y].cell_state = CELLSTATE_EMPTY;
+   printf("y is %d, new_y is %d\n", y, new_y);
+   printf("cell state is %d\n", maze.get[x][new_y].cell_state);
+   maze.get[x][new_y].cell_state = CELLSTATE_OCCUPIED;
+}   
+
+ return 2;
 }
 
 
