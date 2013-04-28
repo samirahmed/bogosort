@@ -40,13 +40,15 @@
 static Maze maze; 		
 static char timestr[9];
 static int  teleport;
+
 //////////////////
 // HELPER CODE  //
 //////////////////
 
-void slog(char*cmd,int*action,int fd,int* team,int* id,int rc)
+void slog(char*cmd,int*action,int fd,int* team,int* id,int rc,clock_t clk)
 {
   time_t raw;
+  int sec;
   struct tm * tt;
   char rcstr[25];
   
@@ -58,25 +60,27 @@ void slog(char*cmd,int*action,int fd,int* team,int* id,int rc)
     sprintf(rcstr,COLOR_OKGREEN "%d" COLOR_END , rc); 
   else
     sprintf(rcstr,COLOR_FAIL "%d" COLOR_END , rc);
+  
+  sec = (int)(((float)(clock()-clk)/CLOCKS_PER_SEC)*1000);
 
   if (team && id && action )
 	fprintf(stdout,
     "%s\t"COLOR_YELLOW"%s"COLOR_END
     "\t[%1d]\tfd:%05d\tteam:"
     COLOR_BLUE"%1d"COLOR_END"\tid:"
-    COLOR_BLUE"%03d"COLOR_END"\trc:%s\n",
-   timestr,cmd,*action,fd,*team,*id,rcstr);
+    COLOR_BLUE"%03d"COLOR_END"\trc:%s\t%dms\n",
+   timestr,cmd,*action,fd,*team,*id,rcstr,sec);
   else if (team && id)
 	fprintf(stdout,
     "%s\t"COLOR_YELLOW"%s"COLOR_END
     "\t\tfd:%05d\tteam:"
     COLOR_BLUE"%1d"COLOR_END"\tid:"
-    COLOR_BLUE"%03d"COLOR_END"\trc:%s\n",
-    timestr,cmd,fd,*team,*id,rcstr);
+    COLOR_BLUE"%03d"COLOR_END"\trc:%s\t%dms\n",
+    timestr,cmd,fd,*team,*id,rcstr,sec);
   else
 	fprintf(stdout,
-    "%s\t"COLOR_YELLOW"%s"COLOR_END"\t\tfd:%05d\tteam:_\tid:___\trc:%s\n",
-    timestr,cmd,fd,rcstr);
+    "%s\t"COLOR_YELLOW"%s"COLOR_END"\t\tfd:%05d\tteam:_\tid:___\trc:%s\t%dms\n",
+    timestr,cmd,fd,rcstr,sec);
     
   fflush(stdout);
 }
@@ -133,6 +137,9 @@ int doUpdateClients(Update *update)
 int client_lost_handler( Proto_Session * s)
 {
   int id,team,rc,fd;
+  clock_t clk;
+  clk = clock();
+
   fd = (int)s->fd;
   rc =server_fd_to_id_and_team(&maze,fd,&team,&id);
   if (rc <0) 
@@ -141,7 +148,7 @@ int client_lost_handler( Proto_Session * s)
     return -1;
   }
 
-	slog("DRP",NULL,fd,&team,&id,0);
+	slog("DRP",NULL,fd,&team,&id,0,clk);
   Update update;  
   server_game_drop_player(&maze, team, id, &update);
 
@@ -159,7 +166,9 @@ int client_lost_handler( Proto_Session * s)
 
 int hello_handler( Proto_Session *s)
 {
+  clock_t clk;
   int rc;
+  clk = clock();
   Player*player;
   Update update;
   
@@ -177,7 +186,7 @@ int hello_handler( Proto_Session *s)
   /// EVENT UPDATE GOES HERE
   doUpdateClients(&update);
 
-	slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc);
+	slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc,clk);
 
   return reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
 }
@@ -190,6 +199,7 @@ int goodbye_handler( Proto_Session *s)
 
 int sync_handler( Proto_Session *s)
 {
+  clock_t clk = clock();
   
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr));
@@ -225,12 +235,13 @@ int sync_handler( Proto_Session *s)
   h.pstate.v3.raw = rlen+blen;
   put_hdr(s,&h);
 	
-  slog("SYN",NULL,s->fd,NULL,NULL,0);
+  slog("SYN",NULL,s->fd,NULL,NULL,0,clk);
   return reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
 }
 
 int action_handler( Proto_Session *s)
 {
+  clock_t clk = clock();
   Proto_Msg_Hdr h;
   int rc,id,team,action,fd;
   Pos current,next;
@@ -252,21 +263,21 @@ int action_handler( Proto_Session *s)
 
   if (rc<0)
   {
-    slog("ACT",&action,fd,&team,&id,rc);
+    slog("ACT",&action,fd,&team,&id,rc,clk);
     return reply(s,PROTO_MT_REP_ACTION,rc,-1);
   }
   
   rc = server_game_action(&maze, &request);
   if (rc<0)
   {
-    slog("ACT",&action,fd,&team,&id,rc);
+    slog("ACT",&action,fd,&team,&id,rc,clk);
     return reply(s,PROTO_MT_REP_ACTION,rc,-1);
   }
 
   /// EVENT UPDATE GOES HERE
   doUpdateClients(&request.update);
   
-  slog("ACT",&action,fd,&team,&id,rc);
+  slog("ACT",&action,fd,&team,&id,rc,clk);
   return reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
 }
 
