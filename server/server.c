@@ -146,7 +146,7 @@ int client_lost_handler( Proto_Session * s)
   if (proto_debug()) proto_session_dump(s);
   
   /// EVENT UPDATE GOES HERE
-  /*doUpdateClients(&update);*/
+  doUpdateClients(&update);
 
   return -1;
 }
@@ -173,7 +173,7 @@ int hello_handler( Proto_Session *s)
   put_hdr(s,&h);
 
   /// EVENT UPDATE GOES HERE
-  /*doUpdateClients(&update);*/
+  doUpdateClients(&update);
 
 	slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc);
 
@@ -260,7 +260,7 @@ int action_handler( Proto_Session *s)
   }
 
   /// EVENT UPDATE GOES HERE
-  /*doUpdateClients(&request.update);*/
+  doUpdateClients(&request.update);
   
   slog("ACT",&action,fd,&team,&id,rc);
   return reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
