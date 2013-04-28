@@ -48,8 +48,7 @@
 
 
 
-//move this to wherever the shallow copy is located
-//char map [201][201];
+
 Maze * map_ptr;
 Maze maze;
 Plist red_players;
@@ -324,25 +323,6 @@ draw_cell(UI *ui, SPRITE_INDEX si, SDL_Rect *t, SDL_Surface *s)
   if ( ts && t->h == SPRITE_H && t->w == SPRITE_W) 
     SDL_BlitSurface(ts, NULL, s, t);
 }
-/*
-static sval 
-ui_initmap(){
-FILE *fp;
-fp = fopen("../daGame.map", "r");
-int i,j;
-int map_char;
-for(i = 0; i < 200; i++){
-   for(j = 0; j < 200; j++){
- 
-    map_char = fgetc(fp);
-   printf("loading character %c", map_char);
-    map[i][j] = map_char; 		
-		}
-	}
-
-}
-*/
-
 
 
 //helper function for ui_put pixel
@@ -357,9 +337,6 @@ static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel){
 		}
 	}
 } 
-
-
-
 
 
 static sval
