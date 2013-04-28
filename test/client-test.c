@@ -18,14 +18,14 @@ void client_wait_for_event(Blocking_Helper *bh,TestContext* tc)
 {
     int assertion;
     assertion = client_maze_lock(bh)==0;
-    /*should("lock the maze from the waiting thread",assertion,tc);*/
+    should("lock the maze from the waiting thread",assertion,tc);
     while (bh->maze->current_game_state !=GAME_STATE_ACTIVE) 
     {
         assertion = client_maze_cond_wait(bh)==0;
-        /*should("wait and recieve signal for condition variable",assertion,tc);*/
+        should("wait and recieve signal for condition variable",assertion,tc);
     }
     assertion = client_maze_unlock(bh)==0;
-    /*should("unlock client maze from waiting thread",assertion,tc);*/
+    should("unlock client maze from waiting thread",assertion,tc);
 
     pthread_exit(NULL);
 }
@@ -34,14 +34,14 @@ void client_signal_update(Blocking_Helper *bh,TestContext* tc)
 {
     int assertion;
     assertion = client_maze_lock(bh)==0;
-    /*should("lock the maze from signaling thread",assertion,tc);*/
+    should("lock the maze from signaling thread",assertion,tc);
     
     bh->maze->current_game_state = GAME_STATE_ACTIVE;
     assertion = client_maze_signal(bh)==0;
-    /*should("signal the other thread for a change in condition",assertion,tc);*/
+    should("signal the other thread for a change in condition",assertion,tc);
     
     assertion = client_maze_unlock(bh)==0;
-    /*should("unlock client maze from signaling thread",assertion,tc);*/
+    should("unlock client maze from signaling thread",assertion,tc);
 
     pthread_exit(NULL);
 }
@@ -63,7 +63,7 @@ void test_get_compress_from_body(TestContext* tc)
     char output[1000];
     //Init Client and Map
     Client C;
-    client_init(&C);
+    client_init(&C,NULL);
     //Compress random things
     Proto_Session* s;
     Proto_Client *proto_client = C.ph;
