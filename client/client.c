@@ -34,8 +34,26 @@
 //Global Variables
 Globals globals;         //Host string and port
 static char MenuString[] = "\n?> ";
+static Client c;
 
-static int update_handler(Proto_Session *s ){return 0;}
+static int update_handler(Proto_Session *s ){
+    Proto_Msg_Hdr hdr;
+    proto_session_hdr_unmarshall(s,&hdr);
+    Maze* maze = &c.maze;
+    update_walls(1,&hdr.gstate.v0.raw,maze);
+    update_players(1,&hdr.gstate.v1.raw,maze);
+    update_players(1,&hdr.gstate.v2.raw,maze);
+    update_objects(1,&hdr.pstate.v0.raw,maze);
+    update_objects(1,&hdr.pstate.v1.raw,maze);
+    update_objects(1,&hdr.pstate.v2.raw,maze);
+    update_objects(1,&hdr.pstate.v3.raw,maze);
+    if(proto_debug())
+    {
+        fprintf(stderr,"Client position x:%d y:%d\n",c.my_player->client_position.x,c.my_player->client_position.y);
+        fprintf(stderr,"Client id:%d\n",c.my_player->id);
+    }
+    return hdr.version;
+}
 static int update_event_handler(Proto_Session *s){return 0;}
 
 int startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
@@ -80,7 +98,7 @@ char* prompt(int menu)
 
 void disconnect (Client *C)
 {
-  connected = 0;
+  C->connected = 0;
   Proto_Session *event = proto_client_event_session(C->ph);
   Proto_Session *rpc = proto_client_rpc_session(C->ph);
   close(event->fd);
@@ -114,11 +132,11 @@ int doConnect(Client *C, char* cmd)
   globals_init(2,address);
 
   // ok startup our connection to the server
-  connected = 1;      //Change connected state to true
+  C->connected = 1;      //Change connected state to true
   if (startConnection(C, globals.host, globals.port, update_event_handler)<0) 
   {
     fprintf(stderr, "ERROR: Not able to connect to %s:%d\n",globals.host,(int)globals.port);
-    connected =0;
+    C->connected =0;
     return -2;
   }
 
@@ -158,14 +176,14 @@ int docmd(Client *C, char* cmd)
     return 1;
   }
 
-  if(!connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
+  if(!C->connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
   {
     rc = doConnect(C, cmd);
     return process_RPC_message(C);
   }
   else if(strncmp(cmd,"where",sizeof("where")-1)==0)
   {
-    if (connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
+    if (C->connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
     else printf("Not connected\n");
   }
   /*else if(strncmp(cmd,"load",sizeof("load")-1)==0)*/
@@ -174,7 +192,15 @@ int docmd(Client *C, char* cmd)
         /*pch = strtok(cmd+5," \n\0");*/
         /*client_map_init(C,pch);*/
     /*}*/
-  else if( connected )
+  else if(strncmp(cmd,"debug on",sizeof("debug on")-1)==0)
+  {
+    proto_debug_on();    
+  }
+  else if(strncmp(cmd,"debug off",sizeof("debug off")-1)==0)
+  {
+    proto_debug_off();    
+  }
+  else if( C->connected )
   {
     Request request;
 
@@ -295,8 +321,7 @@ void globals_init(int argc, char argv[][STRLEN])
 
 int main(int argc, char **argv)
 {
-  Client c;
-  if (client_init(&c) < 0) {
+  if (client_init(&c,update_handler) < 0) {
     fprintf(stderr, "ERROR: clientInit failed\n");
     return -1;
   }    
