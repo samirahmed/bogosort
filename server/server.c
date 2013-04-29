@@ -307,11 +307,13 @@ int init_game(void){
 //  SHELL CODE  //
 //////////////////
 
-char MenuString[] = "Usage:\t d/D-debug on/off\n\t \
-u-update clients\n\t \
-q-quit\n\t \
-asciidump - dump an ascii reprentation of whole maze\n\t \
-textdump - dump player/object/cell/state into readable text file\n\n";
+char MenuString[] = "Usage:\t d/D- debug on/off (default is off)\n\t \
+teleport - toggle teleportation on/off (default is off)\n\t \
+q/quit - terminate server\n\t \
+asciidump console - dump an ascii reprentation of maze to terminal\n\t \
+asciidump <filename> - dump an ascii reprentation of maze into file\n\t \
+textdump console - dump player/object/state into readable to terminal\n\t \
+textdump <filename> - dump player/object/state into readable text file\n\n";
 
 int docmd(char* cmd)
 {
