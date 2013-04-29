@@ -148,15 +148,16 @@ int client_lost_handler( Proto_Session * s)
     return -1;
   }
 
-	slog("DRP",NULL,fd,&team,&id,0,clk);
-  Update update;  
+  Update update; 
+  bzero(&update,sizeof(Update));
   server_game_drop_player(&maze, team, id, &update);
 
   if (proto_debug()) proto_session_dump(s);
   
   /// EVENT UPDATE GOES HERE
   doUpdateClients(&update);
-
+	
+  slog("DRP",NULL,fd,&team,&id,0,clk);
   return -1;
 }
 
@@ -171,6 +172,7 @@ int hello_handler( Proto_Session *s)
   clk = clock();
   Player*player;
   Update update;
+  bzero(&update,sizeof(Update));
   
   rc = server_game_add_player(&maze,s->fd,&player,&update);
   if(rc<0) reply(s,PROTO_MT_REP_HELLO,rc,(size_t)NULL);
