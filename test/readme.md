@@ -1,5 +1,12 @@
 # Bogosort Tests
 
+## Arguments
+
+| command | description |
+|---------|-------------|
+|`-d` or `--debug`| enable `proto_debug` spew (might not work on linux)|
+|`-v` or `--verbose`| enable verbose mode - prints all assertion info |
+|`--only <test number>`| run only the specified test (1 indexed), i.e `--only 5` for the fifth test|
 
 ## Running Tests
 
@@ -52,7 +59,6 @@ int main(int argc, char** argv)
 
 ## Test Framework
 
-
 The `TestContext` object is a variable passed through your tests to share information 
 between tests themselves and the test framework code.
 
@@ -64,6 +70,16 @@ the framework provides the following functions
 - **Assertions**  `should("do someting",assertion,tc)` 
 - **Run Tests**  `run(&testHome,"Home",&testcontext);` 
 
+## Parallelized Tasks
+
+To write parallelized tasks see the `lib/test.c` file.
+
+Create a 'task' function which matchs the `void task(void*)` prototype.
+
+Then pass this to the `parallelize()` function, which will run the task 
+as many times are you specify on as many threads per task as you specify.
+
+for example of parallelized tasks see the `test_server_locks` function in `test/server-test.c`
 ## Debugging
 
 A `SIGINFO` is raised whenever an assertion fails. If you just run the test in gdb
