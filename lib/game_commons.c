@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <poll.h>
 #include <pthread.h>
-#include <strings.h>
+#include <string.h>
 #include "net.h"
 #include "protocol.h"
 #include "protocol_utils.h"
@@ -52,18 +52,19 @@ void object_init(Maze*m, Object_Types object, Team_Types team)
   if (oo->type == OBJECT_FLAG)
   {
     oo->visiblity = 0;
-    int size ,rx, ry, found;
+    int rx, ry, found;
     found = 0;
     while( found==0 )
     {
-      size =(m->max.x / NUM_TEAMS);
-    
       // Hard coded 
       rx = 100*(team)+49;
       ry = 99;
+      
       // Uncomment for randomized starting position
+      /*int size =(m->max.x / NUM_TEAMS);*/
       /*rx = randint()%(size+(team*size));*/
       /*ry = randint()%(m->max.y);*/
+      
       if (rx >= m->max.x || ry >= m->max.y ) continue;
       if (m->get[rx][ry].type != CELL_FLOOR) continue;
       
