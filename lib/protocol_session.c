@@ -230,7 +230,7 @@ proto_session_body_marshall_ll(Proto_Session *s, long long v)
 extern int 
 proto_session_body_unmarshall_ll(Proto_Session *s, int offset, long long *v)
 {
-  if (s && ((s->rlen - (offset + sizeof(long long))) >=0 )) {
+  if (s && (s->rlen >= (offset + sizeof(long long))) ) {
     *v = *((long long *)(s->rbuf + offset));
     *v = ntohll(*v);
     return offset + sizeof(long long);
@@ -252,7 +252,7 @@ proto_session_body_marshall_int(Proto_Session *s, int v)
 extern int 
 proto_session_body_unmarshall_int(Proto_Session *s, int offset, int *v)
 {
-  if (s && ((s->rlen  - (offset + sizeof(int))) >=0 )) {
+  if (s && (s->rlen >= (offset + sizeof(int))) >=0 ) {
     *v = *((int *)(s->rbuf + offset));
     *v = ntohl(*v);
     return offset + sizeof(int);
@@ -274,7 +274,7 @@ proto_session_body_marshall_char(Proto_Session *s, char v)
 extern int 
 proto_session_body_unmarshall_char(Proto_Session *s, int offset, char *v)
 {
-  if (s && ((s->rlen - (offset + sizeof(char))) >= 0)) {
+  if (s && (s->rlen >= (offset + sizeof(char)))) {
     *v = s->rbuf[offset];
     return offset + sizeof(char);
   }
