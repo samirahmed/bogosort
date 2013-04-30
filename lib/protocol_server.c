@@ -384,7 +384,7 @@ extern int reply( Proto_Session * s, unsigned int  mt , int response, int timest
   // setup  reply header : set correct reply message type and everything else empty
   if ( (void*)(size_t) mt != NULL)
   {
-    bzero(&h, sizeof(s));
+    bzero(&h, sizeof(Proto_Msg_Hdr));
     h.type = (Proto_Msg_Types) mt;
     if ( (void*)(size_t)response != NULL) h.gstate.v1.raw = response;
     proto_session_hdr_marshall(s, &h);
