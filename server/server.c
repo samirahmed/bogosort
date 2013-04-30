@@ -178,7 +178,7 @@ int hello_handler( Proto_Session *s)
   if(rc<0)
   {
 	  slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc,clk);
-    reply(s,PROTO_MT_REP_HELLO,rc,(size_t)NULL);
+    return reply(s,PROTO_MT_REP_HELLO,rc,(size_t)NULL);
   }
 
   Proto_Msg_Hdr h;
@@ -200,7 +200,8 @@ int hello_handler( Proto_Session *s)
 int goodbye_handler( Proto_Session *s)
 {
   client_lost_handler(s);
-  return reply(s,PROTO_MT_REP_GOODBYE,0,(size_t)NULL);
+  reply(s,PROTO_MT_REP_GOODBYE,0,(size_t)NULL);
+  return -1;
 }
 
 int sync_handler( Proto_Session *s)
