@@ -85,6 +85,16 @@ $ make
 $ server/server
 ```
 
+#### Max File Limit
+
+It is possible that your machine has limits the number of open files per process.
+
+For Testing, some test might require over 1000 files open (2*500 clients)
+For normal usage the server would need `375*2` or **1000** to be safe.
+
+You can check the limit by running `$ ulimit -n`
+On both OSX and Linux you can set the limit with `$ ulimit -n 2048`
+
 ## Make commands
 
 Assuming these commands are issued from the root bogosort directory
