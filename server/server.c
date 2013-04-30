@@ -175,8 +175,12 @@ int hello_handler( Proto_Session *s)
   bzero(&update,sizeof(Update));
   
   rc = server_game_add_player(&maze,s->fd,&player,&update);
-  if(rc<0) reply(s,PROTO_MT_REP_HELLO,rc,(size_t)NULL);
-  
+  if(rc<0)
+  {
+	  slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc,clk);
+    reply(s,PROTO_MT_REP_HELLO,rc,(size_t)NULL);
+  }
+
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr));
   h.type = PROTO_MT_REP_HELLO;
