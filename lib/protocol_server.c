@@ -261,7 +261,7 @@ proto_server_rpc_listen(void *arg)
       fprintf(stderr, "Error: proto_server_rpc_listen accept failed (%d)\n", errno);
     } else {
       pthread_create(&tid, NULL, &proto_server_req_dispatcher,
-		     (void *)connfd);
+		     (void *)(size_t)connfd);
     }
   }
 }

@@ -188,10 +188,9 @@ void test_plist(TestContext*tc)
     //  PLIST ADDING AND DROPPING
     ////////////////////////////////
     
-    int start, stop, ii, team, rc, assertion,fd;
+    int start,  ii, team, rc, assertion,fd;
     team = randint()%2;
     start = 1000;
-    stop = 2000;
     Plist*players = &maze.players[team];
 
     rc = server_plist_find_player_by_fd(players,123);
@@ -834,9 +833,8 @@ void test_game_move(TestContext*tc)
     bzero(&dummy,sizeof(Player));
     Pos  next;
     
-    int assertion,rc,fd,id,team;
+    int assertion,rc,fd,id; 
     fd   = randint()%9000 + 999;
-    team = randint()%2;
     Player*player;
    
     //////////////////
