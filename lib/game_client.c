@@ -312,16 +312,18 @@ void request_sync_init(Request* request,Client* client)
 int process_hello_request(Maze* maze, Player** my_player, Proto_Msg_Hdr* hdr)
 {
 
-   //Get the team and player id from the header
-   Team_Types team = hdr->pstate.v1.raw;
-   int id = hdr->pstate.v0.raw;
-   
-   //Set local Client player pointer to corresponding player in the plist
-   *my_player = &(maze->players[team].at[id]);
+   if(hdr->gstate.v0.raw>=0)
+   {   
+       //Get the team and player id from the header
+       Team_Types team = hdr->pstate.v1.raw;
+       int id = hdr->pstate.v0.raw;
+       
+       //Set local Client player pointer to corresponding player in the plist
+       *my_player = &(maze->players[team].at[id]);
 
-   (*my_player)->id = id;
-   (*my_player)->team = team;
-
+       (*my_player)->id = id;
+       (*my_player)->team = team;
+    }
 
     return hdr->gstate.v0.raw;
 }
