@@ -338,10 +338,10 @@ proto_session_send_msg(Proto_Session *s, int reset)
   
   // ADD CODE
   // Writing Header
-  if (net_writen( s->fd, &(s->shdr), sizeof( s->shdr )) != sizeof( s->shdr) ) return 0;
+  if (net_writen( s->fd, &(s->shdr), sizeof( s->shdr )) != sizeof( s->shdr) ) return -1;
 
   // Write the Body
-  if (net_writen( s->fd, (s->sbuf) , s->slen )!= s->slen ) return 0;
+  if (net_writen( s->fd, (s->sbuf) , s->slen )!= s->slen ) return -1;
  
   if (proto_debug()) {
     fprintf(stderr, "%p: proto_session_send_msg: SENT:\n", (void *) pthread_self());

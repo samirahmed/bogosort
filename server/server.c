@@ -144,7 +144,7 @@ int client_lost_handler( Proto_Session * s)
   rc =server_fd_to_id_and_team(&maze,fd,&team,&id);
   if (rc <0) 
   {
-    if (proto_debug() ) fprintf(stdout,"DIS\t\tfd:%05d\n",fd);
+    slog("DIS",NULL,fd,NULL,NULL,0,clk);
     return -1;
   }
 
