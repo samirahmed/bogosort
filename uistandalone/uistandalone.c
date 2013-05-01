@@ -635,9 +635,10 @@ ui_init(UI **ui)
 
 int
 ui_dummy_left(UI *ui)
-{ 
+{
+// CHECK IF RUNNING ON CURZON / FIND WORKAROUND FOR UBUNTU 
 //NOTE TO SELF:
-//IF THE FOLLOWING ISN"T PRINTING ON RUN MAKE SURE YOURE RUNNING XMONAD 
+//IF THE FOLLOWING ISN"T PRINTING ON RUN MAKE SURE YOURE RUNNING XMONAD
    int x,y, new_x;
    x = map_ptr->players[0].at[0].client_position.x;
    y = map_ptr->players[0].at[0].client_position.y;
