@@ -148,12 +148,12 @@ proto_server_event_listen(void *arg)
       fprintf(stderr, "Error: EventListen accept failed (%d)\n", errno);
     } else {
       int i;
-      fprintf(stderr, "EventListen: connfd=%d -> ", connfd);
+      if (proto_debug()) fprintf(stderr, "EventListen: connfd=%d -> ", connfd);
 	  if ( proto_server_record_event_subscriber( connfd, &i )<0) { //ADD CODE
 	fprintf(stderr, "oops no space for any more event subscribers\n");
 	close(connfd);
       } else {
-	fprintf(stderr, "subscriber num %d\n", i);
+	if ( proto_debug() ) fprintf(stderr, "subscriber num %d\n", i);
       }
     } 
   }
@@ -162,10 +162,6 @@ proto_server_event_listen(void *arg)
 void
 proto_server_lost_event_helper(int i)
 {
-	// must have lost an event connection
-	close(Proto_Server.EventSession.fd);
-	Proto_Server.EventSubscribers[i]=-1;
-	Proto_Server.EventNumSubscribers--;
 	/*NOT_IMPL;*/
 	Proto_Server.session_lost_handler( &Proto_Server.EventSession);
 	//Proto_Server.ADD CODE
@@ -185,9 +181,13 @@ proto_server_post_event(void)
     Proto_Server.EventSession.fd = Proto_Server.EventSubscribers[i];
     if (Proto_Server.EventSession.fd != -1) {
       num--;
-      /*NOT_IMPL;*/
+      
       if (proto_session_send_msg(&Proto_Server.EventSession,0)<0) {//ADD CODE
-      	proto_server_lost_event_helper(i);
+        
+        // lost an event connection
+        close(Proto_Server.EventSession.fd);
+        Proto_Server.EventSubscribers[i]=-1;
+        Proto_Server.EventNumSubscribers--;
 	  } 
 	  // FIXME: add ack message here to ensure that game is updated 
       // correctly everywhere... at the risk of making server dependent
@@ -215,14 +215,14 @@ proto_server_req_dispatcher(void * arg)
 
   s.fd = (FDType) arg_value;
 
-  fprintf(stderr, "proto_rpc_dispatcher: %p: Started: fd=%d\n", 
+  if(proto_debug()) fprintf(stderr, "proto_rpc_dispatcher: %p: Started: fd=%d\n", 
 	  (void *)pthread_self(), s.fd);
 
   for (;;) {
     if (proto_session_rcv_msg(&s)==1) {
  		mt = (Proto_Msg_Types) proto_session_hdr_unmarshall_type(&s);
-		fprintf(stderr,"proto_rpc_dispatcher: mt=%d ",mt);
-		fprintf(stderr,"proto_rpc_dispatcher: type=%d ", proto_session_hdr_unmarshall_type(&s));
+		if (proto_debug() ) fprintf(stderr,"proto_rpc_dispatcher: mt=%d \n",mt);
+		if (proto_debug() ) fprintf(stderr,"proto_rpc_dispatcher: type=%d \n", proto_session_hdr_unmarshall_type(&s));
 		if ( PROTO_MT_REQ_BASE_RESERVED_FIRST < mt && mt < PROTO_MT_REQ_BASE_RESERVED_LAST )
 		{ 
 		  hdlr = Proto_Server.base_req_handlers[mt-PROTO_MT_REQ_BASE_RESERVED_FIRST-1];
@@ -261,7 +261,7 @@ proto_server_rpc_listen(void *arg)
       fprintf(stderr, "Error: proto_server_rpc_listen accept failed (%d)\n", errno);
     } else {
       pthread_create(&tid, NULL, &proto_server_req_dispatcher,
-		     (void *)connfd);
+		     (void *)(size_t)connfd);
     }
   }
 }
@@ -384,7 +384,7 @@ extern int reply( Proto_Session * s, unsigned int  mt , int response, int timest
   // setup  reply header : set correct reply message type and everything else empty
   if ( (void*)(size_t) mt != NULL)
   {
-    bzero(&h, sizeof(s));
+    bzero(&h, sizeof(Proto_Msg_Hdr));
     h.type = (Proto_Msg_Types) mt;
     if ( (void*)(size_t)response != NULL) h.gstate.v1.raw = response;
     proto_session_hdr_marshall(s, &h);

@@ -46,6 +46,10 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
 
            //Set the player pointer at cell position x,y to my player
            maze->get[x][y].player = player_ptr; 
+           if(proto_debug())
+           {
+                fprintf(stderr,"Player Location Update x:%d y:%d\n",player_ptr->client_position.x,player_ptr->client_position.y);
+           }
         }
     }
 }
@@ -92,6 +96,12 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
                 cell->object = object_ptr;
             }
 
+
+            if(proto_debug())
+            {
+                fprintf(stderr,"Object Update x:%d y:%d\n",object_ptr->client_position.x,object_ptr->client_position.y);
+            }
+
         }
     }
     
@@ -119,6 +129,10 @@ void update_walls(int num_elements,int* game_compress, Maze* maze)
            x = pos.x;
            y = pos.y; 
            maze->get[x][y].type = CELL_FLOOR;
+            if(proto_debug())
+            {
+                fprintf(stderr,"Broken Wall Update x:%d y:%d\n",x,y);
+            }
         }
     }
     
@@ -310,6 +324,11 @@ int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
     free(broken_walls_compress);
     free(player_compress);
     free(object_compress);
+
+    if(proto_debug())
+    {
+    }
+
     return hdr->gstate.v0.raw;    
 }
 
@@ -351,10 +370,6 @@ int process_RPC_message(Client *C)
 }
 
 
-static int update_handler(Proto_Session *s )
-{
-    return 0;
-}
 
 /*  client_init
     Initialize the client data structure
@@ -362,13 +377,13 @@ static int update_handler(Proto_Session *s )
     parameter: C            pointer client data structure
     return:    int          1 or -1 for success or failure respectively
 */
-int client_init(Client *C)
+int client_init(Client *C,Proto_MT_Handler update_handler)
 {
   // Zero global scope
   bzero(C, sizeof(Client));
 
   // Set connected state to zero
-  connected = 0; 
+  C->connected = 0; 
   
   // initialize the client protocol subsystem
   if (proto_client_init(&(C->ph))<0) {

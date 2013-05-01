@@ -72,7 +72,7 @@ extern void parallelize(Task tasks[], int num_tasks, int threads_per_task)
   pthread_attr_t attr; 
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_JOINABLE);
-  pthread_attr_setstacksize(&attr,PTHREAD_STACK_SIZE);
+  pthread_attr_setstacksize(&attr,PTHREAD_STACK_SIZE*2);
   struct sched_param param;
   bzero(&param,sizeof(struct sched_param));
 
@@ -85,11 +85,13 @@ extern void parallelize(Task tasks[], int num_tasks, int threads_per_task)
   int max = sched_get_priority_max(SCHED_OTHER);
   for (ii=0;ii < thread_count ;ii++)
   {
-#ifdef __APPLE__
-    // Randomized Priority
-    param.sched_priority = (randint()%max)+min;
-    pthread_attr_setschedparam(&attr, &param);
-#endif
+    if (max > min && max > 0)
+    {
+      // Randomized Priority
+      param.sched_priority = (randint()%max)+min;
+      pthread_attr_setschedparam(&attr, &param);
+    }
+
     // Spawn thread
     int rc;
     rc = pthread_create(&threads[ii], &attr, threaded_task, (void*) &tasks[ii%num_tasks] );

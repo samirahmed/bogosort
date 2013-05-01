@@ -34,8 +34,26 @@
 //Global Variables
 Globals globals;         //Host string and port
 static char MenuString[] = "\n?> ";
+static Client c;
 
-static int update_handler(Proto_Session *s ){return 0;}
+static int update_handler(Proto_Session *s ){
+    Proto_Msg_Hdr hdr;
+    proto_session_hdr_unmarshall(s,&hdr);
+    Maze* maze = &c.maze;
+    update_walls(1,&hdr.gstate.v0.raw,maze);
+    update_players(1,&hdr.gstate.v1.raw,maze);
+    update_players(1,&hdr.gstate.v2.raw,maze);
+    update_objects(1,&hdr.pstate.v0.raw,maze);
+    update_objects(1,&hdr.pstate.v1.raw,maze);
+    update_objects(1,&hdr.pstate.v2.raw,maze);
+    update_objects(1,&hdr.pstate.v3.raw,maze);
+    if(proto_debug())
+    {
+        fprintf(stderr,"Client position x:%d y:%d\n",c.my_player->client_position.x,c.my_player->client_position.y);
+        fprintf(stderr,"Client id:%d\n",c.my_player->id);
+    }
+    return hdr.version;
+}
 static int update_event_handler(Proto_Session *s){return 0;}
 
 int startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
@@ -66,9 +84,10 @@ char* prompt(int menu)
   // Pull in input from stdin
   int bytes_read;
   size_t nbytes = 0;
-  char *my_string;
+  char *my_string = (char*)malloc(1);
   bytes_read = getline(&my_string, &nbytes, stdin);
 
+  if(bytes_read==-1)return NULL;
   if(bytes_read>0)
     return my_string;
   else
@@ -79,7 +98,7 @@ char* prompt(int menu)
 
 void disconnect (Client *C)
 {
-  connected = 0;
+  C->connected = 0;
   Proto_Session *event = proto_client_event_session(C->ph);
   Proto_Session *rpc = proto_client_rpc_session(C->ph);
   close(event->fd);
@@ -113,11 +132,11 @@ int doConnect(Client *C, char* cmd)
   globals_init(2,address);
 
   // ok startup our connection to the server
-  connected = 1;      //Change connected state to true
+  C->connected = 1;      //Change connected state to true
   if (startConnection(C, globals.host, globals.port, update_event_handler)<0) 
   {
     fprintf(stderr, "ERROR: Not able to connect to %s:%d\n",globals.host,(int)globals.port);
-    connected =0;
+    C->connected =0;
     return -2;
   }
 
@@ -132,15 +151,39 @@ int docmd(Client *C, char* cmd)
   int rc = 1;                      // Set up return code var
 
   if(strncmp(cmd,"quit",sizeof("quit")-1)==0) return -2;
+  else if(strncmp(cmd,"textdump",sizeof("textdump")-1)==0)
+  {
+    char* token;
+    token = strtok(cmd+sizeof("textdump")-1,": \n\0");
+    if (token == NULL )
+    {
+      fprintf(stderr,"Please specify filename $textdump <filename>\n");
+      return -1;
+    }
+    maze_text_dump(&C->maze ,token); 
+    return 1; 
+  }
+  else if(strncmp(cmd,"asciidump",sizeof("asciidump")-1)==0)
+  {
+    char* token;
+    token = strtok(cmd+sizeof("asciidump")-1,": \n\0");
+    if (token == NULL )
+    {
+      fprintf(stderr,"Please specify filename $asciidump <filename>\n");
+      return -1;
+    }
+    maze_ascii_dump(&C->maze, token);
+    return 1;
+  }
 
-  if(!connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
+  if(!C->connected && strncmp(cmd,"connect",sizeof("connect")-1)==0)
   {
     rc = doConnect(C, cmd);
     return process_RPC_message(C);
   }
   else if(strncmp(cmd,"where",sizeof("where")-1)==0)
   {
-    if (connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
+    if (C->connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
     else printf("Not connected\n");
   }
   /*else if(strncmp(cmd,"load",sizeof("load")-1)==0)*/
@@ -149,7 +192,15 @@ int docmd(Client *C, char* cmd)
         /*pch = strtok(cmd+5," \n\0");*/
         /*client_map_init(C,pch);*/
     /*}*/
-  else if( connected )
+  else if(strncmp(cmd,"debug on",sizeof("debug on")-1)==0)
+  {
+    proto_debug_on();    
+  }
+  else if(strncmp(cmd,"debug off",sizeof("debug off")-1)==0)
+  {
+    proto_debug_off();    
+  }
+  else if( C->connected )
   {
     Request request;
 
@@ -159,6 +210,38 @@ int docmd(Client *C, char* cmd)
         rc=doRPCCmd(&request);
 
         disconnect(C);
+    }
+    else if(strncmp(cmd,"right",sizeof("right")-1)==0)
+    {
+        Pos next;
+        next.x = C->my_player->client_position.x+1;
+        next.y = C->my_player->client_position.y;
+        request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        rc = doRPCCmd(&request);
+    }
+    else if(strncmp(cmd,"left",sizeof("left")-1)==0)
+    {
+        Pos next;
+        next.x = C->my_player->client_position.x-1;
+        next.y = C->my_player->client_position.y;
+        request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        rc = doRPCCmd(&request);
+    }
+    else if(strncmp(cmd,"up",sizeof("up")-1)==0)
+    {
+        Pos next;
+        next.x = C->my_player->client_position.x;
+        next.y = C->my_player->client_position.y-1;
+        request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        rc = doRPCCmd(&request);
+    }
+    else if(strncmp(cmd,"down",sizeof("down")-1)==0)
+    {
+        Pos next;
+        next.x = C->my_player->client_position.x;
+        next.y = C->my_player->client_position.y+1;
+        request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        rc = doRPCCmd(&request);
     }
     else if(strncmp(cmd,"move",sizeof("move")-1)==0)
     {
@@ -212,17 +295,21 @@ int docmd(Client *C, char* cmd)
 void* shell(void *arg)
 {
   Client *C = arg;
- client_map_init(C,"daGame.map"); 
+  client_map_init(C,"daGame.map"); 
   char *c;
   int rc;
   int menu=1;
 
-  while (1) {
-    if ((c = prompt(menu))!=0) rc=docmd(C, c);
+  while (1) 
+  {
+    c = prompt(menu);
+    if (c==NULL) break;
+    if (c!=0) 
+    { 
+      rc=docmd(C, c);
+      free(c);
+    }
     if (rc == -2) break; //only terminate when client issues 'q'
-  
-  //If this variable was allocated in prompt(menu) please free memory
-  if(c!=0) free(c);
   }
   
   fprintf(stderr, "terminating\n");
@@ -241,7 +328,6 @@ void usage(char *pgm)
            " %s 12345 : starts client connecting to localhost:12345\n"
          " %s localhost 12345 : starts client connecting to locaalhost:12345\n",
      pgm, pgm, pgm);
- 
 }
 
 void globals_init(int argc, char argv[][STRLEN])
@@ -267,8 +353,7 @@ void globals_init(int argc, char argv[][STRLEN])
 
 int main(int argc, char **argv)
 {
-  Client c;
-  if (client_init(&c) < 0) {
+  if (client_init(&c,update_handler) < 0) {
     fprintf(stderr, "ERROR: clientInit failed\n");
     return -1;
   }    

@@ -153,12 +153,12 @@ extern int server_fd_to_id_and_team(Maze*m,int fd, int *team_ptr, int*id_ptr)
 /******************/
 
 // Returns the player id if it is successfully added to the game
-// Returns -1 if player exists
+// Returns ERR_BAD_REQUEST if player exists
 // Returns -2 if player cannot be added to plist for some reason
 // Returns -3 if player spawn in home cell failed
 extern int server_game_add_player(Maze*maze,int fd, Player**player,Update *update)
 {
-  int rc,team,id;
+  int rc,team,id,tt;
   
   // get team
   server_maze_property_lock(maze);
@@ -168,10 +168,13 @@ extern int server_game_add_player(Maze*maze,int fd, Player**player,Update *updat
  
   *player = &maze->players[team].at[0]; // return first player if so that player pointer is at least set
 
-  rc = server_plist_find_player_by_fd(&maze->players[team],fd);
-  if (proto_debug() && rc>=0) fprintf(stderr,"player with fd %d already exists: find rc=%d\n",fd, rc);
-  if (rc >= 0 ) return -1;
-  
+  for (tt=0;tt<NUM_TEAMS;tt++)
+  {
+      rc = server_plist_find_player_by_fd(&maze->players[tt],fd);
+      if (proto_debug() && rc>=0) fprintf(stderr,"player with fd %d already exists: find rc=%d\n",fd, rc);
+      if (rc >= 0 ) return ERR_BAD_REQUEST;
+  }
+
   rc = server_plist_add_player(&maze->players[team],fd);
   if (proto_debug() && rc<0) fprintf(stderr,"player with fd %d could not be added: rc=%d\n",fd, rc);
   if (rc < 0 ) return -2;

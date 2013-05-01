@@ -33,7 +33,7 @@ typedef struct{
   Pos      broken_wall;
   int      game_state_update;
   int      timestamp;
-  Object  objects[NUM_OBJECTS];
+  Object   objects[NUM_OBJECTS];
 } Update;
 
 typedef struct{

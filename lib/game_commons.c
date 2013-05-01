@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <poll.h>
 #include <pthread.h>
-#include <strings.h>
+#include <string.h>
 #include "net.h"
 #include "protocol.h"
 #include "protocol_utils.h"
@@ -52,18 +52,19 @@ void object_init(Maze*m, Object_Types object, Team_Types team)
   if (oo->type == OBJECT_FLAG)
   {
     oo->visiblity = 0;
-    int size ,rx, ry, found;
+    int rx, ry, found;
     found = 0;
     while( found==0 )
     {
-      size =(m->max.x / NUM_TEAMS);
-    
       // Hard coded 
       rx = 100*(team)+49;
       ry = 99;
+      
       // Uncomment for randomized starting position
+      /*int size =(m->max.x / NUM_TEAMS);*/
       /*rx = randint()%(size+(team*size));*/
       /*ry = randint()%(m->max.y);*/
+      
       if (rx >= m->max.x || ry >= m->max.y ) continue;
       if (m->get[rx][ry].type != CELL_FLOOR) continue;
       
@@ -452,50 +453,107 @@ extern void maze_destroy(Maze*maze)
      bzero(maze,sizeof(Maze)); 
 }
 
-extern void maze_dump(Maze*map)
+extern void maze_object_dump(Object*object,FILE*fd,int indent)
+{
+  fprintf(fd,"\n\t");
+  if( indent>1 ) fprintf(fd,"\t");
+  fprintf(fd,"[" COLOR_OKPINK "object" COLOR_END " team:%1d type:%1d]",
+          object->team,object->type);
+}
+
+extern void maze_player_dump(Player*player,FILE*fd)
+{
+  fprintf(fd,"\n\t["COLOR_OKGREEN"player "COLOR_END"team:%1d id:%03d]",
+          player->team,player->id);
+  if (player->shovel) maze_object_dump(player->shovel,fd,2);
+  if (player->flag) maze_object_dump(player->flag,fd,2);
+}
+
+extern void maze_cell_dump(Cell*c, FILE*fd)
+{
+    fprintf(fd,"[cell %03d,%03d type:%1d]",c->pos.x,c->pos.y,c->type);
+    if (c->object) maze_object_dump(c->object,fd,1);
+    if (c->player) maze_player_dump(c->player,fd);
+    fprintf(fd,"\n");
+}
+
+extern void maze_text_dump(Maze*m, char* filename)
+{
+	int x,y;
+	FILE* fd;
+  if (strncmp(filename,"console",sizeof("console")-1)==0) fd = stderr;
+  else fd =fopen(filename,"w");
+
+  fprintf(fd,"[MAZE STATE:%1d]\n",m->current_game_state);
+
+  for( y = m->min.x; y < m->max.y; y++ )
+  {
+		for( x = m->min.y; x < m->max.x; x++ )
+    {
+      Cell*cell= &m->get[x][y];
+      if ( cell->player || cell->object )
+      maze_cell_dump(cell, fd);
+    }
+  }
+  fprintf(fd,"\n");
+  fprintf(stderr,"Server Text Dump Completed\n");
+  fflush(fd);
+  close((int)(size_t)fd);
+}
+
+extern void maze_ascii_dump(Maze*map, char* filename)
 {
 	int x,y;
 	FILE* dumpfp;
-	dumpfp = fopen("dumpfile.text","w");
-	for( y = map->min.x; y < map->max.y; y++ )
+  if (strncmp(filename,"console",sizeof("console")-1)==0) dumpfp = stderr; 
+  else dumpfp =fopen(filename,"w");
+
+  for( y = map->min.x; y < map->max.y; y++ )
   {
 		for( x = map->min.y; x < map->max.x; x++ )
     {
-      if(map->get[x][y].type==CELL_WALL)
+      if(map->get[x][y].player)
+      {
+        Player*player = map->get[x][y].player;
+        if (player->team == TEAM_RED)
+        {
+				  fprintf(dumpfp,"R");
+        }
+        else
+        {
+				  fprintf(dumpfp,"B");
+        }
+      }
+      else if(map->get[x][y].type==CELL_WALL)
 			{
-				fprintf(stdout,"#");
 				fprintf(dumpfp,"#");
 			}
 			else if(map->get[x][y].type==CELL_FLOOR)
 			{
-				fprintf(stdout," ");
 				fprintf(dumpfp," ");
 			}
 			else if(map->get[x][y].type==CELL_JAIL && map->get[x][y].turf==TEAM_RED)
 			{
-				fprintf(stdout,"j");
 				fprintf(dumpfp,"j");
 			}
 			else if(map->get[x][y].type==CELL_HOME && map->get[x][y].turf==TEAM_RED)
 			{
-				fprintf(stdout,"h");
 				fprintf(dumpfp,"h");
 			}
 			else if(map->get[x][y].type==CELL_JAIL && map->get[x][y].turf==TEAM_BLUE)
 			{
-				fprintf(stdout,"J");
 				fprintf(dumpfp,"J");
 			}
 			else if(map->get[x][y].type==CELL_HOME && map->get[x][y].turf==TEAM_BLUE)
 			{
-				fprintf(stdout,"H");
 				fprintf(dumpfp,"H");
 			}
     }
-		fprintf(stdout,"\n");
 		fprintf(dumpfp,"\n");
 	}
-	close((int)dumpfp);
+  fprintf(stderr,"Server ASCII dump completed\n");
+  fflush(dumpfp);
+	close((int)(size_t)dumpfp);
 }
 
 /****************************/

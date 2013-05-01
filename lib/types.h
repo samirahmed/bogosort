@@ -26,6 +26,18 @@
 
 #define PTHREAD_STACK_SIZE 16384
 
+#define COLOR_HEADER  "\033[95m" 
+#define COLOR_OKBLUE  "\033[94m"
+#define COLOR_WARNING "\033[93m"
+#define COLOR_OKGREEN "\033[92m"
+#define COLOR_FAIL    "\033[91m"
+#define COLOR_BLUE    "\033[34m" 
+#define COLOR_YELLOW  "\033[33m"
+#define COLOR_RED     "\033[31m"
+#define COLOR_PINK    "\033[35m"
+#define COLOR_OKPINK  "\033[95m" 
+#define COLOR_END     "\033[0m"
+
 /* NETWORK TYPES */
 
 /* native word sized unsigned and signed values */
@@ -47,6 +59,7 @@ typedef enum{
     ERR_BAD_X_Y         = -61, // Bad xy position
     ERR_BAD_NEXT_CELL   = -62, // Next cell specified is wrong
     ERR_BAD_ACTION      = -63, // Action Specified is not valid
+    ERR_BAD_REQUEST     = -64, // Your player can't make this request
     ERR_JAIL_FULL       = -80  // Jail is full error 
 }
 Game_Error_Types;

@@ -27,6 +27,7 @@
 #include <poll.h>
 #include <pthread.h>
 #include <string.h>
+#include <time.h>
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/net.h"
@@ -37,6 +38,52 @@
 #include "../lib/protocol_utils.h"
 
 static Maze maze; 		
+static char timestr[9];
+static int  teleport;
+
+//////////////////
+// HELPER CODE  //
+//////////////////
+
+void slog(char*cmd,int*action,int fd,int* team,int* id,int rc,clock_t clk)
+{
+  time_t raw;
+  int sec;
+  struct tm * tt;
+  char rcstr[25];
+  
+  time(&raw); 
+  tt = localtime(&raw);
+  sprintf(timestr,"%.2d:%.2d:%.2d",tt->tm_hour,tt->tm_min,tt->tm_sec);
+  
+  if (rc >= 0)
+    sprintf(rcstr,COLOR_OKGREEN "%d" COLOR_END , rc); 
+  else
+    sprintf(rcstr,COLOR_FAIL "%d" COLOR_END , rc);
+  
+  sec = (int)(((float)(clock()-clk)/CLOCKS_PER_SEC)*1000);
+
+  if (team && id && action )
+	fprintf(stdout,
+    "%s\t"COLOR_YELLOW"%s"COLOR_END
+    "\t[%1d]\tfd:%05d\tteam:"
+    COLOR_BLUE"%1d"COLOR_END"\tid:"
+    COLOR_BLUE"%03d"COLOR_END"\trc:%s\t%dms\n",
+   timestr,cmd,*action,fd,*team,*id,rcstr,sec);
+  else if (team && id)
+	fprintf(stdout,
+    "%s\t"COLOR_YELLOW"%s"COLOR_END
+    "\t\tfd:%05d\tteam:"
+    COLOR_BLUE"%1d"COLOR_END"\tid:"
+    COLOR_BLUE"%03d"COLOR_END"\trc:%s\t%dms\n",
+    timestr,cmd,fd,*team,*id,rcstr,sec);
+  else
+	fprintf(stdout,
+    "%s\t"COLOR_YELLOW"%s"COLOR_END"\t\tfd:%05d\tteam:_\tid:___\trc:%s\t%dms\n",
+    timestr,cmd,fd,rcstr,sec);
+    
+  fflush(stdout);
+}
 
 ///////////////////
 //  EVENT CODE   //
@@ -46,7 +93,8 @@ int doUpdateClients(Update *update)
 {
   Proto_Session *s;
   Proto_Msg_Hdr hdr;
-  
+  bzero(&hdr, sizeof(Proto_Msg_Hdr));
+
   // Copy players/broken walls into update
   hdr.sver.raw = update->timestamp;
   hdr.gstate.v0.raw = update->game_state_update;
@@ -89,23 +137,27 @@ int doUpdateClients(Update *update)
 int client_lost_handler( Proto_Session * s)
 {
   int id,team,rc,fd;
+  clock_t clk;
+  clk = clock();
+
   fd = (int)s->fd;
   rc =server_fd_to_id_and_team(&maze,fd,&team,&id);
   if (rc <0) 
   {
-    fprintf(stderr,"Client Lost but FD doesn't match existing player\n");
+    slog("DIS",NULL,fd,NULL,NULL,0,clk);
     return -1;
   }
 
-  Update update;  
+  Update update; 
+  bzero(&update,sizeof(Update));
   server_game_drop_player(&maze, team, id, &update);
-	fprintf(stdout, "Client Lost fd%d\n",(int)s->fd);
 
   if (proto_debug()) proto_session_dump(s);
   
   /// EVENT UPDATE GOES HERE
-  /*doUpdateClients(&update);*/
-
+  doUpdateClients(&update);
+	
+  slog("DRP",NULL,fd,&team,&id,0,clk);
   return -1;
 }
 
@@ -115,15 +167,20 @@ int client_lost_handler( Proto_Session * s)
 
 int hello_handler( Proto_Session *s)
 {
-  if (proto_debug()) fprintf(stderr,"Hello received\n");
-
+  clock_t clk;
   int rc;
+  clk = clock();
   Player*player;
   Update update;
+  bzero(&update,sizeof(Update));
   
   rc = server_game_add_player(&maze,s->fd,&player,&update);
-  if(rc<0) reply(s,PROTO_MT_REP_HELLO,rc,(size_t)NULL);
-  
+  if(rc<0)
+  {
+	  slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc,clk);
+    return reply(s,PROTO_MT_REP_HELLO,rc,(size_t)NULL);
+  }
+
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr));
   h.type = PROTO_MT_REP_HELLO;
@@ -133,20 +190,24 @@ int hello_handler( Proto_Session *s)
   put_hdr(s,&h);
 
   /// EVENT UPDATE GOES HERE
-  /*doUpdateClients(&update);*/
+  doUpdateClients(&update);
+
+	slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc,clk);
 
   return reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
 }
 
 int goodbye_handler( Proto_Session *s)
 {
-  if(proto_debug()) fprintf(stderr,"Drop Request Received");
   client_lost_handler(s);
-  return reply(s,PROTO_MT_REP_GOODBYE,0,(size_t)NULL);
+  reply(s,PROTO_MT_REP_GOODBYE,0,(size_t)NULL);
+  return -1;
 }
 
 int sync_handler( Proto_Session *s)
 {
+  clock_t clk = clock();
+  
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr));
   int *walls, *rlist, *blist, blen, rlen, wlen, 
@@ -180,14 +241,14 @@ int sync_handler( Proto_Session *s)
   h.pstate.v2.raw = wlen;
   h.pstate.v3.raw = rlen+blen;
   put_hdr(s,&h);
- 
+	
+  slog("SYN",NULL,s->fd,NULL,NULL,0,clk);
   return reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
 }
 
 int action_handler( Proto_Session *s)
 {
-  if (proto_debug()) fprintf(stderr,"Action Request Received from\n");
-
+  clock_t clk = clock();
   Proto_Msg_Hdr h;
   int rc,id,team,action,fd;
   Pos current,next;
@@ -205,20 +266,32 @@ int action_handler( Proto_Session *s)
   proto_session_body_unmarshall_bytes(s, sizeof(Pos), sizeof(Pos), (char*)&next);
 
   rc = server_request_init(&maze,&request,fd,action,next.x,next.y);
-  if (rc<0) return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+  request.test_mode = teleport; // allow server to enable teleport
+
+  if (rc<0)
+  {
+    slog("ACT",&action,fd,&team,&id,rc,clk);
+    return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+  }
   
   rc = server_game_action(&maze, &request);
-  if (rc<0) return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+  if (rc<0)
+  {
+    slog("ACT",&action,fd,&team,&id,rc,clk);
+    return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+  }
 
   /// EVENT UPDATE GOES HERE
-  /*doUpdateClients(&request.update);*/
-
+  doUpdateClients(&request.update);
+  
+  slog("ACT",&action,fd,&team,&id,rc,clk);
   return reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
 }
 
 int init_game(void){
 	int rc;
-  rc = maze_build_from_file(&maze,"../daGame.map");
+  teleport = 0;
+  rc = maze_build_from_file(&maze,"./daGame.map");
   if (rc <0) fprintf(stderr, "ERROR: Failed to build map\n");
   
   if (proto_debug()) fprintf(stderr, "Initializing Request Handlers\n");
@@ -239,14 +312,57 @@ int init_game(void){
 //  SHELL CODE  //
 //////////////////
 
-char MenuString[] =
-  "Usage: d/D-debug on/off\n\tu-update clients\n\tq-quit\n\tload <filename> - Loads a Map file\n\tdump - dump contents of map data structure\n";
+char MenuString[] = "Usage:\t d/D- debug on/off (default is off)\n\t \
+teleport - toggle teleportation on/off (default is off)\n\t \
+q/quit - terminate server\n\t \
+asciidump console - dump an ascii reprentation of maze to terminal\n\t \
+asciidump <filename> - dump an ascii reprentation of maze into file\n\t \
+textdump console - dump player/object/state into readable to terminal\n\t \
+textdump <filename> - dump player/object/state into readable text file\n\n";
 
 int docmd(char* cmd)
 {
   int rc = 1;
 
-  if((strncmp(cmd,"dump",4))==0) { maze_dump(&maze); return rc; }
+  if ((strncmp(cmd,"quit",sizeof("quit")-1))==0)
+  {
+    return -1;
+  }
+  else if ((strncmp(cmd,"teleport",sizeof("quit")-1))==0)
+  {
+    teleport = !teleport;
+    if (teleport) 
+      fprintf(stdout,"Teleportation " COLOR_BLUE "ENABLED" COLOR_END "\n");
+    else
+      fprintf(stdout,"Teleportation " COLOR_RED "DISABLED" COLOR_END "\n");
+
+    fflush(stdout);
+    return 0;
+  }
+  else if((strncmp(cmd,"textdump",sizeof("textdump")-1))==0) 
+  { 
+    char* token;
+    token = strtok(cmd+sizeof("textdump")-1,": \n\0");
+    if (token == NULL )
+    {
+      fprintf(stderr,"Please specify filename $textdump <filename>\n");
+      return rc;
+    }
+    maze_text_dump(&maze,token); 
+    return rc; 
+  }
+  else if((strncmp(cmd,"asciidump",sizeof("asciidump")-1))==0) 
+  { 
+    char* token;
+    token = strtok(cmd+sizeof("asciidump")-1,": \n\0");
+    if (token == NULL )
+    {
+      fprintf(stderr,"Please specify filename $asciidump <filename>\n");
+      return rc;
+    }
+    maze_ascii_dump(&maze,token); 
+    return rc; 
+  }
 
   switch (*cmd) {
   case 'd':
@@ -270,13 +386,13 @@ int docmd(char* cmd)
 
 char* prompt(int menu) 
 {
-  if (menu) printf("%sSERVER_SHELL$ ", MenuString);
+  if (menu) fprintf(stdout,"%sSERVER_SHELL$\n", MenuString);
   fflush(stdout);
   
   // Pull in input from stdin
   int bytes_read;
   size_t nbytes = 0;
-  char *my_string;
+  char *my_string = (char*) malloc(1);
   bytes_read = getline (&my_string, &nbytes, stdin);
   
   char* pch;
@@ -295,16 +411,17 @@ void * shell(void *arg)
   int rc=1;
   int menu=1;
 
-  while (1) {
+  while (1) 
+  {
     if ((c=prompt(menu))!=0) rc=docmd(c);
     if (rc<0) break;
     if (rc==1) menu=1; else menu=0;
+    if(c!=0)	free(c);
   }
-  if(c!=0)//If this variable was allocated in prompt(menu) please free memory
-	free(c);
-
-  fprintf(stderr, "terminating\n");
+  
+  if(c!=0)	free(c);
   fflush(stdout);
+  fprintf(stderr, "terminating\n");
   return NULL;
 }
 
