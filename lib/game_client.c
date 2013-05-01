@@ -46,6 +46,13 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
            //Update player's client position to new coordinates
            player_ptr->client_position.x = new_x;
            player_ptr->client_position.y = new_y;
+
+            player_ptr->id = player.id;
+            player_ptr->state = player.state;
+            player_ptr->team = player.team;
+
+
+
            
            //Delete player's existance from old cell
            maze->get[cur_x][cur_y].player = NULL;
