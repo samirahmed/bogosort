@@ -27,6 +27,7 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
     Player_Update_Types update_type;
     for(ii = 0; ii < num_elements; ii++)
     {
+        bzero(&player,sizeof(Player));
         if(!decompress_is_ignoreable(&player_compress[ii])) 
         {
             decompress_player(&player,&player_compress[ii],&update_type);
@@ -45,6 +46,13 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
            //Update player's client position to new coordinates
            player_ptr->client_position.x = new_x;
            player_ptr->client_position.y = new_y;
+           
+           //Delete player's existance from old cell
+           maze->get[cur_x][cur_y].player = NULL;
+           if(maze->get[cur_x][cur_y].object==NULL)
+               maze->get[cur_x][cur_y].cell_state = CELLSTATE_EMPTY;
+           else
+               maze->get[cur_x][cur_y].cell_state = CELLSTATE_HOLDING;
 
            //Set the player pointer at cell position x,y to my player
            maze->get[new_x][new_y].player = player_ptr; 
@@ -53,12 +61,6 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
            else
                maze->get[cur_x][cur_y].cell_state = CELLSTATE_OCCUPIED_HOLDING;
 
-           //Delete player's existance from old cell
-           maze->get[cur_x][cur_y].player = NULL;
-           if(maze->get[cur_x][cur_y].object==NULL)
-               maze->get[cur_x][cur_y].cell_state = CELLSTATE_EMPTY;
-           else
-               maze->get[cur_x][cur_y].cell_state = CELLSTATE_HOLDING;
 
            if(proto_debug())
            {
@@ -80,60 +82,91 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
 void update_objects(int num_elements,int* object_compress, Maze* maze)
 {
     int ii,new_x,new_y,cur_x,cur_y;
+    int cur_has_player;
     Object object;
     Object* object_ptr;
     Player* player;
     for(ii = 0; ii < num_elements; ii++)
     {
+        bzero(&object,sizeof(Object));
         if(!decompress_is_ignoreable(&object_compress[ii])) 
         {
             decompress_object(&object,&object_compress[ii]);
+            
+            //Get pointer to object from object list
+            object_ptr = object_get(maze,object.type,object.team);
+            
+            //Get objects current coordinates
+            cur_x = object_ptr->client_position.x;
+            cur_y = object_ptr->client_position.y;
 
             //Get new coordinates for the object
             new_x = object.client_position.x;
             new_y = object.client_position.y;
 
-            //Get pointer to object from object list
-            object_ptr = object_get(maze,object.type,object.team);
+            
+            //Get previous state of whether object was held
+            cur_has_player = object_ptr->client_has_player;
+            
 
-            //Get objects current coordinates
-            cur_x = object_ptr->client_position.x;
-            cur_y = object_ptr->client_position.y;
+            
+            //Delete old pointer to the object
+            maze->get[cur_x][cur_y].object = NULL;
+            
+            //Object Dropped
+            if(cur_has_player && !object.client_has_player)
+            {
+                //Get a pointer to the player that dropped the object
+                player = &maze->players[object_ptr->client_player_team].at[object_ptr->client_player_id];
 
-            //Update object location
+                //Set the player's object pointer to null
+                if(object_ptr->type==OBJECT_SHOVEL)
+                    player->shovel = NULL;
+                else
+                    player->flag = NULL;
+
+                //If a player is currently in the same cell as the object then cell state is
+                // CELLSTATE_OCCUPIED_HOLDING else CELLSTATE_HOLDING
+                if(player->client_position.x == new_x && player->client_position.y == new_y)
+                    maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED_HOLDING;
+                else
+                    maze->get[new_x][new_y].cell_state = CELLSTATE_HOLDING;
+
+                maze->get[new_x][new_y].object = object_ptr;
+            }
+            //Object Picked up
+            else if(!cur_has_player && object.client_has_player)
+            {
+                //Get the pointer to the player picking up
+                player = &maze->players[object.client_player_team].at[object.client_player_id];
+
+                //Set the player's object pointer to the object_ptr obtained from the object list
+                if(object.type==OBJECT_SHOVEL)
+                    player->shovel = object_ptr;
+                else
+                    player->flag = object_ptr;
+
+                //Set the cell to an occupied state
+                maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED;
+                maze->get[new_x][new_y].object = NULL;
+            }
+            else if(!object.client_has_player)
+            {
+                if(maze->get[new_x][new_y].player==NULL)
+                    maze->get[new_x][new_y].cell_state = CELLSTATE_HOLDING;
+                else
+                    maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED_HOLDING;
+                maze->get[new_x][new_y].object = object_ptr;
+            }
+
+            //Update object location and other parameters
             object_ptr->client_position.x = new_x;
             object_ptr->client_position.y = new_y;
-
-            //Update Object's other parameters
             object_ptr->team = object.team;
             object_ptr->client_has_player = object.client_has_player;
             object_ptr->client_player_id = object.client_player_id;
             object_ptr->client_player_team = object.client_player_team;
             object_ptr->type = object.type;
-
-            //if object belongs to a player assign object pointer to appropriate data field
-            if(object.client_has_player)
-            {
-                player = &maze->players[object.client_player_team].at[object.client_player_id];
-                if(object.type==OBJECT_SHOVEL)
-                    player->shovel = object_ptr;
-                else
-                    player->flag = object_ptr;
-                maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED_HOLDING;
-            }
-            //else assign object pointer to cell object structure
-            else{
-                maze->get[new_x][new_y].object = object_ptr;
-                maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED;
-            }
-
-            //Clean up old object information
-            maze->get[cur_x][cur_y].object = NULL;
-            if(maze->get[cur_x][cur_y].cell_state==CELLSTATE_OCCUPIED)
-                maze->get[cur_x][cur_y].cell_state = CELLSTATE_EMPTY;
-           
-            //TODO: WHAT DO I DO HERE?!?!?!?
-            else if(maze->get[cur_x][cur_y].cell_state==CELLSTATE_OCCUPIED_HOLDING){}
 
 
 
