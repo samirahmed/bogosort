@@ -81,10 +81,7 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
 void update_objects(int num_elements,int* object_compress, Maze* maze)
 {
     int ii,new_x,new_y,cur_x,cur_y;
-<<<<<<< HEAD
     int cur_has_player;
-=======
->>>>>>> 314ceb26d26358e6ffe765c57d086b1dcf128155
     Object object;
     Object* object_ptr;
     Player* player;
@@ -94,26 +91,14 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
         if(!decompress_is_ignoreable(&object_compress[ii])) 
         {
             decompress_object(&object,&object_compress[ii]);
-<<<<<<< HEAD
             
             //Get pointer to object from object list
             object_ptr = object_get(maze,object.type,object.team);
             
-=======
-
-            //Get new coordinates for the object
-            new_x = object.client_position.x;
-            new_y = object.client_position.y;
-
-            //Get pointer to object from object list
-            object_ptr = object_get(maze,object.type,object.team);
-
->>>>>>> 314ceb26d26358e6ffe765c57d086b1dcf128155
             //Get objects current coordinates
             cur_x = object_ptr->client_position.x;
             cur_y = object_ptr->client_position.y;
 
-<<<<<<< HEAD
             //Get new coordinates for the object
             new_x = object.client_position.x;
             new_y = object.client_position.y;
@@ -150,21 +135,6 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
             }
             //Object Picked up
             else if(!cur_has_player && object.client_has_player)
-=======
-            //Update object location
-            object_ptr->client_position.x = new_x;
-            object_ptr->client_position.y = new_y;
-
-            //Update Object's other parameters
-            object_ptr->team = object.team;
-            object_ptr->client_has_player = object.client_has_player;
-            object_ptr->client_player_id = object.client_player_id;
-            object_ptr->client_player_team = object.client_player_team;
-            object_ptr->type = object.type;
-
-            //if object belongs to a player assign object pointer to appropriate data field
-            if(object.client_has_player)
->>>>>>> 314ceb26d26358e6ffe765c57d086b1dcf128155
             {
                 //Get the pointer to the player picking up
                 player = &maze->players[object.client_player_team].at[object.client_player_id];
@@ -174,7 +144,6 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
                     player->shovel = object_ptr;
                 else
                     player->flag = object_ptr;
-<<<<<<< HEAD
 
                 //Set the cell to an occupied state
                 maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED;
@@ -197,23 +166,6 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
             object_ptr->client_player_id = object.client_player_id;
             object_ptr->client_player_team = object.client_player_team;
             object_ptr->type = object.type;
-=======
-                maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED_HOLDING;
-            }
-            //else assign object pointer to cell object structure
-            else{
-                maze->get[new_x][new_y].object = object_ptr;
-                maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED;
-            }
-
-            //Clean up old object information
-            maze->get[cur_x][cur_y].object = NULL;
-            if(maze->get[cur_x][cur_y].cell_state==CELLSTATE_OCCUPIED)
-                maze->get[cur_x][cur_y].cell_state = CELLSTATE_EMPTY;
-           
-            //TODO: WHAT DO I DO HERE?!?!?!?
-            else if(maze->get[cur_x][cur_y].cell_state==CELLSTATE_OCCUPIED_HOLDING){}
->>>>>>> 314ceb26d26358e6ffe765c57d086b1dcf128155
 
 
 
