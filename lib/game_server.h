@@ -118,6 +118,9 @@ extern int  server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell**
 extern int  server_home_count_increment(Home * home);
 extern int  server_home_count_decrement(Home * home);
 extern int  server_home_count_read(Home * home);
+extern int  server_home_flag_read(Home*home);
+extern int  server_home_flag_increment(Home*home);
+extern int  server_home_flag_decrement(Home*home);
 
 // PLIST METHODS
 extern int  server_plist_player_count( Plist * plist );

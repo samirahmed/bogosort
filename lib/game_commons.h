@@ -106,6 +106,7 @@ typedef struct{
     Pos              max;
     pthread_rwlock_t count_wrlock;
     int              count;
+    int              flags;
     Team_Types       team;
 } Home;
 

@@ -378,10 +378,12 @@ extern int _server_game_state_update(Maze*m, Player*player, Cell*current, Cell*n
   if (current->type!=CELL_HOME && next->type==CELL_HOME && player->team == next->turf )
   {
     server_home_count_increment(&m->home[player->team]);
+    if (player->flag) server_home_flag_increment(&m->home[player->team]);
   }
   if (current->type==CELL_HOME && next->type!=CELL_HOME && player->team == current->turf )
   {
     server_home_count_decrement(&m->home[player->team]);
+    if (player->flag) server_home_flag_decrement(&m->home[player->team]);
   }
 
   return rc;
@@ -706,6 +708,35 @@ extern int server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell** 
    
    if (found != 0) return -1; 
    return 0;
+}
+
+extern int server_home_flag_read(Home*home)
+{
+  int count;
+  pthread_rwlock_rdlock(&(home->count_wrlock));
+  count = home->flags;
+  pthread_rwlock_unlock(&(home->count_wrlock));
+  return count;
+}
+
+extern int server_home_flag_increment(Home*home)
+{
+  int count;
+  pthread_rwlock_wrlock(&(home->count_wrlock));
+  home->flags++;
+  count = home->flags;
+  pthread_rwlock_unlock(&(home->count_wrlock));
+  return count;
+}
+
+extern int server_home_flag_decrement(Home*home)
+{
+  int count;
+  pthread_rwlock_wrlock(&(home->count_wrlock));
+  home->flags--;
+  count = home->count;
+  pthread_rwlock_unlock(&(home->count_wrlock));
+  return count;
 }
 
 extern int server_home_count_read(Home* home)
