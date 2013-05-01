@@ -100,11 +100,6 @@ extern void jail_init(Jail* jail, Pos min, Pos max, Team_Types team)
   jail->max.x = max.x;
   jail->max.y = max.y;
   jail->team  = team;
-  pthread_mutexattr_t attr;
-  pthread_mutexattr_init(&attr);
-  pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE ); //SET TYPE TO RECURSIVE i,e REENTRANT MUTEX
-  pthread_mutex_init(&jail->jail_recursive_lock,&attr);
-  pthread_mutexattr_destroy(&attr);  // after initialization this attr object doesn't affect the pthread  
 }
 
 extern void home_init(Home* home, Pos min, Pos max, Team_Types team)

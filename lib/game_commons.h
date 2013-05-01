@@ -98,7 +98,6 @@ typedef struct{
     Pos              min;
     Pos              max;
     Team_Types       team;
-    pthread_mutex_t  jail_recursive_lock;
 } Jail;
 
 typedef struct{
