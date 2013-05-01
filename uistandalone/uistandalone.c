@@ -33,9 +33,6 @@
 /* A lot of this code comes from http://www.libsdl.org/cgi/docwiki.cgi */
 
 
-#define SPRITE_H 3
-#define SPRITE_W 3
-
 #define UI_FLOOR_BMP "floor.bmp"
 #define UI_REDWALL_BMP "redwall.bmp"
 #define UI_GREENWALL_BMP "greenwall.bmp"
@@ -45,16 +42,15 @@
 #define UI_REDFLAG_BMP "redflag.bmp"
 #define UI_GREENFLAG_BMP "greenflag.bmp"
 #define UI_JACKHAMMER_BMP "shovel.bmp"
-
-
-
+#define SPRITE_H 3 
+#define SPRITE_W 3
 
 Maze * map_ptr;
 Maze maze;
 Plist red_players;
 Plist blue_players;
 Player p;
-
+int waitRpc = 0;
 
 int init_mapload = 0;
 typedef enum {UI_SDLEVENT_UPDATE, UI_SDLEVENT_QUIT} UI_SDL_Event;
@@ -413,7 +409,10 @@ if(cur_cell.cell_state == CELLSTATE_EMPTY){
 		
 		if(cur_cell.cell_state ==  CELLSTATE_OCCUPIED){
 			//if((*(cur_cell.player)).team == TEAM_RED){
-			  ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c); // paint yellow for now -- will have to change colors	
+			//need to color pixels appropriately  
+			// say:
+		
+			ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c); // paint yellow for now -- will have to change colors	
 				}//else{
 				//on the blue team
 				
@@ -422,8 +421,14 @@ if(cur_cell.cell_state == CELLSTATE_EMPTY){
 			else{
 			if(cur_cell.cell_state == CELLSTATE_HOLDING){
 				//PRINT OBJECT
+				//orange if jackhammer/shovel
+				//purple if flag
+				if(cur_cell.object->type == OBJECT_SHOVEL){
+					ui_putnpixel(ui->screen, scale_x, scale_y, ui-> purple_c);
 				}
 				else{
+				//	ui_putnpixel(ui->screen, scale_x, scale_y, ui->orange_c);
+}
 				//PRINT PLAYER HOLDING
 
 
@@ -471,16 +476,16 @@ ui_init_sdl(UI *ui, int32_t h, int32_t w, int32_t d)
   ui->black_c      = SDL_MapRGB(ui->screen->format, 0x00, 0x00, 0x00);
   ui->white_c      = SDL_MapRGB(ui->screen->format, 0xff, 0xff, 0xff);
   ui->red_c        = SDL_MapRGB(ui->screen->format, 0xff, 0x00, 0x00);
-  ui->green_c      = SDL_MapRGB(ui->screen->format, 0x00, 0xff, 0x00);
+  ui->blue_c      = SDL_MapRGB(ui->screen->format, 0x00, 0x00, 0xff);
   ui->yellow_c     = SDL_MapRGB(ui->screen->format, 0xff, 0xff, 0x00);
   ui->purple_c     = SDL_MapRGB(ui->screen->format, 0xff, 0x00, 0xff);
-  
+  //ui->orange_c = SDL_MapRGB(ui->screen->format, 0xff, 0x99, 0x00); 
   
   ui->isle_c         = ui->black_c;
   ui->wall_teama_c   = ui->red_c;
-  ui->wall_teamb_c   = ui->green_c;
+  ui->wall_teamb_c   = ui->blue_c;
   ui->player_teama_c = ui->red_c;
-  ui->player_teamb_c = ui->green_c;
+  ui->player_teamb_c = ui->blue_c;
   ui->flag_teama_c   = ui->white_c;
   ui->flag_teamb_c   = ui->white_c;
   ui->jackhammer_c   = ui->yellow_c;
@@ -545,13 +550,15 @@ ui_process(UI *ui)
 extern sval
 ui_zoom(UI *ui, sval fac)
 {
-  
-  //zoom the ui by a factor fac
-  //SPRITE_H = SPRITE_H * fac;
-  //SPRITE_W = SPRITE_W * fac; 
-  //init__mapload = 0;
+  //zoom the ui in if fac == 1
+  // zoom out otherwise
+       // note: basically want to zoom in around where the player is located
+       // so get the location, enlarge the relevant pixels and don't display the 
+	// others	
+
   fprintf(stderr, "%s:\n", __func__);
   return 2;
+
 }
 
 extern sval
@@ -594,6 +601,7 @@ ui_quit(UI *ui)
 extern void
 ui_main_loop(UI *ui, uval h, uval w)
 {
+
   sval rc;
   
   assert(ui);
