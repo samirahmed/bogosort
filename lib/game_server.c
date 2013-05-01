@@ -461,6 +461,45 @@ extern int server_validate_player( Maze*m, Team_Types team, int id , int fd )
   return rc;
 }
 
+extern int server_recalculate_game_state( Maze*m )
+{
+  pred = server_plist_player_count(m->players[TEAM_RED]);
+  pblue = server_plist_player_count(m->players[TEAM_BLUE]);
+
+  hred = server_home_count_read(m->players[TEAM_RED]);
+  hblue = server_home_count_read(m->players[TEAM_BLUE]);
+
+  fred = server_home_flag_read(m->players[TEAM_RED]);
+  fblue = server_home_flag_read(m->players[TEAM_BLUE]);
+  
+  int snew, scur, rc;
+
+  server_maze_property_lock(m);
+  scur = m->state;
+  rc = GAME_STATE_UNCHANGED;
+
+  if (pred > 0 && pblue > 0)
+  {
+    if (pred == hred && fred == 2 ) state == GAME_STATE_RED_WIN;
+    else if (pblue == hblue && fblue == 2 ) state == GAME_STATE_BLUE_WIN;
+    else GAME_STATE_ACTIVE;
+  }
+  else
+  {
+    state = GAME_STATE_WAITING;
+  }
+  
+  if (scur != snew ) 
+  { 
+    scur = snew;
+    rc = scur;
+  }
+
+  server_maze_property_unlock(m);
+
+  return rc;
+}
+
 /*****************/
 /* LOCKING FUNCS */
 /*****************/
