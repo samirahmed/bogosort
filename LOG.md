@@ -1,3 +1,47 @@
+# Meeting Log
+
+## 5-2-2013
+
+### Attendees:
+Samir A, Katsutoshi K. Will S.
+
+### Questions:
+
+- how do we manage the ui and cli at the same time
+
+### Todo:
+
+- Will & Katsu need to integrate the ui+cli into one client
+- Samir needs to update server with game state info + serialized event updates
+
+### Comments/Notes:
+
+Needed to change some of the ui code, because it gets caught up when the NUMLOCK is enabled on ubuntu.
+
+We need to maintain the cli for testing purposes, it would appear that they we have 3 threads...
+
+- UI
+- Event Update
+- RPC
+
+## 4-27-2013
+
+### Attendees:
+Samir A, Katsutoshi K.
+
+### Questions:
+
+none
+
+### Todo:
+
+- Katsu needs to fix client parsing of EC updates
+- Samir needs to fix up the client + server integration testing framework **CHEF**
+
+### Comments/Notes:
+
+We still need to figure out how to integrate the UI + Client, but it should not be as difficult as the server+client
+
 ## 3-19-2013
 ### Attendees:
 Samir A, Katsutoshi K.
