@@ -461,39 +461,38 @@ extern int server_validate_player( Maze*m, Team_Types team, int id , int fd )
   return rc;
 }
 
-extern int server_recalculate_game_state( Maze*m )
+extern int  server_game_recalculate_state( Maze*m, int * gstate )
 {
-  pred = server_plist_player_count(m->players[TEAM_RED]);
-  pblue = server_plist_player_count(m->players[TEAM_BLUE]);
+  int pred = server_plist_player_count(&m->players[TEAM_RED]);
+  int pblue = server_plist_player_count(&m->players[TEAM_BLUE]);
 
-  hred = server_home_count_read(m->players[TEAM_RED]);
-  hblue = server_home_count_read(m->players[TEAM_BLUE]);
+  int hred = server_home_count_read(&m->home[TEAM_RED]);
+  int hblue = server_home_count_read(&m->home[TEAM_BLUE]);
 
-  fred = server_home_flag_read(m->players[TEAM_RED]);
-  fblue = server_home_flag_read(m->players[TEAM_BLUE]);
+  int fred = server_home_flag_read(&m->home[TEAM_RED]);
+  int fblue = server_home_flag_read(&m->home[TEAM_BLUE]);
   
   int snew, scur, rc;
 
   server_maze_property_lock(m);
-  scur = m->state;
+  scur = m->current_game_state;
   rc = GAME_STATE_UNCHANGED;
 
-  if (pred > 0 && pblue > 0)
+  if (pred > 0 && pblue > 0) // game start condition
   {
-    if (pred == hred && fred == 2 ) state == GAME_STATE_RED_WIN;
-    else if (pblue == hblue && fblue == 2 ) state == GAME_STATE_BLUE_WIN;
-    else GAME_STATE_ACTIVE;
+    if (pred == hred && fred == 2 ) snew = GAME_STATE_RED_WIN;
+    else if (pblue == hblue && fblue == 2 ) snew = GAME_STATE_BLUE_WIN;
+    else GAME_STATE_ACTIVE;  // started but no winner
   }
-  else
-  {
-    state = GAME_STATE_WAITING;
-  }
+  else snew = GAME_STATE_WAITING;
   
   if (scur != snew ) 
   { 
     scur = snew;
     rc = scur;
   }
+
+  if ( gstate ) *gstate = scur;   // Provide the absolute state here if a variable is passed through
 
   server_maze_property_unlock(m);
 

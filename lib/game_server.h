@@ -63,6 +63,7 @@ extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next,
 extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next, Update*update);
 extern int _server_game_state_update(Maze*m, Player*player, Cell*current, Cell*next);
 extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next, Update*update);
+extern int  server_game_recalculate_state( Maze*m, int * gstate );
 
 // Locking Methods
 extern void server_maze_property_unlock(Maze*m);

@@ -1031,7 +1031,51 @@ void test_game_move(TestContext*tc)
     maze_destroy(&maze);
 }
 
-/*void test_event_updates()*/
+void test_game_state(TestContext *tc)
+{
+    Maze maze;
+    maze_build_from_file(&maze,"test.map");
+
+    int state, rc ,assertion,diff,ii;
+    
+    diff = server_game_recalculate_state(m,&state);
+
+    assertion = (diff == GAME_STATE_WAITING) &&
+                (state == GAME_STATE_WAITING);
+    should("indicate waiting state before any players are added",assertion,tc);
+
+    // fake increment plists
+    for (ii=0; ii<25 ;ii++) server_plist_player_count_increment(&maze->players[TEAM_BLUE]);
+    
+    diff = server_game_recalculate_state(m,&state);
+
+    assertion = (diff == GAME_STATE_UNCHANGED) &&
+                (state == GAME_STATE_WAITING);
+    should("indicate waiting state when only one team has players",assertion,tc);
+
+
+    // add one red player and check that game state has changed
+    server_plist_player_count_increment(&maze->players[TEAM_RED]);
+    
+    diff = server_game_recalculate_state(m,&state);
+
+    assertion = (diff == GAME_STATE_ACTIVE) &&
+                (state == GAME_STATE_ACTIVE);
+    should("indicate active when both teams have 1 player",assertion,tc);
+    
+    // fake increment home count
+    for (ii=0; ii<25 ;ii++) server_home_count_increment(&maze->home[TEAM_BLUE]);
+    server_home_count_increment(&maze->home[TEAM_RED]);
+    
+    diff = server_game_recalculate_state(m,&state);
+
+    assertion = (diff == GAME_STATE_UNCHANGED) &&
+                (state == GAME_STATE_ACTIVE);
+    should("not indicate win state unless flags count is 2",assertion,tc);
+
+    
+    maze_destroy(&maze);
+}
 
 int main(int argc, char ** argv )
 {
@@ -1046,7 +1090,7 @@ int main(int argc, char ** argv )
     run(&test_game_move,"Basic Movement",&tc);
     run(&test_pickup_drop_logic,"Objects",&tc);
     run(&test_parallelize_movement,"Concurrent Movement",&tc);
-    /*run(&test_event_updates,"Event Updates",&tc);*/
+    run(&test_game_state,"Game State",&tc);
 
     // TEST END HERE
     
