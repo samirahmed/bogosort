@@ -616,10 +616,10 @@ extern void decompress_object(Object* object, int* compressed)
 
 }
 
-extern void compress_game_state(Maze* maze, int* compressed)
+extern void compress_game_state(Game_State_Types gstate, int* compressed)
 {
   *compressed &=  0xfff8ffff; // clear state bits
-  *compressed |= (0x00070000 & (maze_get_state(maze) << 16)); // write state bits
+  *compressed |= (0x00070000 & (gstate << 16)); // write state bits
 }
 
 extern int decompress_game_state(Game_State_Types *gstate, int* compressed)

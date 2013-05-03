@@ -85,7 +85,7 @@ void test_compression(TestContext *tc)
   test_state = GAME_STATE_UNCHANGED;
   maze_set_state(&maze, GAME_STATE_RED_WIN);
   
-  compress_game_state(&maze, &compressed);
+  compress_game_state(maze.current_game_state, &compressed);
   compress_broken_wall(&broken, &compressed);
   
   assertion = decompress_game_state(&test_state, &compressed);

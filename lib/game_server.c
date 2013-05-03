@@ -195,6 +195,7 @@ extern int server_game_add_player(Maze*maze,int fd, Player**player,Update *updat
     Player copy = *(*player);     // memcpy
     copy.cell = &maze->get[spawn_pos.x][spawn_pos.y];
     compress_player( &copy, &update->compress_player_a, PLAYER_ADDED);
+    compress_game_state( server_game_recalculate_state(maze), &update->game_state_update );
   }
 
   return id;
@@ -219,7 +220,11 @@ extern void server_game_drop_player(Maze*maze,int team, int id, Update*update)
   cell = player->cell;
 
   // make compression of the player before dropping and mark as dropped
-  if (update) compress_player(player,&update->compress_player_a,PLAYER_DROPPED);
+  if (update)
+  {
+    compress_player(player,&update->compress_player_a,PLAYER_DROPPED);
+    compress_game_state( server_game_recalculate_state(maze), &update->game_state_update );
+  }
   
   // drop player, unlock player and player's objects
   _server_drop_handler(maze,player,update);
@@ -330,6 +335,7 @@ extern int server_game_action(Maze*maze , GameRequest* request)
     if ( !(update->broken_wall.x == 0  && update->broken_wall.y == 0) )
       compress_broken_wall( &update->broken_wall, &update->game_state_update );
     update_object_if_possible(update,object);
+    compress_game_state( server_game_recalculate_state(maze), &update->game_state_update );
   }
 
   // unlock the maze

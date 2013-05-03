@@ -178,7 +178,7 @@ extern void decompress_player(Player* player, int* compressed, Player_Update_Typ
 extern void compress_object(Object* object, int* compressed );
 extern void decompress_object(Object* object, int* compressed );
 
-extern void compress_game_state(Maze* object, int* compressed);
+extern void compress_game_state(Game_State_Types gstate, int* compressed);
 extern int decompress_game_state(Game_State_Types* gstate, int* compressed);
 extern void compress_broken_wall(Pos * position, int* compressed);
 extern void decompress_broken_wall(Pos * position, int* compressed);
