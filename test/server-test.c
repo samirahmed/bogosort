@@ -133,11 +133,13 @@ void test_find_and_lock(TestContext * tc)
 void st_increment_home(Task*task)
 {
   server_home_count_increment((Home*)(task->arg0)); 
+  server_home_flag_increment((Home*)(task->arg0)); 
 }
 
 void st_decrement_home(Task*task)
 {
   server_home_count_decrement((Home*)(task->arg0)); 
+  server_home_flag_decrement((Home*)(task->arg0)); 
 }
 
 void st_decrement_plist(Task*task)
@@ -372,8 +374,9 @@ void test_server_locks(TestContext * tc)
     test_task_init(&tasks[1],(Proc)&st_decrement_home,48,&maze.home[team],NULL,NULL,NULL,NULL,NULL);
     parallelize(tasks,2,thread_per_task);
     
-    assertion = server_home_count_read(&maze.home[team]) == ((tasks[0].reps-tasks[1].reps)*thread_per_task);
-    should("atomically increment and decrement home counter",assertion,tc);
+    assertion = server_home_count_read(&maze.home[team]) == ((tasks[0].reps-tasks[1].reps)*thread_per_task) &&
+                server_home_flag_read(&maze.home[team])  == ((tasks[0].reps-tasks[1].reps)*thread_per_task);
+    should("atomically increment and decrement home count & flag",assertion,tc);
    
     ////////////////
     // PLIST COUNTER
@@ -1028,7 +1031,65 @@ void test_game_move(TestContext*tc)
     maze_destroy(&maze);
 }
 
-/*void test_event_updates()*/
+void test_game_state(TestContext *tc)
+{
+    Maze maze;
+    maze_build_from_file(&maze,"test.map");
+
+    int state,assertion,ii;
+    
+    state = server_game_recalculate_state(&maze);
+
+    assertion = (state == GAME_STATE_WAITING);
+    should("indicate waiting state before any players are added",assertion,tc);
+
+    // fake increment plists
+    for (ii=0; ii<25 ;ii++) server_plist_player_count_increment(&maze.players[TEAM_BLUE]);
+    
+    state = server_game_recalculate_state(&maze);
+
+    assertion = (state == GAME_STATE_WAITING);
+    should("indicate waiting state when only one team has players",assertion,tc);
+
+
+    // add one red player and check that game state has changed
+    server_plist_player_count_increment(&maze.players[TEAM_RED]);
+    
+    state = server_game_recalculate_state(&maze);
+
+    assertion = (state == GAME_STATE_ACTIVE);
+    should("indicate active when both teams have 1 player",assertion,tc);
+    
+    // fake increment home count
+    for (ii=0; ii<25 ;ii++) server_home_count_increment(&maze.home[TEAM_BLUE]);
+    server_home_count_increment(&maze.home[TEAM_RED]);
+    
+    state = server_game_recalculate_state(&maze);
+
+    assertion = (state == GAME_STATE_ACTIVE);
+    should("not indicate win state unless flags count is 2",assertion,tc);
+   
+    server_home_flag_increment(&maze.home[TEAM_RED]);
+    server_home_flag_increment(&maze.home[TEAM_RED]);
+    
+    state = server_game_recalculate_state(&maze);
+    
+    assertion = (state == GAME_STATE_RED_WIN);
+    should("indicate win state for red team",assertion,tc);
+    
+    server_home_flag_decrement(&maze.home[TEAM_RED]);
+    server_home_flag_decrement(&maze.home[TEAM_RED]);
+    server_home_flag_increment(&maze.home[TEAM_BLUE]);
+    server_home_flag_increment(&maze.home[TEAM_BLUE]);
+    
+    state = server_game_recalculate_state(&maze);
+    
+    assertion = (state == GAME_STATE_BLUE_WIN);
+    
+    should("indicate win state for blue team",assertion,tc);
+
+    maze_destroy(&maze);
+}
 
 int main(int argc, char ** argv )
 {
@@ -1043,7 +1104,7 @@ int main(int argc, char ** argv )
     run(&test_game_move,"Basic Movement",&tc);
     run(&test_pickup_drop_logic,"Objects",&tc);
     run(&test_parallelize_movement,"Concurrent Movement",&tc);
-    /*run(&test_event_updates,"Event Updates",&tc);*/
+    run(&test_game_state,"Game State",&tc);
 
     // TEST END HERE
     

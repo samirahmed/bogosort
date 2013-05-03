@@ -98,7 +98,6 @@ typedef struct{
     Pos              min;
     Pos              max;
     Team_Types       team;
-    pthread_mutex_t  jail_recursive_lock;
 } Jail;
 
 typedef struct{
@@ -106,6 +105,7 @@ typedef struct{
     Pos              max;
     pthread_rwlock_t count_wrlock;
     int              count;
+    int              flags;
     Team_Types       team;
 } Home;
 
@@ -178,7 +178,7 @@ extern void decompress_player(Player* player, int* compressed, Player_Update_Typ
 extern void compress_object(Object* object, int* compressed );
 extern void decompress_object(Object* object, int* compressed );
 
-extern void compress_game_state(Maze* object, int* compressed);
+extern void compress_game_state(Game_State_Types gstate, int* compressed);
 extern int decompress_game_state(Game_State_Types* gstate, int* compressed);
 extern void compress_broken_wall(Pos * position, int* compressed);
 extern void decompress_broken_wall(Pos * position, int* compressed);

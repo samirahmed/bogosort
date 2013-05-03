@@ -63,6 +63,7 @@ extern int _server_game_wall_move(Maze*m,Player*player, Cell*current, Cell*next,
 extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*next, Update*update);
 extern int _server_game_state_update(Maze*m, Player*player, Cell*current, Cell*next);
 extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next, Update*update);
+extern int  server_game_recalculate_state( Maze*m);
 
 // Locking Methods
 extern void server_maze_property_unlock(Maze*m);
@@ -118,6 +119,9 @@ extern int  server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell**
 extern int  server_home_count_increment(Home * home);
 extern int  server_home_count_decrement(Home * home);
 extern int  server_home_count_read(Home * home);
+extern int  server_home_flag_read(Home*home);
+extern int  server_home_flag_increment(Home*home);
+extern int  server_home_flag_decrement(Home*home);
 
 // PLIST METHODS
 extern int  server_plist_player_count( Plist * plist );
