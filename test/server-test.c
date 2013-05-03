@@ -1036,44 +1036,58 @@ void test_game_state(TestContext *tc)
     Maze maze;
     maze_build_from_file(&maze,"test.map");
 
-    int state, rc ,assertion,diff,ii;
+    int state,assertion,ii;
     
-    diff = server_game_recalculate_state(m,&state);
+    state = server_game_recalculate_state(&maze);
 
-    assertion = (diff == GAME_STATE_WAITING) &&
-                (state == GAME_STATE_WAITING);
+    assertion = (state == GAME_STATE_WAITING);
     should("indicate waiting state before any players are added",assertion,tc);
 
     // fake increment plists
-    for (ii=0; ii<25 ;ii++) server_plist_player_count_increment(&maze->players[TEAM_BLUE]);
+    for (ii=0; ii<25 ;ii++) server_plist_player_count_increment(&maze.players[TEAM_BLUE]);
     
-    diff = server_game_recalculate_state(m,&state);
+    state = server_game_recalculate_state(&maze);
 
-    assertion = (diff == GAME_STATE_UNCHANGED) &&
-                (state == GAME_STATE_WAITING);
+    assertion = (state == GAME_STATE_WAITING);
     should("indicate waiting state when only one team has players",assertion,tc);
 
 
     // add one red player and check that game state has changed
-    server_plist_player_count_increment(&maze->players[TEAM_RED]);
+    server_plist_player_count_increment(&maze.players[TEAM_RED]);
     
-    diff = server_game_recalculate_state(m,&state);
+    state = server_game_recalculate_state(&maze);
 
-    assertion = (diff == GAME_STATE_ACTIVE) &&
-                (state == GAME_STATE_ACTIVE);
+    assertion = (state == GAME_STATE_ACTIVE);
     should("indicate active when both teams have 1 player",assertion,tc);
     
     // fake increment home count
-    for (ii=0; ii<25 ;ii++) server_home_count_increment(&maze->home[TEAM_BLUE]);
-    server_home_count_increment(&maze->home[TEAM_RED]);
+    for (ii=0; ii<25 ;ii++) server_home_count_increment(&maze.home[TEAM_BLUE]);
+    server_home_count_increment(&maze.home[TEAM_RED]);
     
-    diff = server_game_recalculate_state(m,&state);
+    state = server_game_recalculate_state(&maze);
 
-    assertion = (diff == GAME_STATE_UNCHANGED) &&
-                (state == GAME_STATE_ACTIVE);
+    assertion = (state == GAME_STATE_ACTIVE);
     should("not indicate win state unless flags count is 2",assertion,tc);
-
+   
+    server_home_flag_increment(&maze.home[TEAM_RED]);
+    server_home_flag_increment(&maze.home[TEAM_RED]);
     
+    state = server_game_recalculate_state(&maze);
+    
+    assertion = (state == GAME_STATE_RED_WIN);
+    should("indicate win state for red team",assertion,tc);
+    
+    server_home_flag_decrement(&maze.home[TEAM_RED]);
+    server_home_flag_decrement(&maze.home[TEAM_RED]);
+    server_home_flag_increment(&maze.home[TEAM_BLUE]);
+    server_home_flag_increment(&maze.home[TEAM_BLUE]);
+    
+    state = server_game_recalculate_state(&maze);
+    
+    assertion = (state == GAME_STATE_BLUE_WIN);
+    
+    should("indicate win state for blue team",assertion,tc);
+
     maze_destroy(&maze);
 }
 

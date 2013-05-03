@@ -461,7 +461,7 @@ extern int server_validate_player( Maze*m, Team_Types team, int id , int fd )
   return rc;
 }
 
-extern int  server_game_recalculate_state( Maze*m, int * gstate )
+extern int  server_game_recalculate_state( Maze*m)
 {
   int pred = server_plist_player_count(&m->players[TEAM_RED]);
   int pblue = server_plist_player_count(&m->players[TEAM_BLUE]);
@@ -472,31 +472,24 @@ extern int  server_game_recalculate_state( Maze*m, int * gstate )
   int fred = server_home_flag_read(&m->home[TEAM_RED]);
   int fblue = server_home_flag_read(&m->home[TEAM_BLUE]);
   
-  int snew, scur, rc;
+  int snew, scur;
 
   server_maze_property_lock(m);
   scur = m->current_game_state;
-  rc = GAME_STATE_UNCHANGED;
 
   if (pred > 0 && pblue > 0) // game start condition
   {
     if (pred == hred && fred == 2 ) snew = GAME_STATE_RED_WIN;
     else if (pblue == hblue && fblue == 2 ) snew = GAME_STATE_BLUE_WIN;
-    else GAME_STATE_ACTIVE;  // started but no winner
+    else snew=GAME_STATE_ACTIVE;  // started but no winner
   }
   else snew = GAME_STATE_WAITING;
   
-  if (scur != snew ) 
-  { 
-    scur = snew;
-    rc = scur;
-  }
-
-  if ( gstate ) *gstate = scur;   // Provide the absolute state here if a variable is passed through
+  if (scur != snew ) scur = snew;
 
   server_maze_property_unlock(m);
 
-  return rc;
+  return scur;
 }
 
 /*****************/
