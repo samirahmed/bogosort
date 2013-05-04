@@ -835,7 +835,8 @@ void test_game_move(TestContext*tc)
     Player dummy;
     bzero(&dummy,sizeof(Player));
     Pos  next;
-    
+   
+    long long timestamp = -1;
     int assertion,rc,fd,id; 
     fd   = randint()%9000 + 999;
     Player*player;
@@ -883,7 +884,9 @@ void test_game_move(TestContext*tc)
     decompress_player( &dummy, &request.update.compress_player_a , &type);
     assertion = (dummy.client_position.x == next.x) &&
                 (dummy.client_position.y == next.y) &&
-                (type == PLAYER_UNCHANGED);
+                (type == PLAYER_UNCHANGED) && 
+                (request.update.timestamp > timestamp);
+    timestamp = request.update.timestamp;
     should("successfuly prepare an update for player MOVE actions",assertion,tc);
 
     //////////////////
@@ -952,8 +955,10 @@ void test_game_move(TestContext*tc)
     bzero(&dummy,sizeof(Player));
     decompress_player(&dummy, &request.update.compress_player_b ,&type);
     assertion = (!decompress_is_ignoreable(&request.update.compress_player_a)) &&
+                (request.update.timestamp > timestamp) &&
                 (dummy.state == PLAYER_JAILED) && 
                 (type == PLAYER_UNCHANGED );
+    timestamp = request.update.timestamp;
     should("correctly process Updates for passive tagging",assertion,tc);
 
     ///////////////////////////////////////////
@@ -997,8 +1002,10 @@ void test_game_move(TestContext*tc)
                 (dummy.client_position.x != 50) && 
                 (dummy.client_position.y != 99) &&
                 (dummy.state == PLAYER_JAILED)  &&
+                (request.update.timestamp > timestamp) &&
                 (dummy.id == blue->id ) &&
                 (type == PLAYER_UNCHANGED);
+    timestamp = request.update.timestamp;
     should("should correctly package updates for Active tagging",assertion,tc);
 
     ////////////////////////
@@ -1025,8 +1032,12 @@ void test_game_move(TestContext*tc)
     server_game_drop_player(&maze , player->team , player->id , &update);
     decompress_player( &dummy, &update.compress_player_a , &type);
     assertion = (type == PLAYER_DROPPED) && 
+                (update.timestamp > timestamp) &&
                 (dummy.id == player->id) &&
-                (dummy.team = player->team);
+                (dummy.team == player->team);
+    timestamp = update.timestamp;
+    
+    should("correctly package dropped player update",assertion,tc);
 
     maze_destroy(&maze);
 }
