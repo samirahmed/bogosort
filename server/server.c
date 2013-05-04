@@ -126,6 +126,10 @@ int doUpdateClients(Update *update)
   s = proto_server_event_session();
   hdr.type = PROTO_MT_EVENT_UPDATE;
   proto_session_hdr_marshall(s, &hdr);
+  
+  // block until it is your turn
+  
+  // 
   proto_server_post_event();  
   return 1;
 }

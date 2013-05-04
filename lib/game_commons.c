@@ -145,7 +145,7 @@ extern int home_contains(Pos* query, Home*home)
 /* MAZE LOCK METHODS */
 /*********************/
 
-extern long long  maze_next_read_and_increment(Maze*m)
+extern long long  maze_next_increment_and_read(Maze*m)
 {
   long long result;
   pthread_mutex_lock(&m->next_lock);
@@ -164,7 +164,7 @@ extern long long  maze_next_read_only(Maze*m)
   return result;
 }
 
-extern long long maze_current_read_and_increment(Maze*m)
+extern long long maze_current_increment_and_read(Maze*m)
 {
   long long result;
   pthread_mutex_lock(&m->current_lock);
