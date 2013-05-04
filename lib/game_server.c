@@ -21,6 +21,23 @@ void  update_object_if_possible(Update*update,Object*object)
   if (update) if (object) update->objects[object_get_index(object->team,object->type)] = *object;
 }
 
+extern void server_update_wait( Maze*m, long long timestamp)
+{
+  pthread_mutex_lock(&m->current_lock);
+  // block until i am not equal less equal to current
+  while(m->current != timestamp)  
+  {
+    pthread_cond_wait(&m->current_cond,&m->current_lock);
+  }
+}
+
+extern void server_update_signal( Maze*m, long long timestamp)
+{
+  m->current++;
+  pthread_cond_broadcast(&m->current_cond);
+  pthread_mutex_unlock(&m->current_lock);
+}
+
 /*******************/
 /* REQUEST METHODS */
 /*******************/
@@ -51,7 +68,6 @@ extern int* server_request_plist(Maze*m, Team_Types team, int* length)
   
   return list;
 }
-
 
 extern void server_request_objects(Maze*m,int*rshovel,int*rflag,int*bshovel,int*bflag)
 {
@@ -196,6 +212,7 @@ extern int server_game_add_player(Maze*maze,int fd, Player**player,Update *updat
     copy.cell = &maze->get[spawn_pos.x][spawn_pos.y];
     compress_player( &copy, &update->compress_player_a, PLAYER_ADDED);
     compress_game_state( server_game_recalculate_state(maze), &update->game_state_update );
+    update->timestamp = maze_next_read_then_increment(maze);
   }
 
   return id;
@@ -224,6 +241,7 @@ extern void server_game_drop_player(Maze*maze,int team, int id, Update*update)
   {
     compress_player(player,&update->compress_player_a,PLAYER_DROPPED);
     compress_game_state( server_game_recalculate_state(maze), &update->game_state_update );
+    update->timestamp = maze_next_read_then_increment(maze);
   }
   
   // drop player, unlock player and player's objects
@@ -334,8 +352,10 @@ extern int server_game_action(Maze*maze , GameRequest* request)
       compress_player(&update->player_b,&update->compress_player_b,PLAYER_UNCHANGED);
     if ( !(update->broken_wall.x == 0  && update->broken_wall.y == 0) )
       compress_broken_wall( &update->broken_wall, &update->game_state_update );
+    
     update_object_if_possible(update,object);
     compress_game_state( server_game_recalculate_state(maze), &update->game_state_update );
+    update->timestamp = maze_next_read_then_increment(maze);
   }
 
   // unlock the maze
