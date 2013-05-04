@@ -25,7 +25,7 @@ all: $(targets)
 .PHONY: all
 
 client:  ../lib/libdagame.a
-	$(CC) $(CFLAGS) -o client $(src) $(libs)
+	$(CC) $(CFLAGS) -o client $(src) $(libs) $(UILIBS)
 
 clean:
 	rm -f $(objs) $(targets)

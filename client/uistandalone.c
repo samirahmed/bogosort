@@ -26,20 +26,21 @@
 #include <sys/types.h>
 #include <assert.h>
 #include "uistandalone.h"
+#include "SDL/SDL.h"
 #include "../lib/game_commons.h"
 
 /* A lot of this code comes from http://www.libsdl.org/cgi/docwiki.cgi */
 
 
-#define UI_FLOOR_BMP "floor.bmp"
-#define UI_REDWALL_BMP "redwall.bmp"
-#define UI_GREENWALL_BMP "greenwall.bmp"
-#define UI_TEAMA_BMP "teama.bmp"
-#define UI_TEAMB_BMP "teamb.bmp"
-#define UI_LOGO_BMP "logo.bmp"
-#define UI_REDFLAG_BMP "redflag.bmp"
-#define UI_GREENFLAG_BMP "greenflag.bmp"
-#define UI_JACKHAMMER_BMP "shovel.bmp"
+#define UI_FLOOR_BMP "bitmap/floor.bmp"
+#define UI_REDWALL_BMP "bitmap/redwall.bmp"
+#define UI_GREENWALL_BMP "bitmap/greenwall.bmp"
+#define UI_TEAMA_BMP "bitmap/teama.bmp"
+#define UI_TEAMB_BMP "bitmap/teamb.bmp"
+#define UI_LOGO_BMP "bitmap/logo.bmp"
+#define UI_REDFLAG_BMP "bitmap/redflag.bmp"
+#define UI_GREENFLAG_BMP "bitmap/greenflag.bmp"
+#define UI_JACKHAMMER_BMP "bitmap/shovel.bmp"
 #define SPRITE_H 3 
 #define SPRITE_W 3
 
@@ -765,4 +766,66 @@ ui_dummy_jail(UI *ui)
   return 2;
 }
 
+extern sval
+ui_keypress(UI *ui, SDL_KeyboardEvent *e)
+{
+  SDLKey sym = e->keysym.sym;
+  SDLMod mod = e->keysym.mod;
 
+  if (e->type == SDL_KEYDOWN) {
+    if (sym == SDLK_LEFT && mod != KMOD_SHIFT) {
+      printf("move left\n");
+      fprintf(stderr, "%s: move left\n", __func__);
+      return ui_dummy_left(ui);
+    }
+    if (sym == SDLK_RIGHT && mod != KMOD_SHIFT) {
+      fprintf(stderr, "%s: move right\n", __func__);
+      return ui_dummy_right(ui);
+    }
+    if (sym == SDLK_UP && mod != KMOD_SHIFT)  {  
+      fprintf(stderr, "%s: move up\n", __func__);
+      return ui_dummy_up(ui);
+    }
+    if (sym == SDLK_DOWN && mod != KMOD_SHIFT)  {
+      fprintf(stderr, "%s: move down\n", __func__);
+      return ui_dummy_down(ui);
+    }
+    if (sym == SDLK_r && mod != KMOD_SHIFT)  {  
+      fprintf(stderr, "%s: dummy pickup red flag\n", __func__);
+      return ui_dummy_pickup_red(ui);
+    }
+    if (sym == SDLK_g && mod != KMOD_SHIFT)  {   
+      fprintf(stderr, "%s: dummy pickup green flag\n", __func__);
+      return ui_dummy_pickup_green(ui);
+    }
+    if (sym == SDLK_j && mod != KMOD_SHIFT)  {   
+      fprintf(stderr, "%s: dummy jail\n", __func__);
+      return ui_dummy_jail(ui);
+    }
+    if (sym == SDLK_n && mod != KMOD_SHIFT)  {   
+      fprintf(stderr, "%s: dummy normal state\n", __func__);
+      return ui_dummy_normal(ui);
+    }
+    if (sym == SDLK_t && mod != KMOD_SHIFT)  {   
+      fprintf(stderr, "%s: dummy toggle team\n", __func__);
+      //return ui_dummy_toggle_team(ui);
+    }
+    if (sym == SDLK_i && mod == KMOD_NONE)  {   
+      fprintf(stderr, "%s: dummy inc player id \n", __func__);
+      //return ui_dummy_inc_id(ui);
+    }
+    if (sym == SDLK_q) return -1;
+    if (sym == SDLK_z && mod == KMOD_NONE) return ui_zoom(ui, 1);
+    if (sym == SDLK_z && mod & KMOD_SHIFT ) return ui_zoom(ui,-1);
+    if (sym == SDLK_LEFT && mod & KMOD_SHIFT) return ui_pan(ui,-1,0);
+    if (sym == SDLK_RIGHT && mod & KMOD_SHIFT) return ui_pan(ui,1,0);
+    if (sym == SDLK_UP && mod & KMOD_SHIFT) return ui_pan(ui, 0,-1);
+    if (sym == SDLK_DOWN && mod & KMOD_SHIFT) return ui_pan(ui, 0,1);
+    else {
+      fprintf(stderr, "%s: key pressed: %d\n", __func__, sym); 
+    }
+  } else {
+    fprintf(stderr, "%s: key released: %d\n", __func__, sym);
+  }
+  return 1;
+}
