@@ -517,11 +517,9 @@ ui_process(UI *ui, Client* my_client)
     default:
       fprintf(stderr, "%s: e.type=%d NOT Handled\n", __func__, e.type);
     }
-    //Don't call paint map, in this thread, do it in the event channel update
     /*if (rc==2) { */
 	
-	/*ui_paintmap(ui, maze); }*/
-    //if (rc<0) break;
+    if (rc==-1) break;
   }
   return rc;
 }
@@ -591,7 +589,7 @@ ui_main_loop(UI *ui, uval h, uval w,Client* my_client)
    
   
   while (1) {
-    if (ui_process(ui,my_client)<0) break;
+    if (ui_process(ui,my_client)==-1) break;
   }
 
   ui_shutdown_sdl();
