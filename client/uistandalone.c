@@ -311,7 +311,7 @@ draw_cell(UI *ui, SPRITE_INDEX si, SDL_Rect *t, SDL_Surface *s)
 {
   SDL_Surface *ts=NULL;
   
-  uint32_t tc;
+  //uint32_t tc;
 
   ts = ui->sprites[si].img;
 
@@ -521,7 +521,7 @@ ui_process(UI *ui, Client* my_client)
     /*if (rc==2) { */
 	
 	/*ui_paintmap(ui, maze); }*/
-    if (rc<0) break;
+    //if (rc<0) break;
   }
   return rc;
 }
@@ -616,14 +616,14 @@ int
 ui_left(Request *request,Client* my_client)
 {
    int rc,x,y, new_x;
-   x = map_ptr->players[0].at[0].client_position.x;
-   y = map_ptr->players[0].at[0].client_position.y;
+   x = my_client->my_player->client_position.x;
+   y = my_client->my_player->client_position.y;
    new_x = x-1;
    
    Pos next;
    bzero(&next,sizeof(next));
    
-   if(maze.get[new_x][y].type == CELL_WALL)
+   if(my_client->maze.get[new_x][y].type == CELL_WALL)
    {
 	    printf("Cell wall, cannot move in that direction\n");
         rc = -999;//I will change this later
@@ -652,14 +652,14 @@ int
 ui_right(Request *request,Client* my_client)
 {
    int rc,x,y, new_x;
-   x = map_ptr->players[0].at[0].client_position.x;
-   y = map_ptr->players[0].at[0].client_position.y;
+   x = my_client->my_player->client_position.x;
+   y = my_client->my_player->client_position.y;
    new_x = x+1;
 
    Pos next;
    bzero(&next,sizeof(next));
    
-   if(maze.get[new_x][y].type == CELL_WALL)
+   if(my_client->maze.get[new_x][y].type == CELL_WALL)
    {
 	    printf("Cell wall, cannot move in that direction\n");
         rc = -999;//I will change this later
@@ -692,14 +692,14 @@ int
 ui_down(Request *request,Client* my_client)
 {
    int rc,x,y, new_y;
-   x = map_ptr->players[0].at[0].client_position.x;
-   y = map_ptr->players[0].at[0].client_position.y;
+   x = my_client->my_player->client_position.x;
+   y = my_client->my_player->client_position.y;
    new_y = y+1;
 
    Pos next;
    bzero(&next,sizeof(next));
 
-   if(maze.get[x][new_y].type == CELL_WALL)
+   if(my_client->maze.get[x][new_y].type == CELL_WALL)
    {
 	printf("Cell wall, cannot move in that direction\n");
     rc = -999;
@@ -731,14 +731,14 @@ int
 ui_up(Request *request,Client* my_client)
 {
    int rc,x,y, new_y;
-   x = map_ptr->players[0].at[0].client_position.x;
-   y = map_ptr->players[0].at[0].client_position.y;
+   x = my_client->my_player->client_position.x;
+   y = my_client->my_player->client_position.y;
    new_y = y-1;
    
    Pos next;
    bzero(&next,sizeof(next));
 
-   if(maze.get[x][new_y].type == CELL_WALL)
+   if(my_client->maze.get[x][new_y].type == CELL_WALL)
    {
 	printf("Cell wall, cannot move in that direction\n");
     rc = -999;
@@ -794,36 +794,44 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
   SDLMod mod = e->keysym.mod;
   Request request;
   bzero(&request,sizeof(Request));
-
+  int rc;
   if (e->type == SDL_KEYDOWN) {
     if (sym == SDLK_LEFT && mod != KMOD_SHIFT) {
       printf("move left\n");
       fprintf(stderr, "%s: move left\n", __func__);
-      return ui_left(&request,my_client);
+      rc = ui_left(&request,my_client);
+      return rc;
     }
     if (sym == SDLK_RIGHT && mod != KMOD_SHIFT) {
       fprintf(stderr, "%s: move right\n", __func__);
-      return ui_right(&request,my_client);
+      rc = ui_right(&request,my_client);
+      return rc;
     }
     if (sym == SDLK_UP && mod != KMOD_SHIFT)  {  
       fprintf(stderr, "%s: move up\n", __func__);
-      return ui_up(&request,my_client);
+      rc = ui_up(&request,my_client);
+      return rc;
     }
     if (sym == SDLK_DOWN && mod != KMOD_SHIFT)  {
       fprintf(stderr, "%s: move down\n", __func__);
-      return ui_down(&request,my_client);
+      rc = ui_down(&request,my_client);
+      return rc;
     }
     if (sym == SDLK_r && mod != KMOD_SHIFT)  {  
       fprintf(stderr, "%s: pickup flag\n", __func__);
-      return ui_pickup_flag(&request,my_client);
+      rc = ui_pickup_flag(&request,my_client);
+      return rc;
     }
     if (sym == SDLK_g && mod != KMOD_SHIFT)  {  
       fprintf(stderr, "%s: pickup shovel\n", __func__);
-      return ui_pickup_shovel(&request,my_client);
+      rc = ui_pickup_shovel(&request,my_client);
+      return rc;
     }
     if (sym == SDLK_j && mod != KMOD_SHIFT)  {  
       fprintf(stderr, "%s: pickup shovel\n", __func__);
-      return ui_join(&request,my_client);
+      rc = ui_join(&request,my_client);
+      process_RPC_message(my_client);
+      return rc;
     }
     if (sym == SDLK_q) return -1;
     if (sym == SDLK_z && mod == KMOD_NONE) return ui_zoom(ui, 1);
