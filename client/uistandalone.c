@@ -32,15 +32,15 @@
 /* A lot of this code comes from http://www.libsdl.org/cgi/docwiki.cgi */
 
 
-#define UI_FLOOR_BMP "bitmap/floor.bmp"
-#define UI_REDWALL_BMP "bitmap/redwall.bmp"
-#define UI_GREENWALL_BMP "bitmap/greenwall.bmp"
-#define UI_TEAMA_BMP "bitmap/teama.bmp"
-#define UI_TEAMB_BMP "bitmap/teamb.bmp"
-#define UI_LOGO_BMP "bitmap/logo.bmp"
-#define UI_REDFLAG_BMP "bitmap/redflag.bmp"
-#define UI_GREENFLAG_BMP "bitmap/greenflag.bmp"
-#define UI_JACKHAMMER_BMP "bitmap/shovel.bmp"
+#define UI_FLOOR_BMP "client/bitmap/floor.bmp"
+#define UI_REDWALL_BMP "client/bitmap/redwall.bmp"
+#define UI_GREENWALL_BMP "client/bitmap/greenwall.bmp"
+#define UI_TEAMA_BMP "client/bitmap/teama.bmp"
+#define UI_TEAMB_BMP "client/bitmap/teamb.bmp"
+#define UI_LOGO_BMP "client/bitmap/logo.bmp"
+#define UI_REDFLAG_BMP "client/bitmap/redflag.bmp"
+#define UI_GREENFLAG_BMP "client/bitmap/greenflag.bmp"
+#define UI_JACKHAMMER_BMP "client/bitmap/shovel.bmp"
 #define SPRITE_H 3 
 #define SPRITE_W 3
 
