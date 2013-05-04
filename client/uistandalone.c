@@ -80,50 +80,50 @@ pxSpriteOffSet(int team, int state)
   return 0;
 }
 
-static sval
-ui_uip_init(UI *ui, UI_Player **p, int id, int team)
-{
-  UI_Player *ui_p;
+/*static sval*/
+/*ui_uip_init(UI *ui, UI_Player **p, int id, int team)*/
+/*{*/
+  /*UI_Player *ui_p;*/
   
-  ui_p = (UI_Player *)malloc(sizeof(UI_Player));
-  if (!ui_p) return 0;
+  /*ui_p = (UI_Player *)malloc(sizeof(UI_Player));*/
+  /*if (!ui_p) return 0;*/
 
-  ui_p->img = ui_player_img(ui, team);
-  ui_p->clip.w = SPRITE_W; ui_p->clip.h = SPRITE_H; ui_p->clip.y = 0;
-  ui_p->base_clip_x = id * SPRITE_W * 4;
+  /*ui_p->img = ui_player_img(ui, team);*/
+  /*ui_p->clip.w = SPRITE_W; ui_p->clip.h = SPRITE_H; ui_p->clip.y = 0;*/
+  /*ui_p->base_clip_x = id * SPRITE_W * 4;*/
 
-  *p = ui_p;
+  /**p = ui_p;*/
 
-  return 1;
-}
+  /*return 1;*/
+/*}*/
 
 /*
  * Return the pixel value at (x, y)
  * NOTE: The surface must be locked before calling this!
  */
-static uint32_t 
-ui_getpixel(SDL_Surface *surface, int x, int y)
-{
-  int bpp = surface->format->BytesPerPixel;
-  /* Here p is the address to the pixel we want to retrieve */
-  uint8_t *p = (uint8_t *)surface->pixels + y * surface->pitch + x * bpp;
+/*static uint32_t */
+/*ui_getpixel(SDL_Surface *surface, int x, int y)*/
+/*{*/
+  /*int bpp = surface->format->BytesPerPixel;*/
+  /*[> Here p is the address to the pixel we want to retrieve <]*/
+  /*uint8_t *p = (uint8_t *)surface->pixels + y * surface->pitch + x * bpp;*/
   
-  switch (bpp) {
-  case 1:
-    return *p;
-  case 2:
-    return *(uint16_t *)p;
-  case 3:
-    if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
-      return p[0] << 16 | p[1] << 8 | p[2];
-    else
-      return p[0] | p[1] << 8 | p[2] << 16;
-  case 4:
-    return *(uint32_t *)p;
-  default:
-    return 0;       /* shouldn't happen, but avoids warnings */
-  } // switch
-}
+  /*switch (bpp) {*/
+  /*case 1:*/
+    /*return *p;*/
+  /*case 2:*/
+    /*return *(uint16_t *)p;*/
+  /*case 3:*/
+    /*if (SDL_BYTEORDER == SDL_BIG_ENDIAN)*/
+      /*return p[0] << 16 | p[1] << 8 | p[2];*/
+    /*else*/
+      /*return p[0] | p[1] << 8 | p[2] << 16;*/
+  /*case 4:*/
+    /*return *(uint32_t *)p;*/
+  /*default:*/
+    /*return 0;       [> shouldn't happen, but avoids warnings <]*/
+  /*} // switch*/
+/*}*/
 
 /*
  * Set the pixel at (x, y) to the given value
@@ -338,22 +338,22 @@ extern sval
 ui_paintmap(UI *ui,Maze* maze) 
 {
 printf("mapload is %d\n", init_mapload);
-int w,h;
-int map_char;
+//int w,h;
+//int map_char;
 
 int type; 
 printf("cell types set");
 
 Cell cur_cell;
-int cell_state;
+//int cell_state;
 int x,y;
-SDL_Rect t;
+//SDL_Rect t;
 
   y = 0; 
   x = 0;
   int scale_x, scale_y;
-  t.x = 0;
-  t.y = 0;
+//  t.x = 0;
+//  t.y = 0;
 
   for (x = 0; x < 200; x++) {
     for (y = 0; y < 200; y++) {
@@ -581,7 +581,7 @@ extern void
 ui_main_loop(UI *ui, uval h, uval w,Client* my_client)
 {
 
-  sval rc;
+  //sval rc;
   
   //assert(ui);
 
