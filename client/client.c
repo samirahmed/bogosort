@@ -63,7 +63,7 @@ void* run_ui(void* C)
 {
     Client* my_client = (Client*)C;
     ui_init(&(ui));
-    ui_main_loop(ui, my_client->height, my_client->width);
+    ui_main_loop(ui, my_client->height, my_client->width, my_client);
     pthread_exit(NULL);
 }
 
@@ -306,7 +306,6 @@ int docmd(Client *C, char* cmd)
 void* shell(void *arg)
 {
   Client *C = arg;
-  client_map_init(C,"daGame.map"); 
   char *c;
   int rc;
   int menu=1;
@@ -370,6 +369,8 @@ int main(int argc, char **argv)
     return -1;
   }   
   
+
+  client_map_init(&c,"../daGame.map"); 
 
 /* initialized with default attributes */
   pthread_attr_t tattr;
