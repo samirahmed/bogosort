@@ -1102,6 +1102,65 @@ void test_game_state(TestContext *tc)
     maze_destroy(&maze);
 }
 
+void st_ordered_update(void* task_ptr)
+{
+    Task* task = (Task*) task_ptr;
+    Maze* m    = (Maze*) task->arg0;
+    long long*  timestamp = (long long*)  task->arg1;
+    time_t*  times = (time_t*)  task->arg2;
+    
+    int ii = 1000;
+    while(ii-->0)
+    {
+      test_nanosleep();
+    }
+    
+    server_update_wait(m, *timestamp );
+
+    *times = time(NULL);
+    if (test_debug()) {fprintf(stderr,"%d\n",(int)*times); fflush(stderr);}
+    server_update_signal(m, *timestamp );
+}
+
+void test_update_order(TestContext*tc)
+{
+    Maze maze;
+    maze_build_from_file(&maze,"test.map");
+    
+    int assertion,count,ii;
+    count = 1000;
+    
+    // setup 1000 timestamps
+    long long * timestamps =(long long * )malloc(sizeof(long long)*count);
+    Task* tasks = (Task*)malloc(sizeof(Task)*count);
+    time_t* times =(time_t*) malloc(sizeof(Task)*count);
+
+    bzero(tasks,sizeof(Task)*count);
+    bzero(times,sizeof(time_t)*count);
+    bzero(timestamps,sizeof(long long)*count);
+
+    for (ii=0; ii< count; ii++) 
+    {
+        timestamps[ii] = ii; // time stamps start at 1
+        time_t* slot = &times[ii];
+        
+        test_task_init(&tasks[ii],(Proc)&st_ordered_update,1,
+          &maze,&timestamps[ii],slot,NULL,NULL,NULL);
+    }
+    parallelize(tasks,count,1); // run each task one 1 thread only
+    
+    // ensure that the all the slots times are ascending
+    assertion = 1;
+    for (ii=0; ii< count-1;ii++)
+    {
+      assertion = assertion && (timestamps[ii]<timestamps[ii+1]);
+    }
+
+    should("ensure the sequence is preserved",assertion,tc);
+    
+    maze_destroy(&maze);
+}
+
 int main(int argc, char ** argv )
 {
     TestContext tc;
@@ -1116,6 +1175,7 @@ int main(int argc, char ** argv )
     run(&test_pickup_drop_logic,"Objects",&tc);
     run(&test_parallelize_movement,"Concurrent Movement",&tc);
     run(&test_game_state,"Game State",&tc);
+    run(&test_update_order,"Update Order",&tc);
 
     // TEST END HERE
     

@@ -124,6 +124,7 @@ typedef struct{
     pthread_mutex_t  state_lock;
     int              last_team;
     pthread_mutex_t  current_lock;
+    pthread_cond_t   current_cond;
     pthread_mutex_t  next_lock;
     long long        next;
     long long        current;

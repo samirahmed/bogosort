@@ -65,6 +65,10 @@ extern int _server_game_state_update(Maze*m, Player*player, Cell*current, Cell*n
 extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next, Update*update);
 extern int  server_game_recalculate_state( Maze*m);
 
+// Update methods
+extern void server_update_signal( Maze*m, long long timestamp);
+extern void server_update_wait( Maze*m, long long timestamp);
+
 // Locking Methods
 extern void server_maze_property_unlock(Maze*m);
 extern void server_maze_property_lock(Maze*m);

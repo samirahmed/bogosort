@@ -21,6 +21,23 @@ void  update_object_if_possible(Update*update,Object*object)
   if (update) if (object) update->objects[object_get_index(object->team,object->type)] = *object;
 }
 
+extern void server_update_wait( Maze*m, long long timestamp)
+{
+  pthread_mutex_lock(&m->current_lock);
+  // block until i am not equal less equal to current
+  while(m->current != timestamp)  
+  {
+    pthread_cond_wait(&m->current_cond,&m->current_lock);
+  }
+}
+
+extern void server_update_signal( Maze*m, long long timestamp)
+{
+  m->current++;
+  pthread_cond_broadcast(&m->current_cond);
+  pthread_mutex_unlock(&m->current_lock);
+}
+
 /*******************/
 /* REQUEST METHODS */
 /*******************/

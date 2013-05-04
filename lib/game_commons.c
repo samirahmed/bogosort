@@ -319,6 +319,7 @@ extern void maze_init(Maze * m, int max_x, int max_y)
      pthread_mutex_init(&m->state_lock,NULL);
      pthread_mutex_init(&m->current_lock,NULL);
      pthread_mutex_init(&m->next_lock,NULL);
+     pthread_cond_init(&m->current_cond,NULL);
      m->current_game_state = GAME_STATE_WAITING; 
 
      // Initialize cells
