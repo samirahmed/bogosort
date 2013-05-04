@@ -145,6 +145,44 @@ extern int home_contains(Pos* query, Home*home)
 /* MAZE LOCK METHODS */
 /*********************/
 
+extern long long  maze_next_read_and_increment(Maze*m)
+{
+  long long result;
+  pthread_mutex_lock(&m->next_lock);
+  m->next++;
+  result = m->next;
+  pthread_mutex_unlock(&m->next_lock);
+  return result;
+}
+
+extern long long  maze_next_read_only(Maze*m)
+{
+  long long result;
+  pthread_mutex_lock(&m->next_lock);
+  result = m->next;
+  pthread_mutex_unlock(&m->next_lock);
+  return result;
+}
+
+extern long long maze_current_read_and_increment(Maze*m)
+{
+  long long result;
+  pthread_mutex_lock(&m->current_lock);
+  m->current++;
+  result = m->current;
+  pthread_mutex_unlock(&m->current_lock);
+  return result;
+}
+
+extern long long maze_current_read_only(Maze*m)
+{
+  long long result;
+  pthread_mutex_lock(&m->current_lock);
+  result = m->current;
+  pthread_mutex_unlock(&m->current_lock);
+  return result;
+}
+
 extern void maze_set_state(Maze*m, Game_State_Types state)
 {
   pthread_mutex_lock(&(m->state_lock));
@@ -279,6 +317,8 @@ extern void maze_init(Maze * m, int max_x, int max_y)
      pthread_rwlock_init(&m->wall_wrlock,NULL);
      pthread_rwlock_init(&m->object_wrlock,NULL);
      pthread_mutex_init(&m->state_lock,NULL);
+     pthread_mutex_init(&m->current_lock,NULL);
+     pthread_mutex_init(&m->next_lock,NULL);
      m->current_game_state = GAME_STATE_WAITING; 
 
      // Initialize cells

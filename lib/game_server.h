@@ -26,14 +26,14 @@
 #include "./game_commons.h" 
 
 typedef struct{
-  Player   player_a;
-  Player   player_b;
-  int      compress_player_a;
-  int      compress_player_b;
-  Pos      broken_wall;
-  int      game_state_update;
-  int      timestamp;
-  Object   objects[NUM_OBJECTS];
+  Player    player_a;
+  Player    player_b;
+  int       compress_player_a;
+  int       compress_player_b;
+  Pos       broken_wall;
+  int       game_state_update;
+  long long timestamp;
+  Object    objects[NUM_OBJECTS];
 } Update;
 
 typedef struct{
