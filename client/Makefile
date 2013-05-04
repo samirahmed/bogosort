@@ -1,15 +1,25 @@
 UNAME:=$(shell uname -s)
+UISYSTEM=$(shell uname)
+
 ifeq ($(UNAME),Darwin)
 	CC:=cc
 else
 	CC:=gcc
 endif
 
-CFLAGS := -g -pthread -Wall
+ifeq ($(UISYSTEM),Darwin)
+  UIINCDIR = -I/opt/local/include
+  UILIBS = -L/opt/local/lib -lSDLmain -lSDL -lSDL_image -framework Cocoa
+else
+  UINCDIR = 
+  UILIBS = -lSDL
+endif
+
+CFLAGS := -g $(UIINCDIR) -pthread -Wall
 targets=client
-src = client.c
+src = client.c uistandalone.c
 objs = $(patsubst %.c,%.o,$(src))
-libs = -L../lib -ldagame
+libs = -L../lib -ldagame 
 
 all: $(targets)
 .PHONY: all
