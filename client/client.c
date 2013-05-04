@@ -371,7 +371,7 @@ int main(int argc, char **argv)
   }   
   
 
-  client_map_init(&c,"../daGame.map"); 
+  client_map_init(&c,"daGame.map"); 
 
 /* initialized with default attributes */
   pthread_attr_t tattr;
