@@ -42,17 +42,20 @@
 #define UI_REDFLAG_BMP "redflag.bmp"
 #define UI_GREENFLAG_BMP "greenflag.bmp"
 #define UI_JACKHAMMER_BMP "shovel.bmp"
-#define SPRITE_H 3 
-#define SPRITE_W 3
+#define SPRITE_H 5 
+#define SPRITE_W 5
 
 Maze * map_ptr;
 Maze maze;
 Plist red_players;
 Plist blue_players;
 Player p;
-int waitRpc = 0;
-
+int zoom_level = 1;
+int pan_x_offset = 0;
+int pan_y_offset = 0;
 int init_mapload = 0;
+int map_h;
+int map_w;
 typedef enum {UI_SDLEVENT_UPDATE, UI_SDLEVENT_QUIT} UI_SDL_Event;
 
 
@@ -326,10 +329,11 @@ draw_cell(UI *ui, SPRITE_INDEX si, SDL_Rect *t, SDL_Surface *s)
 static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel){
 	int w,h;
 	for(h = y; h < y+SPRITE_H; h++){
-		for(w = x; w < x+SPRITE_W; w++){
-			
-			ui_putpixel(surface, h, w, pixel);
-		
+		for(w = x; w < x+SPRITE_W; w++){ 
+			if( h < map_h && w < map_w){
+				ui_putpixel(surface, h, w, pixel);
+		}
+	
 		}
 	}
 } 
@@ -356,15 +360,13 @@ if(!init_mapload){
 	red_players.at[0] = p;
 	maze.players[0] = red_players;	
 	maze.players[1] = blue_players;
-       	maze.get[10][10].player = &p;
+ //init a player at location 10,10 for map testing      
+	maze.get[10][10].player = &p;
 	maze.get[10][10].cell_state = CELLSTATE_OCCUPIED;	
         int i,j;
 	map_ptr = &maze;
 	init_mapload = 1;
 }
-
-//init player at location 0
-
 
 Cell cur_cell;
 int cell_state;
@@ -376,16 +378,16 @@ SDL_Rect t;
   int scale_x, scale_y;
   t.x = 0;
   t.y = 0;
-
+ 
   for (x = 0; x < 200; x++) {
     for (y = 0; y < 200; y++) {
         cur_cell = maze.get[y][x];
         // get the cell
                
-        scale_x = x * SPRITE_W;
-	scale_y = y * SPRITE_H;
+        scale_x = x * zoom_level;
+	scale_y = y * zoom_level;
         type = cur_cell.type;	
-if(cur_cell.cell_state == CELLSTATE_EMPTY){
+        if(cur_cell.cell_state == CELLSTATE_EMPTY){
 
         if(type == CELL_FLOOR){
 		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> isle_c);
@@ -447,7 +449,10 @@ if(cur_cell.cell_state == CELLSTATE_EMPTY){
 static sval
 ui_init_sdl(UI *ui, int32_t h, int32_t w, int32_t d)
 {
-
+  printf("map height is %d\n", h);
+  printf("map width is %d\n", w);
+  map_h = h;
+  map_w = w;
   fprintf(stderr, "UI_init: Initializing SDL.\n");
 
   /* Initialize defaults, Video and Audio subsystems */
@@ -548,13 +553,27 @@ ui_process(UI *ui)
 }
 
 extern sval
-ui_zoom(UI *ui, sval fac)
+ui_zoom(UI *ui, int fac)
 {
-  //zoom the ui in if fac == 1
-  // zoom out otherwise
-       // note: basically want to zoom in around where the player is located
-       // so get the location, enlarge the relevant pixels and don't display the 
-	// others	
+printf("sval fac is %d\n", fac);	
+//get player location
+//note: zoom level must be between 0 and 5 where 0 
+  if(fac == 1){
+	if(zoom_level > 1){
+		zoom_level--; 
+// zoom in 
+	}else{
+	printf("Cannot zoom in any farther");
+	}
+
+}else{
+	if(zoom_level < SPRITE_H){
+		zoom_level++;
+	}else{
+	printf("Cannot zoom out any farther");
+	}
+
+}
 
   fprintf(stderr, "%s:\n", __func__);
   return 2;
@@ -564,6 +583,29 @@ ui_zoom(UI *ui, sval fac)
 extern sval
 ui_pan(UI *ui, sval xdir, sval ydir)
 {
+	
+	//guaranteed to only have x,y input as:
+	// (1,0), (-1,0), (0,-1), (0,1)
+	if(xdir ==  1){
+		//pan right
+	//we pan by a single square on the map	
+	}
+	if(xdir == -1){
+		//pan left
+		}
+	if(ydir == 1){
+		//pan up
+		}		
+	if(ydir == -1){
+		//pan down
+	
+	}
+		
+	
+
+
+
+
   fprintf(stderr, "%s:\n", __func__);
   return 2;
 }

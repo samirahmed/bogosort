@@ -95,7 +95,7 @@ main(int argc, char **argv)
   pthread_create(&tid, NULL, shell, NULL);
    // WITH OSX ITS IS EASIEST TO KEEP UI ON MAIN THREAD
   // SO JUMP THROW HOOPS :-(
-  ui_main_loop(ui, 700, 700);
+  ui_main_loop(ui, 500, 500);
 
   return 0;
 }
@@ -149,8 +149,8 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e)
       //return ui_dummy_inc_id(ui);
     }
     if (sym == SDLK_q) return -1;
-    if (sym == SDLK_z && mod == KMOD_NONE) return ui_zoom(ui, 1);
-    if (sym == SDLK_z && mod & KMOD_SHIFT ) return ui_zoom(ui,-1);
+    if (sym == SDLK_z) return ui_zoom(ui,1); 
+    if (sym == SDLK_x) return ui_zoom(ui,-1);
     if (sym == SDLK_LEFT && mod & KMOD_SHIFT) return ui_pan(ui,-1,0);
     if (sym == SDLK_RIGHT && mod & KMOD_SHIFT) return ui_pan(ui,1,0);
     if (sym == SDLK_UP && mod & KMOD_SHIFT) return ui_pan(ui, 0,-1);
