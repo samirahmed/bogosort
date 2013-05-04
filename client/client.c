@@ -37,6 +37,7 @@ Globals globals;         //Host string and port
 static char MenuString[] = "\n?> ";
 static Client c;
 static UI* ui;
+static int do_ui;
 
 static int update_handler(Proto_Session *s ){
     Proto_Msg_Hdr hdr;
@@ -49,7 +50,8 @@ static int update_handler(Proto_Session *s ){
     update_objects(1,&hdr.pstate.v1.raw,maze);
     update_objects(1,&hdr.pstate.v2.raw,maze);
     update_objects(1,&hdr.pstate.v3.raw,maze);
-    ui_paintmap(ui,&c.maze);
+    if(do_ui)
+        ui_paintmap(ui,&c.maze);
     if(proto_debug())
     {
         fprintf(stderr,"Client position x:%d y:%d\n",c.my_player->client_position.x,c.my_player->client_position.y);
@@ -374,17 +376,21 @@ int main(int argc, char **argv)
   client_map_init(&c,"daGame.map"); 
 
 /* initialized with default attributes */
-  pthread_attr_t tattr;
-  pthread_attr_init(&tattr);
-  pthread_attr_setdetachstate(&tattr,PTHREAD_CREATE_DETACHED);
-  if(pthread_create(&c.UI_Thread, &tattr, run_ui, (void*)&c)!=0)
+  if(argc==2 && (strcmp(argv[1],"-no_ui")==0))
+      do_ui = 0;
+  else //Turn on the ui
   {
-    fprintf(stderr, "ERROR: Spawning UI thread Failed\n");
-    return -1;
-      
+    do_ui = 1;
+      pthread_attr_t tattr;
+      pthread_attr_init(&tattr);
+      pthread_attr_setdetachstate(&tattr,PTHREAD_CREATE_DETACHED);
+      if(pthread_create(&c.UI_Thread, &tattr, run_ui, (void*)&c)!=0)
+      {
+        fprintf(stderr, "ERROR: Spawning UI thread Failed\n");
+        return -1;
+          
+      }
   }
-
-
   shell(&c);
 
   return 0;
