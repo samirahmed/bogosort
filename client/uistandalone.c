@@ -344,27 +344,6 @@ int map_char;
 int type; 
 printf("cell types set");
 
-if(!init_mapload){  
-	player_init(&p);
-
-	p.client_position.x = 10; //initialize the client position
-        p.client_position.y = 10;
-        maze_build_from_file(&maze, "../daGame.map");
-	plist_init(&red_players, TEAM_RED,2);
-        plist_init(&blue_players, TEAM_BLUE, 2);
-	red_players.at[0] = p;
-	maze.players[0] = red_players;	
-	maze.players[1] = blue_players;
-       	maze.get[10][10].player = &p;
-	maze.get[10][10].cell_state = CELLSTATE_OCCUPIED;	
-        int i,j;
-	map_ptr = &maze;
-	init_mapload = 1;
-}
-
-//init player at location 0
-
-
 Cell cur_cell;
 int cell_state;
 int x,y;
