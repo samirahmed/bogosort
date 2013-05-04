@@ -1143,8 +1143,9 @@ void test_update_order(TestContext*tc)
     {
         timestamps[ii] = ii; // time stamps start at 1
         time_t* slot = &times[ii];
-        
-        test_task_init(&tasks[ii],(Proc)&st_ordered_update,1,
+       
+        // make sure we put the tasks in backwards
+        test_task_init(&tasks[count-(ii+1)],(Proc)&st_ordered_update,1,
           &maze,&timestamps[ii],slot,NULL,NULL,NULL);
     }
     parallelize(tasks,count,1); // run each task one 1 thread only
