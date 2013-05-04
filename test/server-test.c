@@ -1141,7 +1141,8 @@ void test_update_order(TestContext*tc)
 
     for (ii=0; ii< count; ii++) 
     {
-        timestamps[ii] = ii; // time stamps start at 1
+        // time stamps start at 1
+        timestamps[ii] = maze_next_read_then_increment(&maze); 
         time_t* slot = &times[ii];
        
         // make sure we put the tasks in backwards

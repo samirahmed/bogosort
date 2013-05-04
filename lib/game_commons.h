@@ -150,10 +150,8 @@ extern void plist_init(Plist * plist, Team_Types team, int max_player_size);
 // MAZE METHODS
 extern void maze_set_state(Maze*m,Game_State_Types state);
 extern Game_State_Types  maze_get_state(Maze*m);
-extern long long  maze_next_increment_and_read(Maze*m);
+extern long long  maze_next_read_then_increment(Maze*m);
 extern long long  maze_next_read_only(Maze*m);
-extern long long  maze_current_increment_and_read(Maze*m);
-extern long long  maze_current_read_only(Maze*m);
 
 // PLAYER METHODS
 extern void player_init(Player* player);
