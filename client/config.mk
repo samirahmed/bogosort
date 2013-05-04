@@ -1,4 +1,3 @@
-
 # Copyright (C) 2011 by Jonathan Appavoo, Boston University
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,7 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-
 UISYSTEM=$(shell uname)
 
 ifeq ($(UISYSTEM),Darwin)
@@ -30,26 +28,33 @@ else
   UILIBS = -lSDL
 endif
 
-CFLAGS := -g $(UIINCDIR) -pthread  -L../lib -ldagame -std=gnu99
+CFLAGS := -g $(UIINCDIR) -std=c99
 
-all: uitest
+MODULE := $(shell basename $CURDIR)
+
+DAGAMELIBHDRS := types.h net.h protocol.h protocol_utils.h            \
+	protocol_session.h protocol_client.h protocol_server.h maze.h \
+	player.h ui.h game.h
+DAGAMELIBFILE := libdagame.a
+DAGAMELIBARCHIVE := ../lib/$(DAGAMELIBFILE)
+DAGAMELIB := -L../lib -ldagame
+
+
+src  = $(wildcard *.c)
+objs = $(patsubst %.c,%.o,$(src))
+
+ifeq ($(MODULE),lib)
+  DAGAMELIBINCS:=$(DAGAMELIBHDRS)
+else
+  DAGAMELIBINCS:=$(addprefix ../lib/,$(DAGAMELIBHDRS))
+endif
+
+
+all: $(targets)
 .PHONY: all
-targets = libdagame.a
 
-
-libdagame.a: $(objs)
-	ar -c -r libdagame.a $(objs)
-
-
-uistandalone.o: uistandalone.c uistandalone.h ../lib/game_commons.c ../lib/game_commons.h  
-	gcc ${CFLAGS} uistandalone.c -c 
-
-uitest.o: uitest.c uistandalone.h ../lib/game_commons.c
-	gcc $(CFLAGS) uitest.c -c 
-
-uitest: uistandalone.o uitest.o
-	gcc $(CFLAGS) uistandalone.o uitest.o -o uitest ${UILIBS} -L../lib  -ldagame
+$(objs) : $(src) $(DAGAMELIBINCS)
 
 clean:
-	rm uitest *.o
+	rm $(objs) $(targets)
 

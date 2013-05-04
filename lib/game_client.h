@@ -38,10 +38,13 @@ typedef struct ClientBlockingStruct{
 
 typedef struct ClientState  {
   Proto_Client_Handle ph;
+  pthread_t UI_Thread;
   Maze maze;
   Blocking_Helper bh;
   Player* my_player;
   int connected;
+  uval height;
+  uval width;
 } Client;
 
 typedef struct RequestHandler{

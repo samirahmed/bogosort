@@ -466,6 +466,10 @@ int client_init(Client *C,Proto_MT_Handler update_handler)
 
   // Set connected state to zero
   C->connected = 0; 
+
+  //Set UI size
+  C->width = 700;
+  C->height = 700;
   
   // initialize the client protocol subsystem
   if (proto_client_init(&(C->ph))<0) {
