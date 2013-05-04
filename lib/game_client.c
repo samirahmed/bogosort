@@ -64,9 +64,9 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
            //Set the player pointer at cell position x,y to my player
            maze->get[new_x][new_y].player = player_ptr; 
            if(maze->get[new_x][new_y].object==NULL)
-               maze->get[cur_x][cur_y].cell_state = CELLSTATE_OCCUPIED;
+               maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED;
            else
-               maze->get[cur_x][cur_y].cell_state = CELLSTATE_OCCUPIED_HOLDING;
+               maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED_HOLDING;
 
 
            if(proto_debug())
