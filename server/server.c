@@ -172,7 +172,7 @@ int client_lost_handler( Proto_Session * s)
 int hello_handler( Proto_Session *s)
 {
   clock_t clk;
-  int rc;
+  int rc,rpc;
   clk = clock();
   Player*player;
   Update update;
@@ -181,8 +181,9 @@ int hello_handler( Proto_Session *s)
   rc = server_game_add_player(&maze,s->fd,&player,&update);
   if(rc<0)
   {
+    rpc = reply(s,PROTO_MT_REP_HELLO,rc,(size_t)NULL);
 	  slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc,clk);
-    return reply(s,PROTO_MT_REP_HELLO,rc,(size_t)NULL);
+    return rpc;
   }
 
   Proto_Msg_Hdr h;
@@ -196,9 +197,9 @@ int hello_handler( Proto_Session *s)
   /// EVENT UPDATE GOES HERE
   doUpdateClients(&update);
 
+  rpc= reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
 	slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc,clk);
-
-  return reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
+  return rpc;
 }
 
 int goodbye_handler( Proto_Session *s)
@@ -215,7 +216,7 @@ int sync_handler( Proto_Session *s)
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr));
   int *walls, *rlist, *blist, blen, rlen, wlen, 
-      rshovel, bshovel, bflag, rflag, rc,ii;
+      rshovel, bshovel, bflag, rflag, rc,ii,rpc;
   rc = 0;
 
   // Get the walls + rlist
@@ -246,15 +247,16 @@ int sync_handler( Proto_Session *s)
   h.pstate.v3.raw = rlen+blen;
   put_hdr(s,&h);
 	
+  rpc = reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
   slog("SYN",NULL,s->fd,NULL,NULL,0,clk);
-  return reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
+  return rpc; 
 }
 
 int action_handler( Proto_Session *s)
 {
   clock_t clk = clock();
   Proto_Msg_Hdr h;
-  int rc,id,team,action,fd;
+  int rc,id,team,action,fd,rpc;
   Pos current,next;
   GameRequest request;
   rc = 0;
@@ -274,22 +276,25 @@ int action_handler( Proto_Session *s)
 
   if (rc<0)
   {
+    rpc = reply(s,PROTO_MT_REP_ACTION,rc,-1);
     slog("ACT",&action,fd,&team,&id,rc,clk);
-    return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+    return rpc;
   }
   
   rc = server_game_action(&maze, &request);
   if (rc<0)
   {
+    rpc = reply(s,PROTO_MT_REP_ACTION,rc,-1);
     slog("ACT",&action,fd,&team,&id,rc,clk);
-    return reply(s,PROTO_MT_REP_ACTION,rc,-1);
+    return rpc;
   }
 
   /// EVENT UPDATE GOES HERE
   doUpdateClients(&request.update);
   
+  rpc = reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
   slog("ACT",&action,fd,&team,&id,rc,clk);
-  return reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
+  return rpc;
 }
 
 int init_game(void){
