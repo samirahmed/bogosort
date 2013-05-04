@@ -23,10 +23,9 @@
 #include <stdio.h>
 #include <stdlib.h> /* for exit() */
 #include <pthread.h>
+#include <sys/types.h>
 #include <assert.h>
-#include "ui_types.h"
 #include "uistandalone.h"
-#include "../lib/types.h"
 #include "../lib/game_commons.h"
 
 /* A lot of this code comes from http://www.libsdl.org/cgi/docwiki.cgi */
