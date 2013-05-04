@@ -127,10 +127,10 @@ int doUpdateClients(Update *update)
   hdr.type = PROTO_MT_EVENT_UPDATE;
   proto_session_hdr_marshall(s, &hdr);
   
-  // block until it is your turn
-  
-  // 
+  // call wait and signal helpers to ensure correct ordering
+  server_update_wait(&maze,update->timestamp);
   proto_server_post_event();  
+  server_update_signal(&maze,update->timestamp);
   return 1;
 }
 
