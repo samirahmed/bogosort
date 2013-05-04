@@ -26,7 +26,7 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#include "types.h"
+#include "../lib/types.h"
 #include "uistandalone.h"
 
 UI *ui;
@@ -89,14 +89,13 @@ int
 main(int argc, char **argv)
 {
   pthread_t tid;
-
+ 
   ui_init(&(ui));
 
   pthread_create(&tid, NULL, shell, NULL);
-
-  // WITH OSX ITS IS EASIEST TO KEEP UI ON MAIN THREAD
+   // WITH OSX ITS IS EASIEST TO KEEP UI ON MAIN THREAD
   // SO JUMP THROW HOOPS :-(
-  ui_main_loop(ui, 320, 320);
+  ui_main_loop(ui, 700, 700);
 
   return 0;
 }
@@ -108,45 +107,46 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e)
   SDLMod mod = e->keysym.mod;
 
   if (e->type == SDL_KEYDOWN) {
-    if (sym == SDLK_LEFT && mod == KMOD_NONE) {
+    if (sym == SDLK_LEFT && mod != KMOD_SHIFT) {
+      printf("move left\n");
       fprintf(stderr, "%s: move left\n", __func__);
       return ui_dummy_left(ui);
     }
-    if (sym == SDLK_RIGHT && mod == KMOD_NONE) {
+    if (sym == SDLK_RIGHT && mod != KMOD_SHIFT) {
       fprintf(stderr, "%s: move right\n", __func__);
       return ui_dummy_right(ui);
     }
-    if (sym == SDLK_UP && mod == KMOD_NONE)  {  
+    if (sym == SDLK_UP && mod != KMOD_SHIFT)  {  
       fprintf(stderr, "%s: move up\n", __func__);
       return ui_dummy_up(ui);
     }
-    if (sym == SDLK_DOWN && mod == KMOD_NONE)  {
+    if (sym == SDLK_DOWN && mod != KMOD_SHIFT)  {
       fprintf(stderr, "%s: move down\n", __func__);
       return ui_dummy_down(ui);
     }
-    if (sym == SDLK_r && mod == KMOD_NONE)  {  
+    if (sym == SDLK_r && mod != KMOD_SHIFT)  {  
       fprintf(stderr, "%s: dummy pickup red flag\n", __func__);
       return ui_dummy_pickup_red(ui);
     }
-    if (sym == SDLK_g && mod == KMOD_NONE)  {   
+    if (sym == SDLK_g && mod != KMOD_SHIFT)  {   
       fprintf(stderr, "%s: dummy pickup green flag\n", __func__);
       return ui_dummy_pickup_green(ui);
     }
-    if (sym == SDLK_j && mod == KMOD_NONE)  {   
+    if (sym == SDLK_j && mod != KMOD_SHIFT)  {   
       fprintf(stderr, "%s: dummy jail\n", __func__);
       return ui_dummy_jail(ui);
     }
-    if (sym == SDLK_n && mod == KMOD_NONE)  {   
+    if (sym == SDLK_n && mod != KMOD_SHIFT)  {   
       fprintf(stderr, "%s: dummy normal state\n", __func__);
       return ui_dummy_normal(ui);
     }
-    if (sym == SDLK_t && mod == KMOD_NONE)  {   
+    if (sym == SDLK_t && mod != KMOD_SHIFT)  {   
       fprintf(stderr, "%s: dummy toggle team\n", __func__);
-      return ui_dummy_toggle_team(ui);
+      //return ui_dummy_toggle_team(ui);
     }
     if (sym == SDLK_i && mod == KMOD_NONE)  {   
       fprintf(stderr, "%s: dummy inc player id \n", __func__);
-      return ui_dummy_inc_id(ui);
+      //return ui_dummy_inc_id(ui);
     }
     if (sym == SDLK_q) return -1;
     if (sym == SDLK_z && mod == KMOD_NONE) return ui_zoom(ui, 1);

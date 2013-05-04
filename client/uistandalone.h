@@ -23,8 +23,9 @@
 *****************************************************************************/
 
 #include <SDL/SDL.h>   /* All SDL apps need this */
-#include "ui_types.h"
-#include "../lib/game_commons.h"
+#include "../lib/game_client.h"
+#include "../lib/types.h"
+
 typedef enum { 
   TEAMA_S=0, TEAMB_S, FLOOR_S, REDWALL_S, GREENWALL_S, LOGO_S, JACKHAMMER_S, REDFLAG_S, GREENFLAG_S, NUM_S 
 } SPRITE_INDEX;
@@ -63,23 +64,24 @@ char map [201][201];
 sval ui_zoom(UI *ui, sval fac);
 sval ui_pan(UI *ui, sval xdir, sval ydir);
 sval ui_move(UI *ui, sval xdir, sval ydir);
-sval ui_keypress(UI *ui, SDL_KeyboardEvent *e);
+sval ui_keypress(UI *ui, SDL_KeyboardEvent *e, Client* my_client);
 void ui_update(UI *ui);
 void ui_quit(UI *ui);
-void ui_main_loop(UI *ui, uval h, uval w);
+void ui_main_loop(UI *ui, uval h, uval w, Client* my_client);
 void ui_init(UI **ui);
 
 
-// DUMMY TEST CALLS
-int ui_dummy_left(UI *ui);
-int ui_dummy_right(UI *ui); 
-int ui_dummy_down(UI *ui);
-int ui_dummy_up(UI *ui);
-int ui_dummy_normal(UI *ui);
-int ui_dummy_pickup_red(UI *ui);
-int ui_dummy_pickup_green(UI *ui);
-int ui_dummy_jail(UI *ui);
-int ui_dummy_toggle_team(UI *ui);
-int ui_dummy_inc_id(UI *ui);
+// RPC calls based on key presses by user
+int ui_left(Request *request,Client* my_client);
+int ui_right(Request *request,Client* my_client); 
+int ui_down(Request *request,Client* my_client);
+int ui_up(Request *request,Client* my_client);
+int ui_normal(Request *request,Client* my_client);
+int ui_pickup_flag(Request *request,Client* my_client);
+int ui_pickup_shovel(Request *request,Client* my_client);
+int ui_join(Request *request,Client* my_client);
+
+//Paint the map
+sval ui_paintmap(UI *ui,Maze* maze);
 
 #endif

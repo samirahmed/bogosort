@@ -23,25 +23,24 @@
 #include <stdio.h>
 #include <stdlib.h> /* for exit() */
 #include <pthread.h>
+#include <sys/types.h>
 #include <assert.h>
-#include "types2.h"
-#include "ui_types.h"
 #include "uistandalone.h"
-#include "../lib/types.h"
+#include "SDL/SDL.h"
 #include "../lib/game_commons.h"
 
 /* A lot of this code comes from http://www.libsdl.org/cgi/docwiki.cgi */
 
 
-#define UI_FLOOR_BMP "floor.bmp"
-#define UI_REDWALL_BMP "redwall.bmp"
-#define UI_GREENWALL_BMP "greenwall.bmp"
-#define UI_TEAMA_BMP "teama.bmp"
-#define UI_TEAMB_BMP "teamb.bmp"
-#define UI_LOGO_BMP "logo.bmp"
-#define UI_REDFLAG_BMP "redflag.bmp"
-#define UI_GREENFLAG_BMP "greenflag.bmp"
-#define UI_JACKHAMMER_BMP "shovel.bmp"
+#define UI_FLOOR_BMP "bitmap/floor.bmp"
+#define UI_REDWALL_BMP "bitmap/redwall.bmp"
+#define UI_GREENWALL_BMP "bitmap/greenwall.bmp"
+#define UI_TEAMA_BMP "bitmap/teama.bmp"
+#define UI_TEAMB_BMP "bitmap/teamb.bmp"
+#define UI_LOGO_BMP "bitmap/logo.bmp"
+#define UI_REDFLAG_BMP "bitmap/redflag.bmp"
+#define UI_GREENFLAG_BMP "bitmap/greenflag.bmp"
+#define UI_JACKHAMMER_BMP "bitmap/shovel.bmp"
 #define SPRITE_H 3 
 #define SPRITE_W 3
 
@@ -335,8 +334,8 @@ static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel){
 } 
 
 
-static sval
-ui_paintmap(UI *ui) 
+extern sval
+ui_paintmap(UI *ui,Maze* maze) 
 {
 printf("mapload is %d\n", init_mapload);
 int w,h;
@@ -344,27 +343,6 @@ int map_char;
 
 int type; 
 printf("cell types set");
-
-if(!init_mapload){  
-	player_init(&p);
-
-	p.client_position.x = 10; //initialize the client position
-        p.client_position.y = 10;
-        maze_build_from_file(&maze, "../daGame.map");
-	plist_init(&red_players, TEAM_RED,2);
-        plist_init(&blue_players, TEAM_BLUE, 2);
-	red_players.at[0] = p;
-	maze.players[0] = red_players;	
-	maze.players[1] = blue_players;
-       	maze.get[10][10].player = &p;
-	maze.get[10][10].cell_state = CELLSTATE_OCCUPIED;	
-        int i,j;
-	map_ptr = &maze;
-	init_mapload = 1;
-}
-
-//init player at location 0
-
 
 Cell cur_cell;
 int cell_state;
@@ -379,7 +357,7 @@ SDL_Rect t;
 
   for (x = 0; x < 200; x++) {
     for (y = 0; y < 200; y++) {
-        cur_cell = maze.get[y][x];
+        cur_cell = maze->get[y][x];
         // get the cell
                
         scale_x = x * SPRITE_W;
@@ -518,7 +496,7 @@ ui_userevent(UI *ui, SDL_UserEvent *e)
 }
 
 static sval
-ui_process(UI *ui)
+ui_process(UI *ui, Client* my_client)
 {
   SDL_Event e;
   sval rc = 1;
@@ -529,7 +507,7 @@ ui_process(UI *ui)
       return -1;
     case SDL_KEYDOWN:
     case SDL_KEYUP:
-      rc = ui_keypress(ui, &(e.key));
+      rc = ui_keypress(ui, &(e.key),my_client);
       break;
     case SDL_ACTIVEEVENT:
       break;
@@ -539,9 +517,10 @@ ui_process(UI *ui)
     default:
       fprintf(stderr, "%s: e.type=%d NOT Handled\n", __func__, e.type);
     }
-    if (rc==2) { 
+    //Don't call paint map, in this thread, do it in the event channel update
+    /*if (rc==2) { */
 	
-	ui_paintmap(ui); }
+	/*ui_paintmap(ui, maze); }*/
     if (rc<0) break;
   }
   return rc;
@@ -599,20 +578,20 @@ ui_quit(UI *ui)
 }
 
 extern void
-ui_main_loop(UI *ui, uval h, uval w)
+ui_main_loop(UI *ui, uval h, uval w,Client* my_client)
 {
 
   sval rc;
   
-  assert(ui);
+  //assert(ui);
 
   ui_init_sdl(ui, h, w, 32);
 
-  ui_paintmap(ui);
+  ui_paintmap(ui, &my_client->maze);
    
   
   while (1) {
-    if (ui_process(ui)<0) break;
+    if (ui_process(ui,my_client)<0) break;
   }
 
   ui_shutdown_sdl();
@@ -634,137 +613,230 @@ ui_init(UI **ui)
 
 
 int
-ui_dummy_left(UI *ui)
+ui_left(Request *request,Client* my_client)
 {
-// CHECK IF RUNNING ON CURZON / FIND WORKAROUND FOR UBUNTU 
-//NOTE TO SELF:
-//IF THE FOLLOWING ISN"T PRINTING ON RUN MAKE SURE YOURE RUNNING XMONAD
-   int x,y, new_x;
+   int rc,x,y, new_x;
    x = map_ptr->players[0].at[0].client_position.x;
    y = map_ptr->players[0].at[0].client_position.y;
    new_x = x-1;
-   if(maze.get[new_x][y].type == CELL_WALL){
-	printf("Cell wall, cannot move in that direction\n");
-	}
-   else{
-   printf("player after moving at %d, %d\n", new_x,y); 
-   map_ptr->players[0].at[0].client_position.x = new_x;
-   (maze.get[new_x][y].player) = (maze.get[y][x].player);
-   maze.get[x][y].player = NULL;
-   maze.get[x][y].cell_state = CELLSTATE_EMPTY;
-   printf("x is %d, new_x is %d\n", x, new_x);
-   printf("cell state is %d\n", maze.get[new_x][y].cell_state);
-   maze.get[new_x][y].cell_state = CELLSTATE_OCCUPIED;
+   
+   Pos next;
+   bzero(&next,sizeof(next));
+   
+   if(maze.get[new_x][y].type == CELL_WALL)
+   {
+	    printf("Cell wall, cannot move in that direction\n");
+        rc = -999;//I will change this later
+   }
+   else
+   {
+       next.x = new_x;
+       next.y = y;
+       request_action_init(request,my_client,ACTION_MOVE,
+        &my_client->my_player->client_position,&next);
+       rc = doRPCCmd(request);
+       process_RPC_message(my_client);
+       /*printf("player after moving at %d, %d\n", new_x,y); */
+       /*map_ptr->players[0].at[0].client_position.x = new_x;*/
+       /*(maze.get[new_x][y].player) = (maze.get[y][x].player);*/
+       /*maze.get[x][y].player = NULL;*/
+       /*maze.get[x][y].cell_state = CELLSTATE_EMPTY;*/
+       /*printf("x is %d, new_x is %d\n", x, new_x);*/
+       /*printf("cell state is %d\n", maze.get[new_x][y].cell_state);*/
+       /*maze.get[new_x][y].cell_state = CELLSTATE_OCCUPIED;*/
 	}   
-return 2;
+return rc;
 }
 
 int
-ui_dummy_right(UI *ui)
+ui_right(Request *request,Client* my_client)
 {
-    int x,y, new_x;
+   int rc,x,y, new_x;
    x = map_ptr->players[0].at[0].client_position.x;
    y = map_ptr->players[0].at[0].client_position.y;
    new_x = x+1;
-   if(maze.get[new_x][y].type == CELL_WALL){
-	printf("Cell wall, cannot move in that direction\n");
-	}
+
+   Pos next;
+   bzero(&next,sizeof(next));
+   
+   if(maze.get[new_x][y].type == CELL_WALL)
+   {
+	    printf("Cell wall, cannot move in that direction\n");
+        rc = -999;//I will change this later
+   }
    else{
-   printf("player after moving at %d, %d\n", new_x,y); 
-   map_ptr->players[0].at[0].client_position.x = new_x;
-   (maze.get[new_x][y].player) = (maze.get[y][x].player);
-   maze.get[x][y].player = NULL;
-   maze.get[x][y].cell_state = CELLSTATE_EMPTY;
-   printf("x is %d, new_x is %d\n", x, new_x);
-   printf("cell state is %d\n", maze.get[new_x][y].cell_state);
-   maze.get[new_x][y].cell_state = CELLSTATE_OCCUPIED;
+       next.x = new_x;
+       next.y = y;
+       request_action_init(request,my_client,ACTION_MOVE,
+        &my_client->my_player->client_position,&next);
+       rc = doRPCCmd(request);
+       process_RPC_message(my_client);
+
+
+       /*printf("player after moving at %d, %d\n", new_x,y); */
+       /*map_ptr->players[0].at[0].client_position.x = new_x;*/
+       /*(maze.get[new_x][y].player) = (maze.get[y][x].player);*/
+       /*maze.get[x][y].player = NULL;*/
+       /*maze.get[x][y].cell_state = CELLSTATE_EMPTY;*/
+       /*printf("x is %d, new_x is %d\n", x, new_x);*/
+       /*printf("cell state is %d\n", maze.get[new_x][y].cell_state);*/
+       /*maze.get[new_x][y].cell_state = CELLSTATE_OCCUPIED;*/
 	}   
 
- return 2;
+ return rc;
 
 }
 
 
 int
-ui_dummy_down(UI *ui)
+ui_down(Request *request,Client* my_client)
 {
-    int x,y, new_y;
+   int rc,x,y, new_y;
    x = map_ptr->players[0].at[0].client_position.x;
    y = map_ptr->players[0].at[0].client_position.y;
    new_y = y+1;
-   if(maze.get[x][new_y].type == CELL_WALL){
+
+   Pos next;
+   bzero(&next,sizeof(next));
+
+   if(maze.get[x][new_y].type == CELL_WALL)
+   {
 	printf("Cell wall, cannot move in that direction\n");
-	}
+    rc = -999;
+   }
    else{
-   printf("player after moving at %d, %d\n", x,new_y); 
-   map_ptr->players[0].at[0].client_position.y = new_y;
-   (maze.get[x][new_y].player) = (maze.get[y][x].player);
-   maze.get[x][y].player = NULL;
-   maze.get[x][y].cell_state = CELLSTATE_EMPTY;
-   printf("y is %d, new_y is %d\n", y, new_y);
-   printf("cell state is %d\n", maze.get[x][new_y].cell_state);
-   maze.get[x][new_y].cell_state = CELLSTATE_OCCUPIED;
+       next.x = x;
+       next.y = new_y;
+       request_action_init(request,my_client,ACTION_MOVE,
+        &my_client->my_player->client_position,&next);
+       rc = doRPCCmd(request);
+       process_RPC_message(my_client);
+
+       /*printf("player after moving at %d, %d\n", x,new_y); */
+       /*map_ptr->players[0].at[0].client_position.y = new_y;*/
+       /*(maze.get[x][new_y].player) = (maze.get[y][x].player);*/
+       /*maze.get[x][y].player = NULL;*/
+       /*maze.get[x][y].cell_state = CELLSTATE_EMPTY;*/
+       /*printf("y is %d, new_y is %d\n", y, new_y);*/
+       /*printf("cell state is %d\n", maze.get[x][new_y].cell_state);*/
+       /*maze.get[x][new_y].cell_state = CELLSTATE_OCCUPIED;*/
 	}   
 
- return 2;
+ return rc;
 
 }
 
 
 int
-ui_dummy_up(UI *ui)
+ui_up(Request *request,Client* my_client)
 {
-   int x,y, new_y;
+   int rc,x,y, new_y;
    x = map_ptr->players[0].at[0].client_position.x;
    y = map_ptr->players[0].at[0].client_position.y;
    new_y = y-1;
-   if(maze.get[x][new_y].type == CELL_WALL){
+   
+   Pos next;
+   bzero(&next,sizeof(next));
+
+   if(maze.get[x][new_y].type == CELL_WALL)
+   {
 	printf("Cell wall, cannot move in that direction\n");
-	}
+    rc = -999;
+   }
    else{
-   printf("player after moving at %d, %d\n", x,new_y); 
-   map_ptr->players[0].at[0].client_position.y = new_y;
-   (maze.get[x][new_y].player) = (maze.get[y][x].player);
-   maze.get[x][y].player = NULL;
-   maze.get[x][y].cell_state = CELLSTATE_EMPTY;
-   printf("y is %d, new_y is %d\n", y, new_y);
-   printf("cell state is %d\n", maze.get[x][new_y].cell_state);
-   maze.get[x][new_y].cell_state = CELLSTATE_OCCUPIED;
-}   
+       next.x = x;
+       next.y = new_y;
+       request_action_init(request,my_client,ACTION_MOVE,
+        &my_client->my_player->client_position,&next);
+       rc = doRPCCmd(request);
+       process_RPC_message(my_client);
 
- return 2;
+       /*printf("player after moving at %d, %d\n", x,new_y); */
+       /*map_ptr->players[0].at[0].client_position.y = new_y;*/
+       /*(maze.get[x][new_y].player) = (maze.get[y][x].player);*/
+       /*maze.get[x][y].player = NULL;*/
+       /*maze.get[x][y].cell_state = CELLSTATE_EMPTY;*/
+       /*printf("y is %d, new_y is %d\n", y, new_y);*/
+       /*printf("cell state is %d\n", maze.get[x][new_y].cell_state);*/
+       /*maze.get[x][new_y].cell_state = CELLSTATE_OCCUPIED;*/
+   }   
+
+ return rc;
 }
 
-
-
-
 int
-ui_dummy_normal(UI *ui)
+ui_join(Request *request,Client* my_client)
 {
-  //state = 0;
-  return 2;
+ int rc;
+ request_hello_init(request,my_client);
+ rc = doRPCCmd(request);
+ return rc;
 }
 
 int
-ui_dummy_pickup_red(UI *ui)
+ui_pickup_flag(Request *request,Client* my_client)
 {
  // state = 1;
   return 2;
 }
 
 int
-ui_dummy_pickup_green(UI *ui)
+ui_pickup_shovel(Request *request,Client* my_client)
 {
-  // state = 2;
+ // state = 1;
   return 2;
 }
 
-
-int
-ui_dummy_jail(UI *ui)
+extern sval
+ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
 {
-  // state = 3;
-  return 2;
+  SDLKey sym = e->keysym.sym;
+  SDLMod mod = e->keysym.mod;
+  Request request;
+  bzero(&request,sizeof(Request));
+
+  if (e->type == SDL_KEYDOWN) {
+    if (sym == SDLK_LEFT && mod != KMOD_SHIFT) {
+      printf("move left\n");
+      fprintf(stderr, "%s: move left\n", __func__);
+      return ui_left(&request,my_client);
+    }
+    if (sym == SDLK_RIGHT && mod != KMOD_SHIFT) {
+      fprintf(stderr, "%s: move right\n", __func__);
+      return ui_right(&request,my_client);
+    }
+    if (sym == SDLK_UP && mod != KMOD_SHIFT)  {  
+      fprintf(stderr, "%s: move up\n", __func__);
+      return ui_up(&request,my_client);
+    }
+    if (sym == SDLK_DOWN && mod != KMOD_SHIFT)  {
+      fprintf(stderr, "%s: move down\n", __func__);
+      return ui_down(&request,my_client);
+    }
+    if (sym == SDLK_r && mod != KMOD_SHIFT)  {  
+      fprintf(stderr, "%s: pickup flag\n", __func__);
+      return ui_pickup_flag(&request,my_client);
+    }
+    if (sym == SDLK_g && mod != KMOD_SHIFT)  {  
+      fprintf(stderr, "%s: pickup shovel\n", __func__);
+      return ui_pickup_shovel(&request,my_client);
+    }
+    if (sym == SDLK_j && mod != KMOD_SHIFT)  {  
+      fprintf(stderr, "%s: pickup shovel\n", __func__);
+      return ui_join(&request,my_client);
+    }
+    if (sym == SDLK_q) return -1;
+    if (sym == SDLK_z && mod == KMOD_NONE) return ui_zoom(ui, 1);
+    if (sym == SDLK_z && mod & KMOD_SHIFT ) return ui_zoom(ui,-1);
+    if (sym == SDLK_LEFT && mod & KMOD_SHIFT) return ui_pan(ui,-1,0);
+    if (sym == SDLK_RIGHT && mod & KMOD_SHIFT) return ui_pan(ui,1,0);
+    if (sym == SDLK_UP && mod & KMOD_SHIFT) return ui_pan(ui, 0,-1);
+    if (sym == SDLK_DOWN && mod & KMOD_SHIFT) return ui_pan(ui, 0,1);
+    else {
+      fprintf(stderr, "%s: key pressed: %d\n", __func__, sym); 
+    }
+  } else {
+    fprintf(stderr, "%s: key released: %d\n", __func__, sym);
+  }
+  return 1;
 }
-
-
