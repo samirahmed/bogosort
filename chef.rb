@@ -230,7 +230,8 @@ def test(arguments)
     cpids,clients,io_pids = [],[],[]
     ios.each do |io|
       fd = File.open(clog,'w');
-      pid = Process.spawn("#{client}",:in=>io.first,:err=>[fd,"a"],:out=>[fd,"a"])
+      pid = Process.spawn("#{client}","-no_ui",
+        :in=>io.first,:err=>[fd,"a"],:out=>[fd,"a"])
       cpids << pid
       pids << pid
       fds << fd
