@@ -25,7 +25,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "client.h"
-#include "uistandalone.h"
+#include "../uistandalone.h"
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/protocol_client.h"
