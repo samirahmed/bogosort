@@ -28,6 +28,8 @@
 #include <pthread.h>
 #include <string.h>
 #include <time.h>
+#include <X11/Xlib.h>
+
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/net.h"
@@ -36,10 +38,13 @@
 #include "../lib/protocol_session.h"
 #include "../lib/protocol_server.h"
 #include "../lib/protocol_utils.h"
+#include "../lib/uistandalone.h"
 
 static Maze maze; 		
 static char timestr[9];
 static int  teleport;
+static int  ui_enabled;
+static UI*  ui;
 
 //////////////////
 // HELPER CODE  //
@@ -127,6 +132,7 @@ int doUpdateClients(Update *update)
   hdr.type = PROTO_MT_EVENT_UPDATE;
   proto_session_hdr_marshall(s, &hdr);
   proto_server_post_event();  
+  if (ui_enabled && ui) ui_paintmap(ui, &maze);
   return 1;
 }
 
@@ -427,6 +433,7 @@ void * shell(void *arg)
 
 int main(int argc, char **argv)
 { 
+  XInitThreads();
   if (proto_server_init()<0)
   {
     fprintf(stderr, "ERROR: failed to initialize proto_server subsystem\n");
@@ -442,7 +449,19 @@ int main(int argc, char **argv)
     fprintf(stderr, "ERROR: failed to start rpc loop\n");
     exit(-1);
   }
-    
+  
+  ui_enabled = (argc == 2 && strncmp(argv[1],"--ui",sizeof("--ui")-1)==0);
+  if (ui_enabled)
+  {
+    ui_init(&ui);
+    ui_init_sdl(ui, 700, 700, 32);
+    ui_paintmap(ui, &maze);
+  }
+  else
+  {
+    ui = 0;
+  }
+
   shell(NULL);
 
   return 0;

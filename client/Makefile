@@ -17,7 +17,7 @@ endif
 
 CFLAGS := -g $(UIINCDIR) -pthread -Wall
 targets=client
-src = client.c uistandalone.c
+src = client.c 
 objs = $(patsubst %.c,%.o,$(src))
 libs = -L../lib -ldagame 
 
