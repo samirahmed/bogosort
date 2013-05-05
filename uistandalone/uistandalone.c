@@ -51,8 +51,8 @@ Plist red_players;
 Plist blue_players;
 Player p;
 int zoom_level = 1;
-int pan_x_offset = 0;
-int pan_y_offset = 0;
+int pan_offset_x = 0;
+int pan_offset_y = 0;
 int init_mapload = 0;
 int map_h;
 int map_w;
@@ -328,12 +328,14 @@ draw_cell(UI *ui, SPRITE_INDEX si, SDL_Rect *t, SDL_Surface *s)
 //paints SPRITE_W x SPRITE_H pixels starting with x,y at the upper left corner
 static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel){
 	int w,h;
+	int tw, th; //translated w and h
 	for(h = y; h < y+SPRITE_H; h++){
 		for(w = x; w < x+SPRITE_W; w++){ 
-			if( h < map_h && w < map_w){
-				ui_putpixel(surface, h, w, pixel);
-		}
-	
+			tw = w + pan_offset_x;
+			th = h + pan_offset_y;
+			if(0 <= th && th < map_h && 0 <= tw && tw < map_w ){
+				ui_putpixel(surface, th, tw, pixel);
+			}	
 		}
 	}
 } 
@@ -587,24 +589,27 @@ ui_pan(UI *ui, sval xdir, sval ydir)
 	//guaranteed to only have x,y input as:
 	// (1,0), (-1,0), (0,-1), (0,1)
 	if(xdir ==  1){
-		//pan right
+		pan_offset_x+=3; 
+        //pan right
 	//we pan by a single square on the map	
 	}
 	if(xdir == -1){
+		
+		pan_offset_x-=3;
+		
 		//pan left
 		}
 	if(ydir == 1){
+		pan_offset_y+=3;
 		//pan up
 		}		
 	if(ydir == -1){
-		//pan down
-	
+
+		pan_offset_y-=3;
 	}
+		//pan down
+
 		
-	
-
-
-
 
   fprintf(stderr, "%s:\n", __func__);
   return 2;
