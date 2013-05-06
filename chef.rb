@@ -72,12 +72,16 @@ def mkcmd(cmd,arg)
       case arg
         when "0" then "drop flag"
         when "1" then "drop shovel"
+        when "flag" then "pickup flag"
+        when "shovel" then "pickup shovel"
         else  nil
       end
     when "PCK" then
       case arg
         when "0" then "pickup flag"
         when "1" then "pickup shovel"
+        when "flag" then "pickup flag"
+        when "shovel" then "pickup shovel"
         else nil
       end
     else nil
