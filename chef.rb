@@ -84,21 +84,43 @@ def mkcmd(cmd,arg)
   end
 end
 
-def hash_files( thash, ahash ,client_only)
-    
-    thash.map!{|fname| Digest::MD5.hexdigest(File.read(fname))}
-    ahash.map!{|fname| Digest::MD5.hexdigest(File.read(fname))}
+def hash_files( texts, asciis , sfiles)
+   
+    st,sa = nil,nil
+    if (sfiles and !sfiles.empty?)
+      st = Digest::MD5.hexdigest(File.read sfiles.first)
+      sa = Digest::MD5.hexdigest(File.read sfiles.last)
+    end
+
+    thash = texts.map{|fname| Digest::MD5.hexdigest(File.read(fname))}
+    ahash = asciis.map{|fname| Digest::MD5.hexdigest(File.read(fname))}
       
     if thash.sort.uniq.size == 1
-      puts  "#{SYMBOL_TICK.green} Text-Dump Checksum Match"
+      puts  "#{SYMBOL_TICK.green} CLIENTS Text-Dump Checksum Match"
+      
+      if (st)
+        if (thash.first == st)
+          puts  "#{SYMBOL_TICK.green} CLIENTS+SERVER Textdump Match"
+        else
+          puts "#{SYMBOL_CROSS.red} CLIENTS+SERVER Text-Dump DO NOT Match "
+        end
+      end
+    
     else
-      puts "#{SYMBOL_CROSS.red} Text-Dump Checksum DO NOT Match "
+      puts "#{SYMBOL_CROSS.red} CLIENTS Text-Dump Checksum DO NOT Match "
     end
     
     if ahash.sort.uniq.size ==  1
-      puts  "#{SYMBOL_TICK.green} ASCII-Dump Checksum Match"
+      puts  "#{SYMBOL_TICK.green} CLIENTS ASCII-Dump Checksum Match"
+      if (sa)
+        if (ahash.first == sa)
+          puts  "#{SYMBOL_TICK.green} CLIENTS+SERVER ASCII Match"
+        else
+          puts "#{SYMBOL_CROSS.red} CLIENTS+SERVER ASCII DO NOT Match "
+        end
+      end
     else
-      puts "#{SYMBOL_CROSS.red} ASCII-Dump Checksum DO NOT Match "
+      puts "#{SYMBOL_CROSS.red} CLIENTS ASCII-Dump Checksum DO NOT Match "
     end
 end
 
@@ -138,6 +160,12 @@ def console()
   puts "Recipe Saved to test/#{name}.recipe".green
 end
 
+def wait(stage)
+   puts "PAUSING".blue + " - #{stage}"
+   puts "(hit enter to terminate clients)"
+   $stdin.gets
+end
+
 def test(arguments)
   # setup paths
   client  = File.join(FileUtils.pwd,'client/client')
@@ -148,13 +176,15 @@ def test(arguments)
   abort("Error! Executable server/server missing".red) unless File.exists?(server)
 
   ip = 'localhost'
-  port, recipe = nil,nil
+  port, recipe= nil,nil
   pids,fds = [],[]
-  kill, debug,client_only,verbose, pause= false,false,false,false
+  kill,slow, debug,client_only,verbose, pause= [false]*6
 
   arguments.each do |arg|
     if  arg == "--verbose" || arg == "-v"
       verbose = true
+    elsif arg == "--slow" || arg == "-s"
+      slow = true
     elsif arg == "--pause" || arg == "-p"
       pause = true
     elsif arg == "--client" || arg == "-c"
@@ -265,13 +295,16 @@ def test(arguments)
     end
 
     puts "-"*50 if verbose
+    
+    wait("before dumping") if pause
   
     puts "DUMP".blue if verbose 
     # wait 50 ms per client 
     sleep 1.0+(count.to_f*0.05)
+    sleep 1.0+(count.to_f*0.05) if slow
 
     # Dump and Hash after a brief pause
-    thash,ahash = [],[]
+    thash,ahash,server_files = [],[]
     io_pids.push([swrite,spid]) unless client_only
     io_pids.each do |stdin,pid| 
       
@@ -282,28 +315,31 @@ def test(arguments)
       asciidump = File.join log_dir,"#{pid}.ascii.dump"
      
       # if server, give it a seconds the continue
-      textdump.gsub!( /(#{pid})/, "server")  if is_server
-      asciidump.gsub!(/(#{pid})/, "server") if is_server
-      sleep 1 if is_server
+      if is_server
+        textdump.gsub!( /(#{pid})/, "server") 
+        asciidump.gsub!(/(#{pid})/, "server") 
+        server_files = [textdump,asciidump]
+        sleep 1 
+      end
+
       
       stdin.puts "textdump #{textdump}"
       stdin.puts "asciidump #{asciidump}"
-      sleep 0.2 if is_server
-
-      thash << textdump
-      ahash << asciidump
+      
+      if is_server
+        sleep (slow ? 2 : 0.2)
+      else
+        thash << textdump
+        ahash << asciidump
+      end
     end
 
-    if pause
-       puts "PAUSING".blue + ": Recipe completed"
-       puts "(hit enter to terminate clients)"
-       $stdin.gets
-    end
+    wait("after dumping") if pause
 
     # quit everything 
     io_pids.each{|stdin,pid| stdin.puts "quit" ; Process.waitpid(pid);}
     
-    hash_files(thash,ahash,client_only);
+    hash_files(thash,ahash,server_files);
     
 
   rescue 
