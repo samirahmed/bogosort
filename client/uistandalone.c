@@ -366,7 +366,7 @@ if(cur_cell.cell_state == CELLSTATE_EMPTY){
 					ui_putnpixel(ui->screen, scale_x, scale_y, ui-> purple_c);
 				}
 				else{
-					ui_putnpixel(ui->screen, scale_x, scale_y, ui->purple_c);
+					ui_putnpixel(ui->screen, scale_x, scale_y, ui->orange_c);
 }
 				//PRINT PLAYER HOLDING
 
@@ -421,8 +421,8 @@ ui_init_sdl(UI *ui, int32_t h, int32_t w, int32_t d)
   ui->green_c     = SDL_MapRGB(ui->screen->format, 0x7f, 0xe2, 0x2e);
   ui->jail_c      = SDL_MapRGB(ui->screen->format, 0x75, 0x71, 0x5e);
   ui->home_red_c  = SDL_MapRGB(ui->screen->format, 0x50, 0x10, 0x27);
-  ui->home_blue_c = SDL_MapRGB(ui->screen->format, 0x35, 0x6c, 0x77);
-  //ui->orange_c = SDL_MapRGB(ui->screen->format, 0xff, 0x99, 0x00); 
+  ui->home_blue_c = SDL_MapRGB(ui->screen->format, 0x25, 0x53, 0x33);
+  ui->orange_c    = SDL_MapRGB(ui->screen->format, 0xff, 0xff, 0xff); 
   
   ui->isle_c         = ui->black_c;
   ui->wall_teama_c   = ui->red_c;
