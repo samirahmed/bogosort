@@ -519,11 +519,16 @@ ui_process(UI *ui, Client* my_client)
     return rc;
 }
 
+
+
+
 extern sval
 ui_zoom(UI *ui, int fac)
 {
     if(fac == 1){
 	    if(zoom_level > 1){
+
+		    ui_paint_it_black(ui);
 		    zoom_level--;
 	    }
 	 else{
@@ -543,11 +548,27 @@ ui_zoom(UI *ui, int fac)
 
 }
 
+//paint the cells black for panning and zooming
+ui_paint_it_black(UI *ui){
+	int x,y;
+	int scale_x, scale_y;
+    for (x = 0; x < 200; x++)
+    {
+        for (y = 0; y < 200; y++){
+            scale_x = x * zoom_level;
+            scale_y = y * zoom_level;
+            ui_putnpixel(ui->screen, scale_x, scale_y, ui-> black_c);
+	}
+    }
+}
+
 extern sval
 ui_pan(UI *ui, sval xdir, sval ydir)
 {
 	//guaranteed to only have xdir, ydir input as
 	// (1,0) (-1,0), (0,-1), (0,1)
+
+       ui_paint_it_black(ui);
 	if(xdir == 1){
 		pan_offset_x+=3;
 	}
@@ -560,6 +581,7 @@ ui_pan(UI *ui, sval xdir, sval ydir)
 		pan_offset_y+=3;
 	}
 	if(ydir == -3){
+
 		pan_offset_y-=3;
 	}
 
