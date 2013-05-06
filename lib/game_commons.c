@@ -480,8 +480,8 @@ extern void maze_object_dump(Object*object,FILE*fd,int indent)
 
 extern void maze_player_dump(Player*player,FILE*fd)
 {
-  fprintf(fd,"\n\t["COLOR_OKGREEN"player "COLOR_END"team:%1d id:%03d]",
-          player->team,player->id);
+  fprintf(fd,"\n\t["COLOR_OKGREEN"player "COLOR_END"team:%1d id:%03d state:%1d]",
+          player->team,player->id,player->state);
   if (player->shovel) maze_object_dump(player->shovel,fd,2);
   if (player->flag) maze_object_dump(player->flag,fd,2);
 }
