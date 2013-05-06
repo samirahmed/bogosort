@@ -41,8 +41,8 @@
 #define UI_REDFLAG_BMP "client/bitmap/redflag.bmp"
 #define UI_GREENFLAG_BMP "client/bitmap/greenflag.bmp"
 #define UI_JACKHAMMER_BMP "client/bitmap/shovel.bmp"
-#define SPRITE_H 3
-#define SPRITE_W 3
+#define SPRITE_H 5
+#define SPRITE_W 5
 
 Maze * map_ptr;
 Maze maze;
