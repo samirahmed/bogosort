@@ -123,6 +123,7 @@ typedef struct{
     Game_State_Types current_game_state;
     pthread_mutex_t  state_lock;
     int              last_team;
+    Player*          client_player;
 } Maze;
 
 // UTIL METHODS

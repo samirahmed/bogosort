@@ -367,8 +367,13 @@ ui_paintmap(UI *ui,Maze* maze)
 
                 if(cur_cell.cell_state ==  CELLSTATE_OCCUPIED)
                 {
-                    //if((*(cur_cell.player)).team == TEAM_RED){
-                    ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c); // paint yellow for now -- will have to change colors
+                    if (maze->client_player &&  maze->client_player == cur_cell.player)
+                      ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c);
+                    else if((*(cur_cell.player)).team == TEAM_RED)
+                      ui_putnpixel(ui->screen, scale_x, scale_y, ui->player_teama_c); 
+                    else if((*(cur_cell.player)).team == TEAM_BLUE)
+                      ui_putnpixel(ui->screen, scale_x, scale_y, ui->player_teamb_c);
+                      
                 }
                 else
                 {
@@ -439,10 +444,10 @@ ui_init_sdl(UI *ui, int32_t h, int32_t w, int32_t d)
     ui->home_red_c  = SDL_MapRGB(ui->screen->format, 0x50, 0x10, 0x27);
     ui->home_blue_c = SDL_MapRGB(ui->screen->format, 0x25, 0x53, 0x33);
     ui->orange_c  = SDL_MapRGB(ui->screen->format, 0xff, 0xff, 0xff);
+    ui->wall_teama_c   = SDL_MapRGB(ui->screen->format, 0x77, 0x08, 0x30);
+    ui->wall_teamb_c   = SDL_MapRGB(ui->screen->format, 0x0b, 0x66, 0x83);
 
-    ui->isle_c     = ui->black_c;
-    ui->wall_teama_c   = ui->red_c;
-    ui->wall_teamb_c   = ui->blue_c;
+    ui->isle_c         = ui->black_c;
     ui->player_teama_c = ui->red_c;
     ui->player_teamb_c = ui->blue_c;
     ui->flag_teama_c   = ui->white_c;

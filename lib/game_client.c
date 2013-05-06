@@ -330,6 +330,8 @@ int process_hello_request(Maze* maze, Player** my_player, Proto_Msg_Hdr* hdr)
 
        (*my_player)->id = id;
        (*my_player)->team = team;
+
+       maze->client_player = *my_player;
     }
 
     return hdr->gstate.v0.raw;
