@@ -133,11 +133,13 @@ void test_find_and_lock(TestContext * tc)
 void st_increment_home(Task*task)
 {
   server_home_count_increment((Home*)(task->arg0)); 
+  server_home_flag_increment((Home*)(task->arg0)); 
 }
 
 void st_decrement_home(Task*task)
 {
   server_home_count_decrement((Home*)(task->arg0)); 
+  server_home_flag_decrement((Home*)(task->arg0)); 
 }
 
 void st_decrement_plist(Task*task)
@@ -372,8 +374,9 @@ void test_server_locks(TestContext * tc)
     test_task_init(&tasks[1],(Proc)&st_decrement_home,48,&maze.home[team],NULL,NULL,NULL,NULL,NULL);
     parallelize(tasks,2,thread_per_task);
     
-    assertion = server_home_count_read(&maze.home[team]) == ((tasks[0].reps-tasks[1].reps)*thread_per_task);
-    should("atomically increment and decrement home counter",assertion,tc);
+    assertion = server_home_count_read(&maze.home[team]) == ((tasks[0].reps-tasks[1].reps)*thread_per_task) &&
+                server_home_flag_read(&maze.home[team])  == ((tasks[0].reps-tasks[1].reps)*thread_per_task);
+    should("atomically increment and decrement home count & flag",assertion,tc);
    
     ////////////////
     // PLIST COUNTER
@@ -832,7 +835,8 @@ void test_game_move(TestContext*tc)
     Player dummy;
     bzero(&dummy,sizeof(Player));
     Pos  next;
-    
+   
+    long long timestamp = -1;
     int assertion,rc,fd,id; 
     fd   = randint()%9000 + 999;
     Player*player;
@@ -880,7 +884,9 @@ void test_game_move(TestContext*tc)
     decompress_player( &dummy, &request.update.compress_player_a , &type);
     assertion = (dummy.client_position.x == next.x) &&
                 (dummy.client_position.y == next.y) &&
-                (type == PLAYER_UNCHANGED);
+                (type == PLAYER_UNCHANGED) && 
+                (request.update.timestamp > timestamp);
+    timestamp = request.update.timestamp;
     should("successfuly prepare an update for player MOVE actions",assertion,tc);
 
     //////////////////
@@ -949,8 +955,10 @@ void test_game_move(TestContext*tc)
     bzero(&dummy,sizeof(Player));
     decompress_player(&dummy, &request.update.compress_player_b ,&type);
     assertion = (!decompress_is_ignoreable(&request.update.compress_player_a)) &&
+                (request.update.timestamp > timestamp) &&
                 (dummy.state == PLAYER_JAILED) && 
                 (type == PLAYER_UNCHANGED );
+    timestamp = request.update.timestamp;
     should("correctly process Updates for passive tagging",assertion,tc);
 
     ///////////////////////////////////////////
@@ -994,8 +1002,10 @@ void test_game_move(TestContext*tc)
                 (dummy.client_position.x != 50) && 
                 (dummy.client_position.y != 99) &&
                 (dummy.state == PLAYER_JAILED)  &&
+                (request.update.timestamp > timestamp) &&
                 (dummy.id == blue->id ) &&
                 (type == PLAYER_UNCHANGED);
+    timestamp = request.update.timestamp;
     should("should correctly package updates for Active tagging",assertion,tc);
 
     ////////////////////////
@@ -1022,13 +1032,136 @@ void test_game_move(TestContext*tc)
     server_game_drop_player(&maze , player->team , player->id , &update);
     decompress_player( &dummy, &update.compress_player_a , &type);
     assertion = (type == PLAYER_DROPPED) && 
+                (update.timestamp > timestamp) &&
                 (dummy.id == player->id) &&
-                (dummy.team = player->team);
+                (dummy.team == player->team);
+    timestamp = update.timestamp;
+    
+    should("correctly package dropped player update",assertion,tc);
 
     maze_destroy(&maze);
 }
 
-/*void test_event_updates()*/
+void test_game_state(TestContext *tc)
+{
+    Maze maze;
+    maze_build_from_file(&maze,"test.map");
+
+    int state,assertion,ii;
+    
+    state = server_game_recalculate_state(&maze);
+
+    assertion = (state == GAME_STATE_WAITING);
+    should("indicate waiting state before any players are added",assertion,tc);
+
+    // fake increment plists
+    for (ii=0; ii<25 ;ii++) server_plist_player_count_increment(&maze.players[TEAM_BLUE]);
+    
+    state = server_game_recalculate_state(&maze);
+
+    assertion = (state == GAME_STATE_WAITING);
+    should("indicate waiting state when only one team has players",assertion,tc);
+
+
+    // add one red player and check that game state has changed
+    server_plist_player_count_increment(&maze.players[TEAM_RED]);
+    
+    state = server_game_recalculate_state(&maze);
+
+    assertion = (state == GAME_STATE_ACTIVE);
+    should("indicate active when both teams have 1 player",assertion,tc);
+    
+    // fake increment home count
+    for (ii=0; ii<25 ;ii++) server_home_count_increment(&maze.home[TEAM_BLUE]);
+    server_home_count_increment(&maze.home[TEAM_RED]);
+    
+    state = server_game_recalculate_state(&maze);
+
+    assertion = (state == GAME_STATE_ACTIVE);
+    should("not indicate win state unless flags count is 2",assertion,tc);
+   
+    server_home_flag_increment(&maze.home[TEAM_RED]);
+    server_home_flag_increment(&maze.home[TEAM_RED]);
+    
+    state = server_game_recalculate_state(&maze);
+    
+    assertion = (state == GAME_STATE_RED_WIN);
+    should("indicate win state for red team",assertion,tc);
+    
+    server_home_flag_decrement(&maze.home[TEAM_RED]);
+    server_home_flag_decrement(&maze.home[TEAM_RED]);
+    server_home_flag_increment(&maze.home[TEAM_BLUE]);
+    server_home_flag_increment(&maze.home[TEAM_BLUE]);
+    
+    state = server_game_recalculate_state(&maze);
+    
+    assertion = (state == GAME_STATE_BLUE_WIN);
+    
+    should("indicate win state for blue team",assertion,tc);
+
+    maze_destroy(&maze);
+}
+
+void st_ordered_update(void* task_ptr)
+{
+    Task* task = (Task*) task_ptr;
+    Maze* m    = (Maze*) task->arg0;
+    long long*  timestamp = (long long*)  task->arg1;
+    time_t*  times = (time_t*)  task->arg2;
+    
+    int ii = 1000;
+    while(ii-->0)
+    {
+      test_nanosleep();
+    }
+    
+    server_update_wait(m, *timestamp );
+
+    *times = time(NULL);
+    if (test_debug()) {fprintf(stderr,"%d\n",(int)*times); fflush(stderr);}
+    server_update_signal(m, *timestamp );
+}
+
+void test_update_order(TestContext*tc)
+{
+    Maze maze;
+    maze_build_from_file(&maze,"test.map");
+    
+    int assertion,count,ii;
+    count = 1000;
+    
+    // setup 1000 timestamps
+    long long * timestamps =(long long * )malloc(sizeof(long long)*count);
+    Task* tasks = (Task*)malloc(sizeof(Task)*count);
+    time_t* times =(time_t*) malloc(sizeof(Task)*count);
+
+    bzero(tasks,sizeof(Task)*count);
+    bzero(times,sizeof(time_t)*count);
+    bzero(timestamps,sizeof(long long)*count);
+
+    for (ii=0; ii< count; ii++) 
+    {
+        // time stamps start at 1
+        timestamps[ii] = maze_next_read_then_increment(&maze); 
+        time_t* slot = &times[ii];
+       
+        // make sure we put the tasks in backwards
+        test_task_init(&tasks[count-(ii+1)],(Proc)&st_ordered_update,1,
+          &maze,&timestamps[ii],slot,NULL,NULL,NULL);
+    }
+    parallelize(tasks,count,1); // run each task one 1 thread only
+    
+    // ensure that the all the slots times are ascending
+    assertion = 1;
+    for (ii=0; ii< count-1;ii++)
+    {
+      assertion = assertion && (timestamps[ii]<timestamps[ii+1]);
+    }
+
+    should("ensure the sequence is preserved",assertion,tc);
+    
+    maze_destroy(&maze);
+}
 
 int main(int argc, char ** argv )
 {
@@ -1043,7 +1176,8 @@ int main(int argc, char ** argv )
     run(&test_game_move,"Basic Movement",&tc);
     run(&test_pickup_drop_logic,"Objects",&tc);
     run(&test_parallelize_movement,"Concurrent Movement",&tc);
-    /*run(&test_event_updates,"Event Updates",&tc);*/
+    run(&test_game_state,"Game State",&tc);
+    run(&test_update_order,"Update Order",&tc);
 
     // TEST END HERE
     

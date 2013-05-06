@@ -29,3 +29,6 @@ itest:
 
 clean-log:
 	cd log; rm -rf *;
+
+clean-docs:
+	cd doc; cd full; rm -rf *;

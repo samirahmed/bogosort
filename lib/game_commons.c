@@ -100,11 +100,6 @@ extern void jail_init(Jail* jail, Pos min, Pos max, Team_Types team)
   jail->max.x = max.x;
   jail->max.y = max.y;
   jail->team  = team;
-  pthread_mutexattr_t attr;
-  pthread_mutexattr_init(&attr);
-  pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE ); //SET TYPE TO RECURSIVE i,e REENTRANT MUTEX
-  pthread_mutex_init(&jail->jail_recursive_lock,&attr);
-  pthread_mutexattr_destroy(&attr);  // after initialization this attr object doesn't affect the pthread  
 }
 
 extern void home_init(Home* home, Pos min, Pos max, Team_Types team)
@@ -149,6 +144,25 @@ extern int home_contains(Pos* query, Home*home)
 /*********************/
 /* MAZE LOCK METHODS */
 /*********************/
+
+extern long long  maze_next_read_then_increment(Maze*m)
+{
+  long long result;
+  pthread_mutex_lock(&m->next_lock);
+  result = m->next;
+  m->next++;
+  pthread_mutex_unlock(&m->next_lock);
+  return result;
+}
+
+extern long long  maze_next_read_only(Maze*m)
+{
+  long long result;
+  pthread_mutex_lock(&m->next_lock);
+  result = m->next;
+  pthread_mutex_unlock(&m->next_lock);
+  return result;
+}
 
 extern void maze_set_state(Maze*m, Game_State_Types state)
 {
@@ -284,6 +298,9 @@ extern void maze_init(Maze * m, int max_x, int max_y)
      pthread_rwlock_init(&m->wall_wrlock,NULL);
      pthread_rwlock_init(&m->object_wrlock,NULL);
      pthread_mutex_init(&m->state_lock,NULL);
+     pthread_mutex_init(&m->current_lock,NULL);
+     pthread_mutex_init(&m->next_lock,NULL);
+     pthread_cond_init(&m->current_cond,NULL);
      m->current_game_state = GAME_STATE_WAITING; 
 
      // Initialize cells
@@ -621,10 +638,10 @@ extern void decompress_object(Object* object, int* compressed)
 
 }
 
-extern void compress_game_state(Maze* maze, int* compressed)
+extern void compress_game_state(Game_State_Types gstate, int* compressed)
 {
   *compressed &=  0xfff8ffff; // clear state bits
-  *compressed |= (0x00070000 & (maze_get_state(maze) << 16)); // write state bits
+  *compressed |= (0x00070000 & (gstate << 16)); // write state bits
 }
 
 extern int decompress_game_state(Game_State_Types *gstate, int* compressed)
