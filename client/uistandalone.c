@@ -405,7 +405,7 @@ if(cur_cell.cell_state == CELLSTATE_EMPTY){
 					ui_putnpixel(ui->screen, scale_x, scale_y, ui-> purple_c);
 				}
 				else{
-				//	ui_putnpixel(ui->screen, scale_x, scale_y, ui->orange_c);
+					ui_putnpixel(ui->screen, scale_x, scale_y, ui->purple_c);
 }
 				//PRINT PLAYER HOLDING
 
@@ -768,21 +768,53 @@ ui_join(Request *request,Client* my_client)
  int rc;
  request_hello_init(request,my_client);
  rc = doRPCCmd(request);
+ if(rc==0)
+     process_RPC_message(my_client);
  return rc;
+}
+
+int
+ui_drop_flag(Request *request,Client* my_client)
+{
+  int rc;
+  request_action_init(request,my_client,ACTION_DROP_FLAG,NULL,NULL);
+  rc = doRPCCmd(request);
+  if(rc==0)
+    process_RPC_message(my_client);
+  return rc;
+}
+
+int
+ui_drop_shovel(Request *request,Client* my_client)
+{
+  int rc;
+  request_action_init(request,my_client,ACTION_DROP_SHOVEL,NULL,NULL);
+  rc = doRPCCmd(request);
+  if(rc==0)
+    process_RPC_message(my_client);
+  return rc;
 }
 
 int
 ui_pickup_flag(Request *request,Client* my_client)
 {
- // state = 1;
-  return 2;
+  int rc;
+  request_action_init(request,my_client,ACTION_PICKUP_FLAG,NULL,NULL);
+  rc = doRPCCmd(request);
+  if(rc==0)
+    process_RPC_message(my_client);
+  return rc;
 }
 
 int
 ui_pickup_shovel(Request *request,Client* my_client)
 {
- // state = 1;
-  return 2;
+  int rc;
+  request_action_init(request,my_client,ACTION_PICKUP_SHOVEL,NULL,NULL);
+  rc = doRPCCmd(request);
+  if(rc==0)
+    process_RPC_message(my_client);
+  return rc;
 }
 
 extern sval
@@ -817,12 +849,18 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
     }
     if (sym == SDLK_r && mod != KMOD_SHIFT)  {  
       fprintf(stderr, "%s: pickup flag\n", __func__);
-      rc = ui_pickup_flag(&request,my_client);
+      if(my_client->my_player->flag==NULL)
+        rc = ui_pickup_flag(&request,my_client);
+      else
+        rc = ui_drop_flag(&request,my_client);
       return rc;
     }
     if (sym == SDLK_g && mod != KMOD_SHIFT)  {  
       fprintf(stderr, "%s: pickup shovel\n", __func__);
-      rc = ui_pickup_shovel(&request,my_client);
+      if(my_client->my_player->shovel==NULL)
+        rc = ui_pickup_shovel(&request,my_client);
+      else
+        rc = ui_drop_shovel(&request,my_client);
       return rc;
     }
     if (sym == SDLK_j && mod != KMOD_SHIFT)  {  

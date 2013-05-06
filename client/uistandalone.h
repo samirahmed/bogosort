@@ -79,6 +79,8 @@ int ui_up(Request *request,Client* my_client);
 int ui_normal(Request *request,Client* my_client);
 int ui_pickup_flag(Request *request,Client* my_client);
 int ui_pickup_shovel(Request *request,Client* my_client);
+int ui_drop_flag(Request *request,Client* my_client);
+int ui_drop_shovel(Request *request,Client* my_client);
 int ui_join(Request *request,Client* my_client);
 
 //Paint the map
