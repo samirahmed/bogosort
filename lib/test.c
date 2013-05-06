@@ -122,7 +122,7 @@ extern void should(const char* message, int valid, TestContext *tc)
     if (!valid) 
     {
       fprintf(stderr,"  "COLOR_FAIL SYMBOL_CROSS COLOR_END " %s should %s\n" , tc->current, message ); 
-      BREAKPOINT();
+      //BREAKPOINT();
       tc->current_test_status=-1;
       pthread_exit( (void*)-1 );
     }

@@ -10,7 +10,7 @@
 #include "protocol_utils.h"
 #include "protocol_session.h"
 #include "game_commons.h"
-
+#include "types.h"
 /******************/
 /* UTIL   METHODS */
 /******************/

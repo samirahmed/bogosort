@@ -25,6 +25,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "client.h"
+#include "uistandalone.h"
 #include "../lib/types.h"
 #include "../lib/protocol.h"
 #include "../lib/protocol_client.h"
@@ -35,6 +36,8 @@
 Globals globals;         //Host string and port
 static char MenuString[] = "\n?> ";
 static Client c;
+static UI* ui;
+static int do_ui;
 
 static int update_handler(Proto_Session *s ){
     Proto_Msg_Hdr hdr;
@@ -47,6 +50,8 @@ static int update_handler(Proto_Session *s ){
     update_objects(1,&hdr.pstate.v1.raw,maze);
     update_objects(1,&hdr.pstate.v2.raw,maze);
     update_objects(1,&hdr.pstate.v3.raw,maze);
+    if(do_ui)
+        ui_paintmap(ui,&c.maze);
     if(proto_debug())
     {
         fprintf(stderr,"Client position x:%d y:%d\n",c.my_player->client_position.x,c.my_player->client_position.y);
@@ -54,7 +59,16 @@ static int update_handler(Proto_Session *s ){
     }
     return hdr.version;
 }
+
 static int update_event_handler(Proto_Session *s){return 0;}
+
+void* run_ui(void* C)
+{
+    Client* my_client = (Client*)C;
+    ui_init(&(ui));
+    ui_main_loop(ui, my_client->height, my_client->width, my_client);
+    pthread_exit(NULL);
+}
 
 int startConnection(Client *C, char *host, PortType port, Proto_MT_Handler h)
 {
@@ -295,7 +309,6 @@ int docmd(Client *C, char* cmd)
 void* shell(void *arg)
 {
   Client *C = arg;
-  client_map_init(C,"daGame.map"); 
   char *c;
   int rc;
   int menu=1;
@@ -353,11 +366,31 @@ void globals_init(int argc, char argv[][STRLEN])
 
 int main(int argc, char **argv)
 {
-  if (client_init(&c,update_handler) < 0) {
-    fprintf(stderr, "ERROR: clientInit failed\n");
+  if (client_init(&c,update_handler) < 0) 
+  {
+    fprintf(stderr, "ERROR: client initialization failed\n");
     return -1;
-  }    
+  }   
+  
 
+  client_map_init(&c,"daGame.map"); 
+
+/* initialized with default attributes */
+  if(argc==2 && (strcmp(argv[1],"-no_ui")==0))
+      do_ui = 0;
+  else //Turn on the ui
+  {
+    do_ui = 1;
+      pthread_attr_t tattr;
+      pthread_attr_init(&tattr);
+      pthread_attr_setdetachstate(&tattr,PTHREAD_CREATE_DETACHED);
+      if(pthread_create(&c.UI_Thread, &tattr, run_ui, (void*)&c)!=0)
+      {
+        fprintf(stderr, "ERROR: Spawning UI thread Failed\n");
+        return -1;
+          
+      }
+  }
   shell(&c);
 
   return 0;

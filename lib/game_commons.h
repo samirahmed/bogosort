@@ -128,6 +128,7 @@ typedef struct{
     pthread_mutex_t  next_lock;
     long long        next;
     long long        current;
+    Player*          client_player;
 } Maze;
 
 // UTIL METHODS
