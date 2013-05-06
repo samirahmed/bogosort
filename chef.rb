@@ -62,6 +62,10 @@ def mkcmd(cmd,arg)
         when "1" then "right"
         when "2" then "down"
         when "3" then "left"
+        when "up" then "up"
+        when "right" then "right"
+        when "down" then "down"
+        when "left" then "left"
         else nil
       end
     when "DRP" then
