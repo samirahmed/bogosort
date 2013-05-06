@@ -47,7 +47,11 @@ struct UI_Struct {
   uint32_t black_c;
   uint32_t yellow_c;
   uint32_t purple_c;
+  uint32_t orange_c;
   uint32_t isle_c;
+  uint32_t home_red_c;
+  uint32_t jail_c;
+  uint32_t home_blue_c;
   uint32_t wall_teama_c;
   uint32_t wall_teamb_c;
   uint32_t player_teama_c;

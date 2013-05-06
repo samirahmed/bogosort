@@ -80,50 +80,6 @@ pxSpriteOffSet(int team, int state)
   return 0;
 }
 
-/*static sval*/
-/*ui_uip_init(UI *ui, UI_Player **p, int id, int team)*/
-/*{*/
-  /*UI_Player *ui_p;*/
-  
-  /*ui_p = (UI_Player *)malloc(sizeof(UI_Player));*/
-  /*if (!ui_p) return 0;*/
-
-  /*ui_p->img = ui_player_img(ui, team);*/
-  /*ui_p->clip.w = SPRITE_W; ui_p->clip.h = SPRITE_H; ui_p->clip.y = 0;*/
-  /*ui_p->base_clip_x = id * SPRITE_W * 4;*/
-
-  /**p = ui_p;*/
-
-  /*return 1;*/
-/*}*/
-
-/*
- * Return the pixel value at (x, y)
- * NOTE: The surface must be locked before calling this!
- */
-/*static uint32_t */
-/*ui_getpixel(SDL_Surface *surface, int x, int y)*/
-/*{*/
-  /*int bpp = surface->format->BytesPerPixel;*/
-  /*[> Here p is the address to the pixel we want to retrieve <]*/
-  /*uint8_t *p = (uint8_t *)surface->pixels + y * surface->pitch + x * bpp;*/
-  
-  /*switch (bpp) {*/
-  /*case 1:*/
-    /*return *p;*/
-  /*case 2:*/
-    /*return *(uint16_t *)p;*/
-  /*case 3:*/
-    /*if (SDL_BYTEORDER == SDL_BIG_ENDIAN)*/
-      /*return p[0] << 16 | p[1] << 8 | p[2];*/
-    /*else*/
-      /*return p[0] | p[1] << 8 | p[2] << 16;*/
-  /*case 4:*/
-    /*return *(uint32_t *)p;*/
-  /*default:*/
-    /*return 0;       [> shouldn't happen, but avoids warnings <]*/
-  /*} // switch*/
-/*}*/
 
 /*
  * Set the pixel at (x, y) to the given value
@@ -341,7 +297,8 @@ printf("mapload is %d\n", init_mapload);
 //int w,h;
 //int map_char;
 
-int type; 
+int type;
+Team_Types turf;
 printf("cell types set");
 
 Cell cur_cell;
@@ -362,25 +319,29 @@ int x,y;
                
         scale_x = x * SPRITE_W;
 	scale_y = y * SPRITE_H;
-        type = cur_cell.type;	
+        type = cur_cell.type;
+        turf = cur_cell.turf;
 if(cur_cell.cell_state == CELLSTATE_EMPTY){
 
         if(type == CELL_FLOOR){
 		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> isle_c);
  			}
-	if(type == CELL_WALL && y < 100){
+	if(type == CELL_WALL && turf == TEAM_RED){
 		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teama_c);
  			}
-	if(type == CELL_WALL && y >= 100){ 
+	if(type == CELL_WALL && turf == TEAM_BLUE){ 
 		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teamb_c);
 			}
 	//for now paint home areas white and jail areas yellow
        	if(type == CELL_JAIL){
-		ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c);
+		ui_putnpixel(ui->screen, scale_x, scale_y, ui->jail_c);
 			}
 
-	if(type == CELL_HOME){
-		ui_putnpixel(ui->screen, scale_x, scale_y, ui-> white_c);
+	if(type == CELL_HOME && turf == TEAM_RED ){
+		ui_putnpixel(ui->screen, scale_x, scale_y, ui->home_red_c);
+			}
+	else if(type == CELL_HOME && turf == TEAM_BLUE ){
+		ui_putnpixel(ui->screen, scale_x, scale_y, ui->home_blue_c);
 			}
 	}
 	else{
@@ -451,12 +412,16 @@ ui_init_sdl(UI *ui, int32_t h, int32_t w, int32_t d)
 
   if (load_sprites(ui)<=0) return -1;
 
-  ui->black_c      = SDL_MapRGB(ui->screen->format, 0x00, 0x00, 0x00);
-  ui->white_c      = SDL_MapRGB(ui->screen->format, 0xff, 0xff, 0xff);
-  ui->red_c        = SDL_MapRGB(ui->screen->format, 0xff, 0x00, 0x00);
-  ui->blue_c      = SDL_MapRGB(ui->screen->format, 0x00, 0x00, 0xff);
-  ui->yellow_c     = SDL_MapRGB(ui->screen->format, 0xff, 0xff, 0x00);
-  ui->purple_c     = SDL_MapRGB(ui->screen->format, 0xff, 0x00, 0xff);
+  ui->black_c     = SDL_MapRGB(ui->screen->format, 0x27, 0x28, 0x22);
+  ui->white_c     = SDL_MapRGB(ui->screen->format, 0xf8, 0xf8, 0xf2);
+  ui->red_c       = SDL_MapRGB(ui->screen->format, 0xf9, 0x26, 0x72);
+  ui->blue_c      = SDL_MapRGB(ui->screen->format, 0x57, 0xb4, 0xd1);
+  ui->yellow_c    = SDL_MapRGB(ui->screen->format, 0xe6, 0xdb, 0x74);
+  ui->purple_c    = SDL_MapRGB(ui->screen->format, 0xae, 0x81, 0xff);
+  ui->green_c     = SDL_MapRGB(ui->screen->format, 0x7f, 0xe2, 0x2e);
+  ui->jail_c      = SDL_MapRGB(ui->screen->format, 0x75, 0x71, 0x5e);
+  ui->home_red_c  = SDL_MapRGB(ui->screen->format, 0x50, 0x10, 0x27);
+  ui->home_blue_c = SDL_MapRGB(ui->screen->format, 0x35, 0x6c, 0x77);
   //ui->orange_c = SDL_MapRGB(ui->screen->format, 0xff, 0x99, 0x00); 
   
   ui->isle_c         = ui->black_c;
