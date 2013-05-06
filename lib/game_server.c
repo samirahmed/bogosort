@@ -1129,7 +1129,7 @@ extern int _server_action_player_reset_shovel(Maze*m, Player*player,Update*updat
 extern int _server_action_drop_shovel(Maze*m , Player*player)
 {
    if (!player)              return ERR_NO_PLAYER;
-   if (player->cell->object) return ERR_CELL_OCCUPIED; // CAN'T DROP HERE
+   if (player->cell->object) return ERR_CELL_HOLDING; // CAN'T DROP HERE
    if (!player->shovel)      return 1;       // no need to do more, shovel dropped
 
    Object* object= player->shovel ;
