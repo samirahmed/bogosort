@@ -21,6 +21,23 @@ void  update_object_if_possible(Update*update,Object*object)
   if (update) if (object) update->objects[object_get_index(object->team,object->type)] = *object;
 }
 
+extern void server_update_wait( Maze*m, long long timestamp)
+{
+  pthread_mutex_lock(&m->current_lock);
+  // block until i am not equal less equal to current
+  while(m->current != timestamp)  
+  {
+    pthread_cond_wait(&m->current_cond,&m->current_lock);
+  }
+}
+
+extern void server_update_signal( Maze*m, long long timestamp)
+{
+  m->current++;
+  pthread_cond_broadcast(&m->current_cond);
+  pthread_mutex_unlock(&m->current_lock);
+}
+
 /*******************/
 /* REQUEST METHODS */
 /*******************/
@@ -51,7 +68,6 @@ extern int* server_request_plist(Maze*m, Team_Types team, int* length)
   
   return list;
 }
-
 
 extern void server_request_objects(Maze*m,int*rshovel,int*rflag,int*bshovel,int*bflag)
 {
@@ -195,6 +211,8 @@ extern int server_game_add_player(Maze*maze,int fd, Player**player,Update *updat
     Player copy = *(*player);     // memcpy
     copy.cell = &maze->get[spawn_pos.x][spawn_pos.y];
     compress_player( &copy, &update->compress_player_a, PLAYER_ADDED);
+    compress_game_state( server_game_recalculate_state(maze), &update->game_state_update );
+    update->timestamp = maze_next_read_then_increment(maze);
   }
 
   return id;
@@ -219,7 +237,12 @@ extern void server_game_drop_player(Maze*maze,int team, int id, Update*update)
   cell = player->cell;
 
   // make compression of the player before dropping and mark as dropped
-  if (update) compress_player(player,&update->compress_player_a,PLAYER_DROPPED);
+  if (update)
+  {
+    compress_player(player,&update->compress_player_a,PLAYER_DROPPED);
+    compress_game_state( server_game_recalculate_state(maze), &update->game_state_update );
+    update->timestamp = maze_next_read_then_increment(maze);
+  }
   
   // drop player, unlock player and player's objects
   _server_drop_handler(maze,player,update);
@@ -329,7 +352,10 @@ extern int server_game_action(Maze*maze , GameRequest* request)
       compress_player(&update->player_b,&update->compress_player_b,PLAYER_UNCHANGED);
     if ( !(update->broken_wall.x == 0  && update->broken_wall.y == 0) )
       compress_broken_wall( &update->broken_wall, &update->game_state_update );
+    
     update_object_if_possible(update,object);
+    compress_game_state( server_game_recalculate_state(maze), &update->game_state_update );
+    update->timestamp = maze_next_read_then_increment(maze);
   }
 
   // unlock the maze
@@ -344,7 +370,8 @@ extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next, Up
   // Check if player is jailed if so go to jail move handler
   if (player->state == PLAYER_JAILED && next->type != CELL_WALL) 
   { 
-    if (next->type!=CELL_JAIL && cell_is_unoccupied(next))
+    if (next->type!=CELL_JAIL) rc = ERR_JAILED;
+    else if (next->type==CELL_JAIL && cell_is_unoccupied(next))
     rc = _server_action_move_player(m,current,next,update);
   }
   else if ( next->type == CELL_WALL )
@@ -378,10 +405,12 @@ extern int _server_game_state_update(Maze*m, Player*player, Cell*current, Cell*n
   if (current->type!=CELL_HOME && next->type==CELL_HOME && player->team == next->turf )
   {
     server_home_count_increment(&m->home[player->team]);
+    if (player->flag) server_home_flag_increment(&m->home[player->team]);
   }
   if (current->type==CELL_HOME && next->type!=CELL_HOME && player->team == current->turf )
   {
     server_home_count_decrement(&m->home[player->team]);
+    if (player->flag) server_home_flag_decrement(&m->home[player->team]);
   }
 
   return rc;
@@ -457,6 +486,37 @@ extern int server_validate_player( Maze*m, Team_Types team, int id , int fd )
   server_plist_unlock(plist);
   
   return rc;
+}
+
+extern int  server_game_recalculate_state( Maze*m)
+{
+  int pred = server_plist_player_count(&m->players[TEAM_RED]);
+  int pblue = server_plist_player_count(&m->players[TEAM_BLUE]);
+
+  int hred = server_home_count_read(&m->home[TEAM_RED]);
+  int hblue = server_home_count_read(&m->home[TEAM_BLUE]);
+
+  int fred = server_home_flag_read(&m->home[TEAM_RED]);
+  int fblue = server_home_flag_read(&m->home[TEAM_BLUE]);
+  
+  int snew, scur;
+
+  server_maze_property_lock(m);
+  scur = m->current_game_state;
+
+  if (pred > 0 && pblue > 0) // game start condition
+  {
+    if (pred == hred && fred == 2 ) snew = GAME_STATE_RED_WIN;
+    else if (pblue == hblue && fblue == 2 ) snew = GAME_STATE_BLUE_WIN;
+    else snew=GAME_STATE_ACTIVE;  // started but no winner
+  }
+  else snew = GAME_STATE_WAITING;
+  
+  if (scur != snew ) scur = snew;
+
+  server_maze_property_unlock(m);
+
+  return scur;
 }
 
 /*****************/
@@ -706,6 +766,35 @@ extern int server_find_empty_home_cell_and_lock(Maze*m, Team_Types team, Cell** 
    
    if (found != 0) return -1; 
    return 0;
+}
+
+extern int server_home_flag_read(Home*home)
+{
+  int count;
+  pthread_rwlock_rdlock(&(home->count_wrlock));
+  count = home->flags;
+  pthread_rwlock_unlock(&(home->count_wrlock));
+  return count;
+}
+
+extern int server_home_flag_increment(Home*home)
+{
+  int count;
+  pthread_rwlock_wrlock(&(home->count_wrlock));
+  home->flags++;
+  count = home->flags;
+  pthread_rwlock_unlock(&(home->count_wrlock));
+  return count;
+}
+
+extern int server_home_flag_decrement(Home*home)
+{
+  int count;
+  pthread_rwlock_wrlock(&(home->count_wrlock));
+  home->flags--;
+  count = home->count;
+  pthread_rwlock_unlock(&(home->count_wrlock));
+  return count;
 }
 
 extern int server_home_count_read(Home* home)
@@ -1040,7 +1129,7 @@ extern int _server_action_player_reset_shovel(Maze*m, Player*player,Update*updat
 extern int _server_action_drop_shovel(Maze*m , Player*player)
 {
    if (!player)              return ERR_NO_PLAYER;
-   if (player->cell->object) return ERR_CELL_OCCUPIED; // CAN'T DROP HERE
+   if (player->cell->object) return ERR_CELL_HOLDING; // CAN'T DROP HERE
    if (!player->shovel)      return 1;       // no need to do more, shovel dropped
 
    Object* object= player->shovel ;

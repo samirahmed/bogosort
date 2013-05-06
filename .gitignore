@@ -10,6 +10,9 @@ client/client
 server/server
 test/*-test
 
+# doxygen gitignore
+doc/full/*
+
 # Object files
 *.o
 

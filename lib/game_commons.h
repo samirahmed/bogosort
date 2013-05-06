@@ -98,7 +98,6 @@ typedef struct{
     Pos              min;
     Pos              max;
     Team_Types       team;
-    pthread_mutex_t  jail_recursive_lock;
 } Jail;
 
 typedef struct{
@@ -106,6 +105,7 @@ typedef struct{
     Pos              max;
     pthread_rwlock_t count_wrlock;
     int              count;
+    int              flags;
     Team_Types       team;
 } Home;
 
@@ -123,6 +123,11 @@ typedef struct{
     Game_State_Types current_game_state;
     pthread_mutex_t  state_lock;
     int              last_team;
+    pthread_mutex_t  current_lock;
+    pthread_cond_t   current_cond;
+    pthread_mutex_t  next_lock;
+    long long        next;
+    long long        current;
     Player*          client_player;
 } Maze;
 
@@ -146,6 +151,8 @@ extern void plist_init(Plist * plist, Team_Types team, int max_player_size);
 // MAZE METHODS
 extern void maze_set_state(Maze*m,Game_State_Types state);
 extern Game_State_Types  maze_get_state(Maze*m);
+extern long long  maze_next_read_then_increment(Maze*m);
+extern long long  maze_next_read_only(Maze*m);
 
 // PLAYER METHODS
 extern void player_init(Player* player);
@@ -179,7 +186,7 @@ extern void decompress_player(Player* player, int* compressed, Player_Update_Typ
 extern void compress_object(Object* object, int* compressed );
 extern void decompress_object(Object* object, int* compressed );
 
-extern void compress_game_state(Maze* object, int* compressed);
+extern void compress_game_state(Game_State_Types gstate, int* compressed);
 extern int decompress_game_state(Game_State_Types* gstate, int* compressed);
 extern void compress_broken_wall(Pos * position, int* compressed);
 extern void decompress_broken_wall(Pos * position, int* compressed);

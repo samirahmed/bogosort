@@ -48,6 +48,7 @@ Chef supports the following parameters.
 | `-d` or `--debug` | display the debug spew |
 | `-c` or  `--client-only`| do not spawn a server (default true when port or ip specified) |
 | `-p` or `--pause` | chef will pause after running the recipe so that you can play with the server | 
+| `-s` or `--slow` | chef will automatically issue longer delays |
 | `console` | interactive menu for creating recipes |
 
 ### Recipes
@@ -65,32 +66,32 @@ The first line declares some parameters (only the first one is necessary)
 
 parameters = `teleport`. Teleport sends the server (if there is one) a signal to turn on teleportation
 
-**Every other line **
+**Every other line**
 
 `<client_no>, <delay in seconds>, <command>, <optional argument>`
 
 - 0 <= `<client_no>`< total number of clients.
 - the delay may be specificed in seconds.. this means `0.245` is  245 millisecond delay
 - command can be either an `MOV`,`HEL`,`BYE`,`SYN`,`TEL`... (move/hello/goodbye/sync/teleport)
-- argument can be `0-3` for `MOV` and any valid `x,y` value for `TEL`
+- argument can be `0-3` or `right|left|up|down` for `MOV` and any valid `x,y` value for `TEL`
 
 ## Building, Cleaning
 
 Building and running
 
-```
+<pre>
 $ git clone https://github.com/BU-CS451-DS/bogosort.git
 $ cd bogosort
 $ make
 $ server/server
-```
+</pre>
 
 #### Max File Limit
 
 It is possible that your machine has limits the number of open files per process.
 
 For Testing, some test might require over 1000 files open (2*500 clients)
-For normal usage the server would need `375*2` or **1000** to be safe.
+For normal usage the server would need ` 375 * 2 ` or **1000** to be safe.
 
 You can check the limit by running `$ ulimit -n`
 On both OSX and Linux you can set the limit with `$ ulimit -n 2048`
@@ -104,10 +105,19 @@ Assuming these commands are issued from the root bogosort directory
 | `make clean`| recursively destroys all binaries |
 | `make` | build project if not built |
 | `make clean-log` | cleans out the log/ folder |
+| `make clean-docs` | cleans out the doc/full folder |
 | `make utest` | run all unit tests|
 | `make itest` | run all integration tests |
 | `make test` | run both integration and unit tests |
 
-
 `make clean` will clean and build lib/client/server
 `make test` will run tests
+
+## Complete Documentation
+
+For the the complete documentation install doxygen
+
+`brew install doxygen` or `sudo apt-get install doxygen` and then run
+`doxygen Doxyfile` to create the complete documentation that can be viewed in `doc/full/html/index.html`
+
+

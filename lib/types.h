@@ -59,7 +59,8 @@ typedef enum{
     ERR_BAD_NEXT_CELL   = -62, // Next cell specified is wrong
     ERR_BAD_ACTION      = -63, // Action Specified is not valid
     ERR_BAD_REQUEST     = -64, // Your player can't make this request
-    ERR_JAIL_FULL       = -80  // Jail is full error 
+    ERR_JAIL_FULL       = -80, // Jail is full error 
+    ERR_JAILED          = -81  // Jail is full error 
 }
 Game_Error_Types;
 
