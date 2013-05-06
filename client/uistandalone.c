@@ -49,8 +49,11 @@ Maze maze;
 Plist red_players;
 Plist blue_players;
 Player p;
-int waitRpc = 0;
-
+int zoom_level = 1;
+int pan_offset_x = 0;
+int pan_offset_y = 0;
+int map_h;
+int map_w;
 int init_mapload = 0;
 typedef enum {UI_SDLEVENT_UPDATE, UI_SDLEVENT_QUIT} UI_SDL_Event;
 
@@ -295,13 +298,16 @@ draw_cell(UI *ui, SPRITE_INDEX si, SDL_Rect *t, SDL_Surface *s)
 static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel)
 {
     int w,h;
+    int tw, th; // translated w and h
     for(h = y; h < y+SPRITE_H; h++)
     {
         for(w = x; w < x+SPRITE_W; w++)
         {
-
-            ui_putpixel(surface, h, w, pixel);
-
+		tw = w + pan_offset_x;
+		th = h + pan_offset_y;
+		if(0 <= th && th < map_h && 0 <= tw && tw < map_w){
+			ui_putpixel(surface, th, tw, pixel);
+		}
         }
     }
 }
@@ -329,8 +335,8 @@ ui_paintmap(UI *ui,Maze* maze)
         {
             cur_cell = maze->get[y][x];
 
-            scale_x = x * SPRITE_W;
-            scale_y = y * SPRITE_H;
+            scale_x = x * zoom_level;
+            scale_y = y * zoom_level;
             type = cur_cell.type;
             turf = cur_cell.turf;
             if(cur_cell.cell_state == CELLSTATE_EMPTY)
@@ -406,6 +412,8 @@ static sval
 ui_init_sdl(UI *ui, int32_t h, int32_t w, int32_t d)
 {
 
+    map_h = h;
+    map_w = w;
     fprintf(stderr, "UI_init: Initializing SDL.\n");
 
     /* Initialize defaults, Video and Audio subsystems */
@@ -512,14 +520,24 @@ ui_process(UI *ui, Client* my_client)
 }
 
 extern sval
-ui_zoom(UI *ui, sval fac)
+ui_zoom(UI *ui, int fac)
 {
-    //zoom the ui in if fac == 1
-    // zoom out otherwise
-    // note: basically want to zoom in around where the player is located
-    // so get the location, enlarge the relevant pixels and don't display the
-    // others
-
+    if(fac == 1){
+	    if(zoom_level > 1){
+		    zoom_level--;
+	    }
+	 else{
+	    printf("Cannot zoom in any farther");
+	 }
+    }
+    else{
+	    if(zoom_level < SPRITE_H){
+		    zoom_level++;
+	    }
+	    else{
+	    printf("Cannot zoom out any farther");
+	    }
+    }
     fprintf(stderr, "%s:\n", __func__);
     return 2;
 
@@ -528,6 +546,24 @@ ui_zoom(UI *ui, sval fac)
 extern sval
 ui_pan(UI *ui, sval xdir, sval ydir)
 {
+	//guaranteed to only have xdir, ydir input as
+	// (1,0) (-1,0), (0,-1), (0,1)
+	if(xdir == 1){
+		pan_offset_x+=3;
+	}
+	
+	if(xdir == -1){
+		pan_offset_x-=3;
+	}
+	
+	if(ydir == 1){
+		pan_offset_y+=3;
+	}
+	if(ydir == -3){
+		pan_offset_y-=3;
+	}
+
+
     fprintf(stderr, "%s:\n", __func__);
     return 2;
 }
@@ -851,12 +887,12 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
             return rc;
         }
         if (sym == SDLK_q) return -1;
-        if (sym == SDLK_z && mod == KMOD_NONE) return ui_zoom(ui, 1);
-        if (sym == SDLK_z && mod & KMOD_SHIFT ) return ui_zoom(ui,-1);
-        if (sym == SDLK_LEFT && mod & KMOD_SHIFT) return ui_pan(ui,-1,0);
-        if (sym == SDLK_RIGHT && mod & KMOD_SHIFT) return ui_pan(ui,1,0);
-        if (sym == SDLK_UP && mod & KMOD_SHIFT) return ui_pan(ui, 0,-1);
-        if (sym == SDLK_DOWN && mod & KMOD_SHIFT) return ui_pan(ui, 0,1);
+        if (sym == SDLK_z) return ui_zoom(ui, 1);
+        if (sym == SDLK_x) return ui_zoom(ui,-1); 
+	if (sym == SDLK_w) return ui_pan(ui, -1, 0);
+	if (sym == SDLK_s) return ui_pan(ui, 1, 0);
+	if (sym == SDLK_a) return ui_pan(ui, 0, -1);
+	if (sym == SDLK_d) return ui_pan(ui, 0, 1);
         else
         {
             fprintf(stderr, "%s: key pressed: %d\n", __func__, sym);
