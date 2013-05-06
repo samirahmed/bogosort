@@ -370,7 +370,8 @@ extern int _server_game_move(Maze*m, Player*player, Cell* current, Cell*next, Up
   // Check if player is jailed if so go to jail move handler
   if (player->state == PLAYER_JAILED && next->type != CELL_WALL) 
   { 
-    if (next->type!=CELL_JAIL && cell_is_unoccupied(next))
+    if (next->type!=CELL_JAIL) rc = ERR_JAILED;
+    else if (next->type==CELL_JAIL && cell_is_unoccupied(next))
     rc = _server_action_move_player(m,current,next,update);
   }
   else if ( next->type == CELL_WALL )
