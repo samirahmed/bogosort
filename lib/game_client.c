@@ -359,11 +359,12 @@ int process_goodbye_request(Proto_Msg_Hdr* hdr)
     parameter: ch           handle to a Proto_Client
     return:    int          return code
 */
-int process_action_request(Player* my_player, Proto_Client_Handle ch)
+int process_action_request(Blocking_Helper* bh ,Proto_Msg_Hdr* hdr, Proto_Client_Handle ch)
 {
     int result;
     get_int(ch,0,&result);
-    return result;
+    bh->RPC_update_id = result;
+    return hdr->gstate.v0.raw;
 }
 
 /*  process_sync_request
@@ -439,7 +440,7 @@ int process_RPC_message(Client *C)
             rc = process_goodbye_request(&hdr);
             break;
         case PROTO_MT_REP_ACTION:
-            rc = process_action_request(C->my_player,C->ph);
+            rc = process_action_request(&C->bh,&hdr,C->ph);
             break;
         case PROTO_MT_REP_SYNC:
             rc =process_sync_request(&C->maze,C->ph,&hdr);
