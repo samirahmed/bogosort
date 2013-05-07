@@ -309,8 +309,8 @@ extern int server_game_action(Maze*maze , GameRequest* request)
     break;
       
     case ACTION_DROP_FLAG: 
-      rc =_server_action_drop_flag(maze,player,NULL);
-      if (rc>=0) object= currentcell->object;
+      rc =_server_action_drop_flag(maze,player,update);
+   // if (rc>=0) object= currentcell->object;
     break;
       
     case ACTION_DROP_SHOVEL: 
