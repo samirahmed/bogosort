@@ -11,7 +11,20 @@ Members:
 See all the planning and specifications for the game in this [google doc](https://docs.google.com/document/d/1k-GoO7uVXnsxbEDet3T3o6b-2WuqdsMCtxiKncwQ33o/edit?usp=sharing)
 
 ## UI
-
+| command | description |
+|---------|-------------|
+|`←`| move left|
+|`→`| move right|
+|`↑`| move up|
+|`↓`| move down|
+|`w`| pan up|
+|`a`| pan left|
+|`d`| pan right|
+|`s`| pan down|
+|`z`| zoom in|
+|`x`| zoom out|
+|`r`| pickup / drop flag|
+|`g`| pickup / drop shovel|
 ## [Client](/client)
 
 ## [Server](/server)
