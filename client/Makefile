@@ -12,7 +12,7 @@ ifeq ($(UISYSTEM),Darwin)
   UILIBS = -L/opt/local/lib -lSDLmain -lSDL -lSDL_image -framework Cocoa
 else
   UINCDIR = 
-  UILIBS = -lSDL
+  UILIBS = -lSDL -lX11
 endif
 
 CFLAGS := -g $(UIINCDIR) -pthread -Wall

@@ -664,14 +664,6 @@ int ui_left(Request *request,Client* my_client)
                             &my_client->my_player->client_position,&next);
         rc = doRPCCmd(request);
         process_RPC_message(my_client);
-        /*printf("player after moving at %d, %d\n", new_x,y); */
-        /*map_ptr->players[0].at[0].client_position.x = new_x;*/
-        /*(maze.get[new_x][y].player) = (maze.get[y][x].player);*/
-        /*maze.get[x][y].player = NULL;*/
-        /*maze.get[x][y].cell_state = CELLSTATE_EMPTY;*/
-        /*printf("x is %d, new_x is %d\n", x, new_x);*/
-        /*printf("cell state is %d\n", maze.get[new_x][y].cell_state);*/
-        /*maze.get[new_x][y].cell_state = CELLSTATE_OCCUPIED;*/
     }
     return rc;
 }
@@ -699,16 +691,6 @@ int ui_right(Request *request,Client* my_client)
                             &my_client->my_player->client_position,&next);
         rc = doRPCCmd(request);
         process_RPC_message(my_client);
-
-
-        /*printf("player after moving at %d, %d\n", new_x,y); */
-        /*map_ptr->players[0].at[0].client_position.x = new_x;*/
-        /*(maze.get[new_x][y].player) = (maze.get[y][x].player);*/
-        /*maze.get[x][y].player = NULL;*/
-        /*maze.get[x][y].cell_state = CELLSTATE_EMPTY;*/
-        /*printf("x is %d, new_x is %d\n", x, new_x);*/
-        /*printf("cell state is %d\n", maze.get[new_x][y].cell_state);*/
-        /*maze.get[new_x][y].cell_state = CELLSTATE_OCCUPIED;*/
     }
 
     return rc;
@@ -739,15 +721,6 @@ int ui_down(Request *request,Client* my_client)
                             &my_client->my_player->client_position,&next);
         rc = doRPCCmd(request);
         process_RPC_message(my_client);
-
-        /*printf("player after moving at %d, %d\n", x,new_y); */
-        /*map_ptr->players[0].at[0].client_position.y = new_y;*/
-        /*(maze.get[x][new_y].player) = (maze.get[y][x].player);*/
-        /*maze.get[x][y].player = NULL;*/
-        /*maze.get[x][y].cell_state = CELLSTATE_EMPTY;*/
-        /*printf("y is %d, new_y is %d\n", y, new_y);*/
-        /*printf("cell state is %d\n", maze.get[x][new_y].cell_state);*/
-        /*maze.get[x][new_y].cell_state = CELLSTATE_OCCUPIED;*/
     }
 
     return rc;
@@ -779,14 +752,6 @@ int ui_up(Request *request,Client* my_client)
         rc = doRPCCmd(request);
         process_RPC_message(my_client);
 
-        /*printf("player after moving at %d, %d\n", x,new_y); */
-        /*map_ptr->players[0].at[0].client_position.y = new_y;*/
-        /*(maze.get[x][new_y].player) = (maze.get[y][x].player);*/
-        /*maze.get[x][y].player = NULL;*/
-        /*maze.get[x][y].cell_state = CELLSTATE_EMPTY;*/
-        /*printf("y is %d, new_y is %d\n", y, new_y);*/
-        /*printf("cell state is %d\n", maze.get[x][new_y].cell_state);*/
-        /*maze.get[x][new_y].cell_state = CELLSTATE_OCCUPIED;*/
     }
 
     return rc;
@@ -860,43 +825,67 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
         {
             if (proto_debug()) printf("move left\n");
             if (proto_debug() ) fprintf(stderr, "%s: move left\n", __func__);
+            client_maze_lock(&my_client->bh);
             rc = ui_left(&request,my_client);
+            while(my_client->bh.EC_update_id < my_client->bh.RPC_update_id)
+                client_maze_cond_wait(&my_client->bh);
+            client_maze_unlock(&my_client->bh);
             return rc;
         }
         if (sym == SDLK_RIGHT && mod != KMOD_SHIFT)
         {
             if (proto_debug() ) fprintf(stderr, "%s: move right\n", __func__);
+            client_maze_lock(&my_client->bh);
             rc = ui_right(&request,my_client);
+            while(my_client->bh.EC_update_id < my_client->bh.RPC_update_id)
+                client_maze_cond_wait(&my_client->bh);
+            client_maze_unlock(&my_client->bh);
             return rc;
         }
         if (sym == SDLK_UP && mod != KMOD_SHIFT)
         {
             if (proto_debug() )fprintf(stderr, "%s: move up\n", __func__);
+            client_maze_lock(&my_client->bh);
             rc = ui_up(&request,my_client);
+            while(my_client->bh.EC_update_id < my_client->bh.RPC_update_id)
+                client_maze_cond_wait(&my_client->bh);
+            client_maze_unlock(&my_client->bh);
             return rc;
         }
         if (sym == SDLK_DOWN && mod != KMOD_SHIFT)
         {
             if (proto_debug() )fprintf(stderr, "%s: move down\n", __func__);
+            client_maze_lock(&my_client->bh);
             rc = ui_down(&request,my_client);
+            while(my_client->bh.EC_update_id < my_client->bh.RPC_update_id)
+                client_maze_cond_wait(&my_client->bh);
+            client_maze_unlock(&my_client->bh);
             return rc;
         }
         if (sym == SDLK_r && mod != KMOD_SHIFT)
         {
             if (proto_debug() )fprintf(stderr, "%s: pickup flag\n", __func__);
+            client_maze_lock(&my_client->bh);
             if(my_client->my_player->flag==NULL)
                 rc = ui_pickup_flag(&request,my_client);
             else
                 rc = ui_drop_flag(&request,my_client);
+            while(my_client->bh.EC_update_id < my_client->bh.RPC_update_id)
+                client_maze_cond_wait(&my_client->bh);
+            client_maze_unlock(&my_client->bh);
             return rc;
         }
         if (sym == SDLK_g && mod != KMOD_SHIFT)
         {
             if (proto_debug() )fprintf(stderr, "%s: pickup shovel\n", __func__);
+            client_maze_lock(&my_client->bh);
             if(my_client->my_player->shovel==NULL)
                 rc = ui_pickup_shovel(&request,my_client);
             else
                 rc = ui_drop_shovel(&request,my_client);
+            while(my_client->bh.EC_update_id < my_client->bh.RPC_update_id)
+                client_maze_cond_wait(&my_client->bh);
+            client_maze_unlock(&my_client->bh);
             return rc;
         }
         if (sym == SDLK_j && mod != KMOD_SHIFT)
