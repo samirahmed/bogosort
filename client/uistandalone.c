@@ -821,7 +821,7 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
     Request request;
     bzero(&request,sizeof(Request));
     int rc;
-    if (e->type == SDL_KEYDOWN)
+    if (e->type == SDL_KEYDOWN && my_client->my_player)
     {
         if (sym == SDLK_LEFT && mod != KMOD_SHIFT)
         {
