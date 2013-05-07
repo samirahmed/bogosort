@@ -41,12 +41,12 @@
 #define UI_REDFLAG_BMP "client/bitmap/redflag.bmp"
 #define UI_GREENFLAG_BMP "client/bitmap/greenflag.bmp"
 #define UI_JACKHAMMER_BMP "client/bitmap/shovel.bmp"
-#define SPRITE_H 5
-#define SPRITE_W 5
+#define SPRITE_H 20
+#define SPRITE_W 20
 
-int zoom_level = 1;
-int pan_offset_x = 0;
-int pan_offset_y = 0;
+int zoom_level = 3;
+int pan_offset_x = 50;
+int pan_offset_y = 50;
 int map_h;
 int map_w;
 int init_mapload = 0;
@@ -563,20 +563,22 @@ ui_pan(UI *ui, Client *c,  sval xdir, sval ydir)
 	// (1,0) (-1,0), (0,-1), (0,1)
 
        ui_paint_it_black(ui);
+
+  int diff = zoom_level*2 * 3;
 	if(xdir == 1){
-		pan_offset_x+=3;
+		pan_offset_x+= diff;
 	}
 	
 	if(xdir == -1){
-		pan_offset_x-=3;
+		pan_offset_x-= diff;
 	}
 	
 	if(ydir == 1){
-		pan_offset_y+=3;
+		pan_offset_y+= diff;
 	}
 	if(ydir == -1){
 
-		pan_offset_y-=3;
+		pan_offset_y-= diff;
 	}
 
     ui_paintmap(ui, &c->maze);
@@ -898,10 +900,10 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
         if (sym == SDLK_q) return -1;
         if (sym == SDLK_z) return ui_zoom(ui, my_client, 1);
         if (sym == SDLK_x) return ui_zoom(ui, my_client, -1); 
-	if (sym == SDLK_w) return ui_pan(ui, my_client, -1, 0);
-	if (sym == SDLK_s) return ui_pan(ui, my_client, 1, 0);
-	if (sym == SDLK_a) return ui_pan(ui, my_client, 0, -1);
-	if (sym == SDLK_d) return ui_pan(ui, my_client, 0, 1);
+	if (sym == SDLK_w) return ui_pan(ui, my_client, 1, 0);
+	if (sym == SDLK_s) return ui_pan(ui, my_client, -1, 0);
+	if (sym == SDLK_a) return ui_pan(ui, my_client, 0, 1);
+	if (sym == SDLK_d) return ui_pan(ui, my_client, 0, -1);
         else
         {
            if (proto_debug() ) fprintf(stderr, "%s: key pressed: %d\n", __func__, sym);
