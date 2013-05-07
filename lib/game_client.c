@@ -73,43 +73,62 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
         {
             decompress_player(&player,&player_compress[ii],&update_type);
 
-           //Get pointer to player from Plist
-           player_ptr =  &(maze->players[player.team].at[player.id]);
-          
-           //Get current position of the player
-           cur_x = player_ptr->client_position.x;
-           cur_y = player_ptr->client_position.y;
-           
-           //Get next position of the player
-           new_x = player.client_position.x;
-           new_y = player.client_position.y; 
+            if(update_type == PLAYER_DROPPED)
+            {
+               //Get pointer to player from Plist
+               player_ptr =  &(maze->players[player.team].at[player.id]);
+               //Get current position of the player
+               cur_x = player_ptr->client_position.x;
+               cur_y = player_ptr->client_position.y;
+               
+               bzero(player_ptr,sizeof(Player));
+               
+               
+               //Delete player's existance from old cell
+               maze->get[cur_x][cur_y].player = NULL;
+               if(maze->get[cur_x][cur_y].object==NULL)
+                   maze->get[cur_x][cur_y].cell_state = CELLSTATE_EMPTY;
+               else
+                   maze->get[cur_x][cur_y].cell_state = CELLSTATE_HOLDING;
+               
+            }
+            else
+            {
+               //Get pointer to player from Plist
+               player_ptr =  &(maze->players[player.team].at[player.id]);
+              
+               //Get current position of the player
+               cur_x = player_ptr->client_position.x;
+               cur_y = player_ptr->client_position.y;
+               
+               //Get next position of the player
+               new_x = player.client_position.x;
+               new_y = player.client_position.y; 
 
-           //Update player's client position to new coordinates
-           player_ptr->client_position.x = new_x;
-           player_ptr->client_position.y = new_y;
+               //Update player's client position to new coordinates
+               player_ptr->client_position.x = new_x;
+               player_ptr->client_position.y = new_y;
 
-            player_ptr->id = player.id;
-            player_ptr->state = player.state;
-            player_ptr->team = player.team;
+               player_ptr->id = player.id;
+               player_ptr->state = player.state;
+               player_ptr->team = player.team;
 
+               
+               //Delete player's existance from old cell
+               maze->get[cur_x][cur_y].player = NULL;
+               if(maze->get[cur_x][cur_y].object==NULL)
+                   maze->get[cur_x][cur_y].cell_state = CELLSTATE_EMPTY;
+               else
+                   maze->get[cur_x][cur_y].cell_state = CELLSTATE_HOLDING;
 
+               //Set the player pointer at cell position x,y to my player
+               maze->get[new_x][new_y].player = player_ptr; 
+               if(maze->get[new_x][new_y].object==NULL)
+                   maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED;
+               else
+                   maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED_HOLDING;
 
-           
-           //Delete player's existance from old cell
-           maze->get[cur_x][cur_y].player = NULL;
-           if(maze->get[cur_x][cur_y].object==NULL)
-               maze->get[cur_x][cur_y].cell_state = CELLSTATE_EMPTY;
-           else
-               maze->get[cur_x][cur_y].cell_state = CELLSTATE_HOLDING;
-
-           //Set the player pointer at cell position x,y to my player
-           maze->get[new_x][new_y].player = player_ptr; 
-           if(maze->get[new_x][new_y].object==NULL)
-               maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED;
-           else
-               maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED_HOLDING;
-
-
+           }
            if(proto_debug())
            {
                 fprintf(stderr,"Player Location Update x:%d y:%d\n",player_ptr->client_position.x,player_ptr->client_position.y);
