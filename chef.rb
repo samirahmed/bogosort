@@ -46,6 +46,14 @@ def log(id,delay,cmdstr,verbose,fd)
   fd.puts "#{id}".pink+"\t| #{dstr} \t| #{time}"+"\t| #{cmdstr}".yellow 
 end
 
+def rand_aisle
+  if (rand(2))
+    "#{rand(180)+10} #{[49,50,149,150].sample}"
+  else
+    "#{[51,52,151,152].sample} #{rand(180)+10}"
+  end
+end
+
 ## Command parser
 def mkcmd(cmd,arg)
   cmd.strip if cmd
@@ -55,7 +63,11 @@ def mkcmd(cmd,arg)
     when "BYE" then "disconnect"
     when "CDP" then "clientdump"
     when "SDP" then "serverdump"
-    when "TEL" then "move #{arg.strip}"
+    when "TEL" then 
+      case arg.strip
+        when "?" then "move #{rand_aisle}"
+        else "move #{arg.strip}"
+      end
     when "MOV" then
       case arg.strip
         when "0" then "up"
@@ -132,6 +144,8 @@ def console()
   puts "Welcome to the chef console"
   puts "How many clients? ".yellow
   clients = $stdin.gets.strip.to_i
+  puts "How teleport clients to aisles? [y/n]".yellow
+  teleport = $stdin.gets.strip.downcase[0] == "y"
   puts "How many moves per client?".yellow
   moves =  $stdin.gets.strip.to_i
   puts "Min delay between requests?".yellow
@@ -158,6 +172,11 @@ def console()
 
   fd.puts "#{clients}";
   cids.shuffle.each{|id| fd.puts "#{id},\t#{delay.call()},\tHEL"}
+  
+  if teleport
+    cids.shuffle.each{|id| fd.puts "#{id},\t#{delay.call()},\tTEL, ?"}
+  end
+  
   (cids*moves).shuffle.each{|id| fd.puts "#{id},\t#{delay.call()},\tMOV,\t#{rand(4)}"}
   cids.shuffle.each{|id| fd.puts "#{id},\t#{delay.call()},\tBYE"} if goodbyes
   fd.close
