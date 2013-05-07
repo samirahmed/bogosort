@@ -96,7 +96,7 @@ void test_update_players_from_compress(TestContext* tc)
 {
    int assertion;
    int compress; 
-
+   PixelUpdate pu;
    //Create maze
    Maze maze;
    maze_build_from_file(&maze,"test.map");
@@ -113,7 +113,7 @@ void test_update_players_from_compress(TestContext* tc)
    compress_player(&test_player,&compress,PLAYER_ADDED);
 
    //Update Maze based on compressed player
-   update_players(1,&compress,&maze);
+   update_players(1,&compress,&maze,&pu);
 
 
    assertion = (maze.get[0][0].player)==(&maze.players[TEAM_RED].at[0]);
@@ -127,7 +127,7 @@ void test_update_objects_from_compress(TestContext* tc)
 {
    int assertion;
    int red_flag_compress,blue_flag_compress,red_shovel_compress,blue_shovel_compress;
-
+   PixelUpdate pu;
    //Create maze
    Maze maze;
    maze_build_from_file(&maze,"test.map");
@@ -151,10 +151,10 @@ void test_update_objects_from_compress(TestContext* tc)
    compress_object(blue_shovel,&blue_shovel_compress);
 
    //Update Maze based on compressed object
-   update_objects(1,&red_flag_compress,&maze);
-   update_objects(1,&blue_flag_compress,&maze);
-   update_objects(1,&red_shovel_compress,&maze);
-   update_objects(1,&blue_shovel_compress,&maze);
+   update_objects(1,&red_flag_compress,&maze,&pu);
+   update_objects(1,&blue_flag_compress,&maze,&pu);
+   update_objects(1,&red_shovel_compress,&maze,&pu);
+   update_objects(1,&blue_shovel_compress,&maze,&pu);
    
    //Check if pointer to object from object list points to same object from the cell it occupies
    assertion = (object_get(&maze,OBJECT_FLAG,TEAM_RED)->client_position.x == 50) &&
@@ -183,10 +183,10 @@ void test_update_objects_from_compress(TestContext* tc)
    compress_object(blue_shovel,&blue_shovel_compress);
 
    //Update Maze based on compressed object
-   update_objects(1,&red_flag_compress,&maze);
-   update_objects(1,&blue_flag_compress,&maze);
-   update_objects(1,&red_shovel_compress,&maze);
-   update_objects(1,&blue_shovel_compress,&maze);
+   update_objects(1,&red_flag_compress,&maze,&pu);
+   update_objects(1,&blue_flag_compress,&maze,&pu);
+   update_objects(1,&red_shovel_compress,&maze,&pu);
+   update_objects(1,&blue_shovel_compress,&maze,&pu);
    
    //Check if pointer to object from object list points to same object from the cell it occupies
    assertion = (object_get(&maze,OBJECT_FLAG,TEAM_RED)->client_position.x == 11) &&
