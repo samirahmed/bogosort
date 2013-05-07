@@ -11,7 +11,20 @@ Members:
 See all the planning and specifications for the game in this [google doc](https://docs.google.com/document/d/1k-GoO7uVXnsxbEDet3T3o6b-2WuqdsMCtxiKncwQ33o/edit?usp=sharing)
 
 ## UI
-
+| command | description |
+|---------|-------------|
+|`←`| move left|
+|`→`| move right|
+|`↑`| move up|
+|`↓`| move down|
+|`w`| pan up|
+|`a`| pan left|
+|`d`| pan right|
+|`s`| pan down|
+|`z`| zoom in|
+|`x`| zoom out|
+|`r`| pickup / drop flag|
+|`g`| pickup / drop shovel|
 ## [Client](/client)
 
 ## [Server](/server)
@@ -48,6 +61,7 @@ Chef supports the following parameters.
 | `-d` or `--debug` | display the debug spew |
 | `-c` or  `--client-only`| do not spawn a server (default true when port or ip specified) |
 | `-p` or `--pause` | chef will pause after running the recipe so that you can play with the server | 
+| `-s` or `--slow` | chef will automatically issue longer delays |
 | `console` | interactive menu for creating recipes |
 
 ### Recipes
@@ -72,7 +86,7 @@ parameters = `teleport`. Teleport sends the server (if there is one) a signal to
 - 0 <= `<client_no>`< total number of clients.
 - the delay may be specificed in seconds.. this means `0.245` is  245 millisecond delay
 - command can be either an `MOV`,`HEL`,`BYE`,`SYN`,`TEL`... (move/hello/goodbye/sync/teleport)
-- argument can be `0-3` for `MOV` and any valid `x,y` value for `TEL`
+- argument can be `0-3` or `right|left|up|down` for `MOV` and any valid `x,y` value for `TEL`
 
 ## Building, Cleaning
 

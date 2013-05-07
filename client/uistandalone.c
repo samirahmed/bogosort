@@ -811,7 +811,8 @@ int  ui_join(Request *request,Client* my_client)
 int  ui_drop_flag(Request *request,Client* my_client)
 {
     int rc;
-    request_action_init(request,my_client,ACTION_DROP_FLAG,NULL,NULL);
+    Pos * pos = &my_client->my_player->client_position;
+    request_action_init(request,my_client,ACTION_DROP_FLAG,pos,pos);
     rc = doRPCCmd(request);
     if(rc==0)
         process_RPC_message(my_client);
@@ -821,7 +822,8 @@ int  ui_drop_flag(Request *request,Client* my_client)
 int  ui_drop_shovel(Request *request,Client* my_client)
 {
     int rc;
-    request_action_init(request,my_client,ACTION_DROP_SHOVEL,NULL,NULL);
+    Pos * pos = &my_client->my_player->client_position;
+    request_action_init(request,my_client,ACTION_DROP_SHOVEL,pos,pos);
     rc = doRPCCmd(request);
     if(rc==0)
         process_RPC_message(my_client);
@@ -831,7 +833,8 @@ int  ui_drop_shovel(Request *request,Client* my_client)
 int  ui_pickup_flag(Request *request,Client* my_client)
 {
     int rc;
-    request_action_init(request,my_client,ACTION_PICKUP_FLAG,NULL,NULL);
+    Pos * pos = &my_client->my_player->client_position;
+    request_action_init(request,my_client,ACTION_PICKUP_FLAG,pos,pos);
     rc = doRPCCmd(request);
     if(rc==0)
         process_RPC_message(my_client);
@@ -841,7 +844,8 @@ int  ui_pickup_flag(Request *request,Client* my_client)
 int  ui_pickup_shovel(Request *request,Client* my_client)
 {
     int rc;
-    request_action_init(request,my_client,ACTION_PICKUP_SHOVEL,NULL,NULL);
+    Pos * pos = &my_client->my_player->client_position;
+    request_action_init(request,my_client,ACTION_PICKUP_SHOVEL,pos,pos);
     rc = doRPCCmd(request);
     if(rc==0)
         process_RPC_message(my_client);
