@@ -46,10 +46,8 @@ static int update_handler(Proto_Session *s ){
     Game_State_Types state;
     proto_session_hdr_unmarshall(s,&hdr);
     Maze* maze = &c.maze;
-    
     //Aquire Maze Lock
     client_maze_lock(&c.bh);
-
 
     // Get the update ID or timestamp from the event channel update
     c.bh.EC_update_id = hdr.sver.raw;
