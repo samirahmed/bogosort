@@ -292,6 +292,10 @@ draw_cell(UI *ui, SPRITE_INDEX si, SDL_Rect *t, SDL_Surface *s)
 //paints SPRITE_W x SPRITE_H pixels starting with x,y at the upper left corner
 static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel)
 {
+
+    
+    scale_x = x * zoom_level;
+    scale_y = y * zoom_level;
     int w,h;
     int tw, th; // translated w and h
     for(h = y; h < y+SPRITE_H; h++)
@@ -330,37 +334,35 @@ ui_paintmap(UI *ui,Maze* maze)
         {
             cur_cell = maze->get[y][x];
 
-            scale_x = x * zoom_level;
-            scale_y = y * zoom_level;
             type = cur_cell.type;
             turf = cur_cell.turf;
             if(cur_cell.cell_state == CELLSTATE_EMPTY)
             {
                 if(type == CELL_FLOOR)
                 {
-                    ui_putnpixel(ui->screen, scale_x, scale_y, ui-> isle_c);
+                    ui_putnpixel(ui->screen, x,  y, ui-> isle_c);
                 }
                 if(type == CELL_WALL && turf == TEAM_RED)
                 {
-                    ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teama_c);
+                    ui_putnpixel(ui->screen, x, y, ui-> wall_teama_c);
                 }
                 if(type == CELL_WALL && turf == TEAM_BLUE)
                 {
-                    ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teamb_c);
+                    ui_putnpixel(ui->screen, x, y, ui-> wall_teamb_c);
                 }
                 //for now paint home areas white and jail areas yellow
                 if(type == CELL_JAIL)
                 {
-                    ui_putnpixel(ui->screen, scale_x, scale_y, ui->jail_c);
+                    ui_putnpixel(ui->screen, x, y, ui->jail_c);
                 }
 
                 if(type == CELL_HOME && turf == TEAM_RED )
                 {
-                    ui_putnpixel(ui->screen, scale_x, scale_y, ui->home_red_c);
+                    ui_putnpixel(ui->screen, x, y, ui->home_red_c);
                 }
                 else if(type == CELL_HOME && turf == TEAM_BLUE )
                 {
-                    ui_putnpixel(ui->screen, scale_x, scale_y, ui->home_blue_c);
+                    ui_putnpixel(ui->screen, x, y, ui->home_blue_c);
                 }
             }
             else
@@ -369,11 +371,11 @@ ui_paintmap(UI *ui,Maze* maze)
                 if(cur_cell.cell_state ==  CELLSTATE_OCCUPIED)
                 {
                     if (maze->client_player &&  maze->client_player == cur_cell.player)
-                      ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c);
+                      ui_putnpixel(ui->screen, x, y, ui->yellow_c);
                     else if((*(cur_cell.player)).team == TEAM_RED)
-                      ui_putnpixel(ui->screen, scale_x, scale_y, ui->player_teama_c); 
+                      ui_putnpixel(ui->screen, x, y, ui->player_teama_c); 
                     else if((*(cur_cell.player)).team == TEAM_BLUE)
-                      ui_putnpixel(ui->screen, scale_x, scale_y, ui->player_teamb_c);
+                      ui_putnpixel(ui->screen, x, y, ui->player_teamb_c);
                       
                 }
                 else
@@ -385,11 +387,11 @@ ui_paintmap(UI *ui,Maze* maze)
                         //purple if flag
                         if(cur_cell.object->type == OBJECT_SHOVEL)
                         {
-                            ui_putnpixel(ui->screen, scale_x, scale_y, ui-> purple_c);
+                            ui_putnpixel(ui->screen, x, y, ui-> purple_c);
                         }
                         else
                         {
-                            ui_putnpixel(ui->screen, scale_x, scale_y, ui->orange_c);
+                            ui_putnpixel(ui->screen, x, y, ui->orange_c);
                         }
                     }
 
