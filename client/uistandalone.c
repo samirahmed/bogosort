@@ -41,12 +41,12 @@
 #define UI_REDFLAG_BMP "client/bitmap/redflag.bmp"
 #define UI_GREENFLAG_BMP "client/bitmap/greenflag.bmp"
 #define UI_JACKHAMMER_BMP "client/bitmap/shovel.bmp"
-#define SPRITE_H 20
-#define SPRITE_W 20
+#define SPRITE_H 5
+#define SPRITE_W 5
 
-int zoom_level = 3;
-int pan_offset_x = 50;
-int pan_offset_y = 50;
+int zoom_level = 1;
+int pan_offset_x = 0;
+int pan_offset_y = 0;
 int map_h;
 int map_w;
 int init_mapload = 0;
@@ -290,19 +290,23 @@ draw_cell(UI *ui, SPRITE_INDEX si, SDL_Rect *t, SDL_Surface *s)
 
 //helper function for ui_put pixel
 //paints SPRITE_W x SPRITE_H pixels starting with x,y at the upper left corner
-static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel)
+static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel, int update)
 {
     int w,h;
     int tw, th; // translated w and h
-    for(h = y; h < y+SPRITE_H; h++)
+    for(h = y; h < y+zoom_level; h++)
     {
-        for(w = x; w < x+SPRITE_W; w++)
+        for(w = x; w < x+zoom_level; w++)
         {
             tw = w + pan_offset_x;
             th = h + pan_offset_y;
             if(0 <= th && th < map_h && 0 <= tw && tw < map_w)
             {
-              ui_putpixel(surface, th, tw, pixel);
+              ui_putpixel(surface, tw, th, pixel);
+			if(update) 
+    			{
+      			SDL_UpdateRect(surface, tw,th,1,1);
+    			}
             }
         }
     }
@@ -315,7 +319,7 @@ extern void ui_paintcell(UI* ui, Maze * maze, int x, int y, int update)
 	int type;
 	Team_Types turf;
 	int scale_x, scale_y;
-	cur_cell = maze->get[y][x];
+	cur_cell = maze->get[x][y];
 
             scale_x = x * zoom_level;
             scale_y = y * zoom_level;
@@ -325,29 +329,29 @@ extern void ui_paintcell(UI* ui, Maze * maze, int x, int y, int update)
             {
                 if(type == CELL_FLOOR)
                 {
-                    ui_putnpixel(ui->screen, scale_x, scale_y, ui-> isle_c);
+                    ui_putnpixel(ui->screen, scale_x, scale_y, ui-> isle_c, update);
                 }
                 if(type == CELL_WALL && turf == TEAM_RED)
                 {
-                    ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teama_c);
+                    ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teama_c, update);
                 }
                 if(type == CELL_WALL && turf == TEAM_BLUE)
                 {
-                    ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teamb_c);
+                    ui_putnpixel(ui->screen, scale_x, scale_y, ui-> wall_teamb_c, update);
                 }
                 //for now paint home areas white and jail areas yellow
                 if(type == CELL_JAIL)
                 {
-                    ui_putnpixel(ui->screen, scale_x, scale_y, ui->jail_c);
+                    ui_putnpixel(ui->screen, scale_x, scale_y, ui->jail_c, update);
                 }
 
                 if(type == CELL_HOME && turf == TEAM_RED )
                 {
-                    ui_putnpixel(ui->screen, scale_x, scale_y, ui->home_red_c);
+                    ui_putnpixel(ui->screen, scale_x, scale_y, ui->home_red_c, update);
                 }
                 else if(type == CELL_HOME && turf == TEAM_BLUE )
                 {
-                    ui_putnpixel(ui->screen, scale_x, scale_y, ui->home_blue_c);
+                    ui_putnpixel(ui->screen, scale_x, scale_y, ui->home_blue_c, update);
                 }
             }
             else
@@ -356,11 +360,11 @@ extern void ui_paintcell(UI* ui, Maze * maze, int x, int y, int update)
                 if(cur_cell.cell_state ==  CELLSTATE_OCCUPIED)
                 {
                     if (maze->client_player &&  maze->client_player == cur_cell.player)
-                      ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c);
+                      ui_putnpixel(ui->screen, scale_x, scale_y, ui->yellow_c, update);
                     else if((*(cur_cell.player)).team == TEAM_RED)
-                      ui_putnpixel(ui->screen, scale_x, scale_y, ui->player_teama_c); 
+                      ui_putnpixel(ui->screen, scale_x, scale_y, ui->player_teama_c,update); 
                     else if((*(cur_cell.player)).team == TEAM_BLUE)
-                      ui_putnpixel(ui->screen, scale_x, scale_y, ui->player_teamb_c);
+                      ui_putnpixel(ui->screen, scale_x, scale_y, ui->player_teamb_c,update);
                       
                 }
                 else
@@ -372,20 +376,16 @@ extern void ui_paintcell(UI* ui, Maze * maze, int x, int y, int update)
                         //purple if flag
                         if(cur_cell.object->type == OBJECT_SHOVEL)
                         {
-                            ui_putnpixel(ui->screen, scale_x, scale_y, ui-> purple_c);
+                            ui_putnpixel(ui->screen, scale_x, scale_y, ui-> purple_c, update);
                         }
                         else
                         {
-                            ui_putnpixel(ui->screen, scale_x, scale_y, ui->orange_c);
+                            ui_putnpixel(ui->screen, scale_x, scale_y, ui->orange_c, update);
 			}
 		    }
 		}
 	    }
     
-    if(update) 
-    {
-      SDL_UpdateRect(ui->screen,x+pan_offset_x,y+pan_offset_y, SPRITE_W, SPRITE_H);
-    }
 
 }
 
@@ -406,7 +406,7 @@ ui_paintmap(UI *ui,Maze* maze)
 	}
     }	
 
-    SDL_UpdateRect(ui->screen, 0, 0, ui->screen->h, ui->screen->w);
+    SDL_UpdateRect(ui->screen, 0, 0, ui->screen->w, ui->screen->h);
     return 1;
 }
 
@@ -558,9 +558,12 @@ void ui_paint_it_black(UI *ui){
         for (y = 0; y < 200; y++){
             scale_x = x * zoom_level;
             scale_y = y * zoom_level;
-            ui_putnpixel(ui->screen, scale_x, scale_y, ui-> black_c);
+            ui_putnpixel(ui->screen, scale_x, scale_y, ui-> black_c, 0);
 	}
     }
+
+
+
 }
 
 extern sval
