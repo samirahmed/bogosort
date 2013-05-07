@@ -769,43 +769,67 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
         {
             printf("move left\n");
             fprintf(stderr, "%s: move left\n", __func__);
+            client_maze_lock(&my_client->bh);
             rc = ui_left(&request,my_client);
+            while(my_client->bh.EC_update_id < my_client->bh.RPC_update_id)
+                client_maze_cond_wait(&my_client->bh);
+            client_maze_unlock(&my_client->bh);
             return rc;
         }
         if (sym == SDLK_RIGHT && mod != KMOD_SHIFT)
         {
             fprintf(stderr, "%s: move right\n", __func__);
+            client_maze_lock(&my_client->bh);
             rc = ui_right(&request,my_client);
+            while(my_client->bh.EC_update_id < my_client->bh.RPC_update_id)
+                client_maze_cond_wait(&my_client->bh);
+            client_maze_unlock(&my_client->bh);
             return rc;
         }
         if (sym == SDLK_UP && mod != KMOD_SHIFT)
         {
             fprintf(stderr, "%s: move up\n", __func__);
+            client_maze_lock(&my_client->bh);
             rc = ui_up(&request,my_client);
+            while(my_client->bh.EC_update_id < my_client->bh.RPC_update_id)
+                client_maze_cond_wait(&my_client->bh);
+            client_maze_unlock(&my_client->bh);
             return rc;
         }
         if (sym == SDLK_DOWN && mod != KMOD_SHIFT)
         {
             fprintf(stderr, "%s: move down\n", __func__);
+            client_maze_lock(&my_client->bh);
             rc = ui_down(&request,my_client);
+            while(my_client->bh.EC_update_id < my_client->bh.RPC_update_id)
+                client_maze_cond_wait(&my_client->bh);
+            client_maze_unlock(&my_client->bh);
             return rc;
         }
         if (sym == SDLK_r && mod != KMOD_SHIFT)
         {
             fprintf(stderr, "%s: pickup flag\n", __func__);
+            client_maze_lock(&my_client->bh);
             if(my_client->my_player->flag==NULL)
                 rc = ui_pickup_flag(&request,my_client);
             else
                 rc = ui_drop_flag(&request,my_client);
+            while(my_client->bh.EC_update_id < my_client->bh.RPC_update_id)
+                client_maze_cond_wait(&my_client->bh);
+            client_maze_unlock(&my_client->bh);
             return rc;
         }
         if (sym == SDLK_g && mod != KMOD_SHIFT)
         {
             fprintf(stderr, "%s: pickup shovel\n", __func__);
+            client_maze_lock(&my_client->bh);
             if(my_client->my_player->shovel==NULL)
                 rc = ui_pickup_shovel(&request,my_client);
             else
                 rc = ui_drop_shovel(&request,my_client);
+            while(my_client->bh.EC_update_id < my_client->bh.RPC_update_id)
+                client_maze_cond_wait(&my_client->bh);
+            client_maze_unlock(&my_client->bh);
             return rc;
         }
         if (sym == SDLK_j && mod != KMOD_SHIFT)
