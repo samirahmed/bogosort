@@ -666,14 +666,6 @@ int ui_left(Request *request,Client* my_client)
                             &my_client->my_player->client_position,&next);
         rc = doRPCCmd(request);
         process_RPC_message(my_client);
-        /*printf("player after moving at %d, %d\n", new_x,y); */
-        /*map_ptr->players[0].at[0].client_position.x = new_x;*/
-        /*(maze.get[new_x][y].player) = (maze.get[y][x].player);*/
-        /*maze.get[x][y].player = NULL;*/
-        /*maze.get[x][y].cell_state = CELLSTATE_EMPTY;*/
-        /*printf("x is %d, new_x is %d\n", x, new_x);*/
-        /*printf("cell state is %d\n", maze.get[new_x][y].cell_state);*/
-        /*maze.get[new_x][y].cell_state = CELLSTATE_OCCUPIED;*/
     }
     return rc;
 }
@@ -701,16 +693,6 @@ int ui_right(Request *request,Client* my_client)
                             &my_client->my_player->client_position,&next);
         rc = doRPCCmd(request);
         process_RPC_message(my_client);
-
-
-        /*printf("player after moving at %d, %d\n", new_x,y); */
-        /*map_ptr->players[0].at[0].client_position.x = new_x;*/
-        /*(maze.get[new_x][y].player) = (maze.get[y][x].player);*/
-        /*maze.get[x][y].player = NULL;*/
-        /*maze.get[x][y].cell_state = CELLSTATE_EMPTY;*/
-        /*printf("x is %d, new_x is %d\n", x, new_x);*/
-        /*printf("cell state is %d\n", maze.get[new_x][y].cell_state);*/
-        /*maze.get[new_x][y].cell_state = CELLSTATE_OCCUPIED;*/
     }
 
     return rc;
@@ -741,15 +723,6 @@ int ui_down(Request *request,Client* my_client)
                             &my_client->my_player->client_position,&next);
         rc = doRPCCmd(request);
         process_RPC_message(my_client);
-
-        /*printf("player after moving at %d, %d\n", x,new_y); */
-        /*map_ptr->players[0].at[0].client_position.y = new_y;*/
-        /*(maze.get[x][new_y].player) = (maze.get[y][x].player);*/
-        /*maze.get[x][y].player = NULL;*/
-        /*maze.get[x][y].cell_state = CELLSTATE_EMPTY;*/
-        /*printf("y is %d, new_y is %d\n", y, new_y);*/
-        /*printf("cell state is %d\n", maze.get[x][new_y].cell_state);*/
-        /*maze.get[x][new_y].cell_state = CELLSTATE_OCCUPIED;*/
     }
 
     return rc;
@@ -781,14 +754,6 @@ int ui_up(Request *request,Client* my_client)
         rc = doRPCCmd(request);
         process_RPC_message(my_client);
 
-        /*printf("player after moving at %d, %d\n", x,new_y); */
-        /*map_ptr->players[0].at[0].client_position.y = new_y;*/
-        /*(maze.get[x][new_y].player) = (maze.get[y][x].player);*/
-        /*maze.get[x][y].player = NULL;*/
-        /*maze.get[x][y].cell_state = CELLSTATE_EMPTY;*/
-        /*printf("y is %d, new_y is %d\n", y, new_y);*/
-        /*printf("cell state is %d\n", maze.get[x][new_y].cell_state);*/
-        /*maze.get[x][new_y].cell_state = CELLSTATE_OCCUPIED;*/
     }
 
     return rc;
