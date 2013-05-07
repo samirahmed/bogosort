@@ -292,8 +292,7 @@ draw_cell(UI *ui, SPRITE_INDEX si, SDL_Rect *t, SDL_Surface *s)
 //paints SPRITE_W x SPRITE_H pixels starting with x,y at the upper left corner
 static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel)
 {
-
-    
+    int scale_x, scale_y;
     scale_x = x * zoom_level;
     scale_y = y * zoom_level;
     int w,h;
