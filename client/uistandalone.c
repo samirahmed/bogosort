@@ -653,7 +653,7 @@ int ui_left(Request *request,Client* my_client)
     Pos next;
     bzero(&next,sizeof(next));
 
-    if(my_client->maze.get[new_x][y].type == CELL_WALL)
+    if(my_client->maze.get[new_x][y].type == CELL_WALL && my_client->my_player->shovel == NULL)
     {
         printf("Cell wall, cannot move in that direction\n");
         rc = -999;//I will change this later
@@ -680,7 +680,7 @@ int ui_right(Request *request,Client* my_client)
     Pos next;
     bzero(&next,sizeof(next));
 
-    if(my_client->maze.get[new_x][y].type == CELL_WALL)
+    if(my_client->maze.get[new_x][y].type == CELL_WALL && my_client->my_player->shovel == NULL)
     {
         printf("Cell wall, cannot move in that direction\n");
         rc = -999;//I will change this later
@@ -710,7 +710,7 @@ int ui_down(Request *request,Client* my_client)
     Pos next;
     bzero(&next,sizeof(next));
 
-    if(my_client->maze.get[x][new_y].type == CELL_WALL)
+    if(my_client->maze.get[x][new_y].type == CELL_WALL && my_client->my_player->shovel == NULL)
     {
         printf("Cell wall, cannot move in that direction\n");
         rc = -999;
@@ -740,7 +740,7 @@ int ui_up(Request *request,Client* my_client)
     Pos next;
     bzero(&next,sizeof(next));
 
-    if(my_client->maze.get[x][new_y].type == CELL_WALL)
+    if(my_client->maze.get[x][new_y].type == CELL_WALL && my_client->my_player->shovel == NULL)
     {
         printf("Cell wall, cannot move in that direction\n");
         rc = -999;
