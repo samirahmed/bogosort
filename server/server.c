@@ -268,6 +268,7 @@ int action_handler( Proto_Session *s)
   action  = h.gstate.v1.raw;
   id      = h.pstate.v0.raw;
   team    = h.pstate.v1.raw;
+  if (proto_debug() ) fprintf(stderr,"len %d\n",h.blen);
   proto_session_body_unmarshall_bytes(s, 0, sizeof(Pos), (char*)&current);
   proto_session_body_unmarshall_bytes(s, sizeof(Pos), sizeof(Pos), (char*)&next);
 
