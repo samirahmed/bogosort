@@ -163,10 +163,17 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
             //Get pointer to object from object list
             object_ptr = object_get(maze,object.type,object.team);
             
-            //Get objects current coordinates
-            cur_x = object_ptr->client_position.x;
-            cur_y = object_ptr->client_position.y;
-
+            if(num_elements==4)
+            {
+                cur_x = object_ptr->cell->pos.x;     
+                cur_y = object_ptr->cell->pos.y;
+            }
+            else
+            {
+                //Get objects current coordinates
+                cur_x = object_ptr->client_position.x;
+                cur_y = object_ptr->client_position.y;
+            }
             //Get new coordinates for the object
             new_x = object.client_position.x;
             new_y = object.client_position.y;
@@ -224,6 +231,7 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
                     maze->get[new_x][new_y].cell_state = CELLSTATE_HOLDING;
                 else
                     maze->get[new_x][new_y].cell_state = CELLSTATE_OCCUPIED_HOLDING;
+                maze->get[cur_x][cur_y].object = NULL;
                 maze->get[new_x][new_y].object = object_ptr;
             }
 
