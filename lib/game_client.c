@@ -117,8 +117,6 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
             
 
             
-            //Delete old pointer to the object
-            maze->get[cur_x][cur_y].object = NULL;
             
             //Object Dropped
             if(cur_has_player && !object.client_has_player)
@@ -144,6 +142,9 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
             //Object Picked up
             else if(!cur_has_player && object.client_has_player)
             {
+                //Delete old pointer to the object
+                maze->get[cur_x][cur_y].object = NULL;
+
                 //Get the pointer to the player picking up
                 player = &maze->players[object.client_player_team].at[object.client_player_id];
 
