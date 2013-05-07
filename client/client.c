@@ -78,8 +78,6 @@ static int update_handler(Proto_Session *s ){
     if(do_ui)
         ui_paintmap(ui,&c.maze);
 
-    //Unlock the maze
-    client_maze_unlock(&c.bh);
 
     if(proto_debug())
     {
