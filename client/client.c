@@ -373,11 +373,6 @@ int main(int argc, char **argv)
   client_map_init(&c,"daGame.map"); 
 
 /* initialized with default attributes */
-  if(argc==2 && (strncmp(argv[1],"connect",sizeof("connect")-1)==0))
-  {
-    docmd(&c, argv[1]);
-    docmd(&c, "hello");
-  }
   if(argc==2 && (strcmp(argv[1],"-no_ui")==0))
       do_ui = 0;
   else //Turn on the ui
@@ -392,6 +387,14 @@ int main(int argc, char **argv)
         return -1;
           
       }
+  }
+  if(argc==2 && (strncmp(argv[1],"connect",sizeof("connect")-1)==0))
+  {
+    // This would ideall be solved by signal and wait.  We do not want to connect
+    // before the SDL is initialized"
+    sleep(1);
+    docmd(&c, argv[1]);
+    docmd(&c, "hello");
   }
   shell(&c);
 
