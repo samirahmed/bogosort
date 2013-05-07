@@ -1,0 +1,34 @@
+4,teleport
+0,	0.046,	HEL
+1,	0.077,	HEL
+2,	0.077,	HEL
+3,	0.077,	HEL
+0,	0.389,	TEL,	160 99
+1,	0.325,	TEL,	161 99
+0,	0.314,	MOV,	right
+0,	0.314,	MOV,	right
+3,  0.444,  TEL,    110 99
+3,  0.444,  MOV,    left
+3,  0.444,  MOV,    left
+3,  0.444,  MOV,    left
+1,	0.314,	MOV,	down
+1,	0.314,	MOV,	down
+1,	0.314,	MOV,	down
+1,	0.314,	MOV,	down
+1,	0.314,	MOV,	down
+1,	0.314,	MOV,	down
+1,	0.314,	MOV,	down
+1,	0.314,	MOV,	down
+1,	0.314,	MOV,	down
+1,	0.314,	MOV,	down
+1,	0.314,	MOV,	right
+1,	0.314,	MOV,	right
+1,	0.314,	MOV,	right
+1,	0.314,	MOV,	right
+1,	0.314,	MOV,	right
+1,	0.314,	MOV,	right
+1,	0.314,	MOV,	right
+1,	0.314,	MOV,	right
+1,	0.314,	MOV,	right
+1,	0.314,	MOV,	right
+

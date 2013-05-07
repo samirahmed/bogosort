@@ -460,7 +460,7 @@ extern int _server_game_floor_move(Maze*m, Player*player, Cell*current, Cell*nex
     // check if this qualifies for a free
     if (next->type==CELL_JAIL && current->type!=CELL_JAIL && next->turf!=player->team )
     {
-      _server_action_jailbreak(m, player->team, current, next );
+      _server_action_jailbreak(m, opposite_team(player->team), current, next );
     }
     
     rc = _server_action_move_player(m, current, next,update);
