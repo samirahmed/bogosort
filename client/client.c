@@ -44,6 +44,7 @@ static int do_ui;
 static int update_handler(Proto_Session *s ){
     clock_t clk = clock();
     Proto_Msg_Hdr hdr;
+    PixelUpdate pixels[PU_COUNT];
     Game_State_Types state;
     proto_session_hdr_unmarshall(s,&hdr);
     Maze* maze = &c.maze;
@@ -64,21 +65,29 @@ static int update_handler(Proto_Session *s ){
         fprintf(stderr,"BLUE TEAM WINS\n");
 
     // Update the broken wall locations
-    update_walls(1,&hdr.gstate.v0.raw,maze);
+    update_walls(1,&hdr.gstate.v0.raw,maze,&pixels[4]);
 
     //Update player information
-    update_players(1,&hdr.gstate.v1.raw,maze);
-    update_players(1,&hdr.gstate.v2.raw,maze);
+    update_players(1,&hdr.gstate.v1.raw,maze,&pixels[5]);
+    update_players(1,&hdr.gstate.v2.raw,maze,&pixels[6]);
 
     //Update Object Information
-    update_objects(1,&hdr.pstate.v0.raw,maze);
-    update_objects(1,&hdr.pstate.v1.raw,maze);
-    update_objects(1,&hdr.pstate.v2.raw,maze);
-    update_objects(1,&hdr.pstate.v3.raw,maze);
+    update_objects(1,&hdr.pstate.v0.raw,maze,&pixels[0]);
+    update_objects(1,&hdr.pstate.v1.raw,maze,&pixels[1]);
+    update_objects(1,&hdr.pstate.v2.raw,maze,&pixels[2]);
+    update_objects(1,&hdr.pstate.v3.raw,maze,&pixels[3]);
 
     //If UI is turned on, paint the UI with new information
     if(do_ui)
-        ui_paintmap(ui,&c.maze);
+    {
+        int ii;
+        for(ii=0; ii<PU_COUNT ;ii++)
+        {
+          ui_paintcell(ui,&c,maze,&pixels[ii]->older); 
+          ui_paintcell(ui,&c,maze,&pixels[ii]->newer); 
+        }
+        /*ui_paintmap(ui,&c.maze);*/
+    }
 
     //Unlock the maze
     client_maze_unlock(&c.bh);

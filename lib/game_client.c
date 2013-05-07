@@ -60,7 +60,7 @@ extern void c_log(int cmd, int action, int rc, clock_t clk)
     parameter: maze            pointer to client version of the maze
     return:    void
 */
-void update_players(int num_elements,int* player_compress, Maze* maze)
+void update_players(int num_elements,int* player_compress, Maze* maze, PixelUpdate*pu)
 {
     int ii,new_x,new_y,cur_x,cur_y;
     Player player;
@@ -100,10 +100,14 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
                //Get current position of the player
                cur_x = player_ptr->client_position.x;
                cur_y = player_ptr->client_position.y;
+               pu->older.x = cur_x;
+               pu->older.y = cur_y;
                
                //Get next position of the player
                new_x = player.client_position.x;
                new_y = player.client_position.y; 
+               pu->newer.x = new_x;
+               pu->newer.y = new_y;
 
                //Update player's client position to new coordinates
                player_ptr->client_position.x = new_x;
