@@ -373,6 +373,11 @@ int main(int argc, char **argv)
   client_map_init(&c,"daGame.map"); 
 
 /* initialized with default attributes */
+  if(argc==2 && (strncmp(argv[1],"connect",sizeof("connect")-1)==0))
+  {
+    docmd(&c, argv[1]);
+    docmd(&c, "hello");
+  }
   if(argc==2 && (strcmp(argv[1],"-no_ui")==0))
       do_ui = 0;
   else //Turn on the ui
