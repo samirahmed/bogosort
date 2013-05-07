@@ -91,8 +91,8 @@ extern int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hd
         
 //Updating Maze functions
 extern void update_players(int num_elements,int* player_compress,Maze* maze, PixelUpdate*pu);
-extern void update_objects(int num_elements,int* object_compress,Maze* maze);
-extern void update_walls(int num_elements,int* game_compress,Maze* maze);
+extern void update_objects(int num_elements,int* object_compress,Maze* maze, PixelUpdate*pu);
+extern void update_walls(int num_elements,int* game_compress,Maze* maze, PixelUpdate*pu);
 
 
 // Init Methods
