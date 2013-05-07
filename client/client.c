@@ -46,6 +46,7 @@ static int update_handler(Proto_Session *s ){
     Game_State_Types state;
     proto_session_hdr_unmarshall(s,&hdr);
     Maze* maze = &c.maze;
+    
     //Aquire Maze Lock
     client_maze_lock(&c.bh);
 
@@ -307,47 +308,31 @@ int docmd(Client *C, char* cmd)
     }
     else if(strncmp(cmd,"pickup flag",sizeof("pickup flag")-1)==0)
     {
-<<<<<<< HEAD
+        client_maze_lock(&C->bh);
         Pos * curr = &C->my_player->client_position;
         request_action_init(&request,C,ACTION_PICKUP_FLAG,curr,curr);
-=======
-        client_maze_lock(&C->bh);
-        request_action_init(&request,C,ACTION_PICKUP_FLAG,NULL,NULL);
->>>>>>> Implemented Blocking and Signal for RPC + Event thread
         rc = doRPCCmd(&request);
 
     }
     else if(strncmp(cmd,"drop flag",sizeof("drop flag")-1)==0)
     {
-<<<<<<< HEAD
+        client_maze_lock(&C->bh);
         Pos * curr = &C->my_player->client_position;
         request_action_init(&request,C,ACTION_DROP_FLAG,curr,curr);
-=======
-        client_maze_lock(&C->bh);
-        request_action_init(&request,C,ACTION_DROP_FLAG,NULL,NULL);
->>>>>>> Implemented Blocking and Signal for RPC + Event thread
         rc = doRPCCmd(&request);
     }
     else if(strncmp(cmd,"pickup shovel",sizeof("pickup shovel")-1)==0)
     {
-<<<<<<< HEAD
+        client_maze_lock(&C->bh);
         Pos * curr = &C->my_player->client_position;
         request_action_init(&request,C,ACTION_PICKUP_SHOVEL,curr,curr);
-=======
-        client_maze_lock(&C->bh);
-        request_action_init(&request,C,ACTION_PICKUP_SHOVEL,NULL,NULL);
->>>>>>> Implemented Blocking and Signal for RPC + Event thread
         rc = doRPCCmd(&request);
     }
     else if(strncmp(cmd,"drop shovel",sizeof("drop shovel")-1)==0)
     {
-<<<<<<< HEAD
+        client_maze_lock(&C->bh);
         Pos * curr = &C->my_player->client_position;
         request_action_init(&request,C,ACTION_DROP_SHOVEL,curr,curr);
-=======
-        client_maze_lock(&C->bh);
-        request_action_init(&request,C,ACTION_DROP_SHOVEL,NULL,NULL);
->>>>>>> Implemented Blocking and Signal for RPC + Event thread
         rc = doRPCCmd(&request);
     }
     else if(strncmp(cmd,"hello",sizeof("hello")-1)==0)
