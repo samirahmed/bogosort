@@ -93,9 +93,6 @@ static int update_handler(Proto_Session *s ){
         /*ui_paintmap(ui,&c.maze);*/
     }
 
-    //Unlock the maze
-    client_maze_unlock(&c.bh);
-
     if(proto_debug())
     {
         fprintf(stderr,"Client position x:%d y:%d\n",c.my_player->client_position.x,c.my_player->client_position.y);
