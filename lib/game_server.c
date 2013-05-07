@@ -346,8 +346,17 @@ extern int server_game_action(Maze*maze , GameRequest* request)
   // Compress the update
   if (update && rc>=0)
   {
+    if (proto_debug() )
+    {
+      if (update->player_a.cell) 
+        fprintf(stdout,"player_a packaging %d:%d", update->player_a.team,update->player_a.id);
+      if (update->player_b.cell) 
+        fprintf(stdout,"player_a packaging %d:%d", update->player_b.team,update->player_b.id);
+    }
+
     if (update->player_a.cell) 
       compress_player(&update->player_a,&update->compress_player_a,PLAYER_UNCHANGED);
+    
     if (update->player_b.cell) 
       compress_player(&update->player_b,&update->compress_player_b,PLAYER_UNCHANGED);
     if ( !(update->broken_wall.x == 0  && update->broken_wall.y == 0) )
