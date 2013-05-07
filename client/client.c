@@ -43,15 +43,33 @@ static int do_ui;
 static int update_handler(Proto_Session *s ){
     clock_t clk = clock();
     Proto_Msg_Hdr hdr;
+    Game_State_Types state;
     proto_session_hdr_unmarshall(s,&hdr);
     Maze* maze = &c.maze;
+
+    // Get the Game state from the update
+    if(decompress_game_state(&state,&hdr.gstate.v0.raw)!=0)
+        fprintf(stderr,"Invalid Game State\n");
+    maze_set_state(maze,state);
+    if(state == GAME_STATE_RED_WIN)
+        fprintf(stderr,"RED TEAM WINS\n");
+    else if (state == GAME_STATE_BLUE_WIN)
+        fprintf(stderr,"BLUE TEAM WINS\n");
+
+    // Update the broken wall locations
     update_walls(1,&hdr.gstate.v0.raw,maze);
+
+    //Update player information
     update_players(1,&hdr.gstate.v1.raw,maze);
     update_players(1,&hdr.gstate.v2.raw,maze);
+
+    //Update Object Information
     update_objects(1,&hdr.pstate.v0.raw,maze);
     update_objects(1,&hdr.pstate.v1.raw,maze);
     update_objects(1,&hdr.pstate.v2.raw,maze);
     update_objects(1,&hdr.pstate.v3.raw,maze);
+
+    //If UI is turned on, paint the UI with new information
     if(do_ui)
         ui_paintmap(ui,&c.maze);
     if(proto_debug())
