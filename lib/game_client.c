@@ -301,6 +301,7 @@ void request_action_init(Request* request, Client* client,Action_Types action,Po
     request->client = client;
     request->type = PROTO_MT_REQ_ACTION;
     request->action_type = action;
+    request->team = client->my_player->team;
     if(action==ACTION_MOVE)
     {
         if(current)
@@ -600,6 +601,7 @@ int doRPCCmd(Request* request)
     if(proto_debug()) fprintf(stderr,"Action COMMAND ISSUED");
     hdr.type = request->type;
     hdr.gstate.v1.raw = request->action_type;
+    hdr.pstate.v1.raw = request->team;
     hdr.pstate.v0.raw = C->my_player->id;
     rc = do_action_request_rpc(C->ph,&hdr,request->current,request->next);
     break;

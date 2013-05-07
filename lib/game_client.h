@@ -53,6 +53,7 @@ typedef struct RequestHandler{
   Client * client;
   Proto_Msg_Types type;
   Action_Types action_type;
+  Team_Types team;
   Pos current;
   Pos next;
 }Request;
