@@ -200,12 +200,6 @@ int docmd(Client *C, char* cmd)
     if (C->connected) printf("Host = %s : Port = %d", globals.host , (int) globals.port );
     else printf("Not connected\n");
   }
-  /*else if(strncmp(cmd,"load",sizeof("load")-1)==0)*/
-    /*{*/
-        /*char* pch;*/
-        /*pch = strtok(cmd+5," \n\0");*/
-        /*client_map_init(C,pch);*/
-    /*}*/
   else if(strncmp(cmd,"debug on",sizeof("debug on")-1)==0)
   {
     proto_debug_on();    
@@ -271,24 +265,27 @@ int docmd(Client *C, char* cmd)
     }
     else if(strncmp(cmd,"pickup flag",sizeof("pickup flag")-1)==0)
     {
-        request_action_init(&request,C,ACTION_PICKUP_FLAG,NULL,NULL);
+        Pos * curr = &C->my_player->client_position;
+        request_action_init(&request,C,ACTION_PICKUP_FLAG,curr,curr);
         rc = doRPCCmd(&request);
 
     }
     else if(strncmp(cmd,"drop flag",sizeof("drop flag")-1)==0)
     {
-        request_action_init(&request,C,ACTION_DROP_FLAG,NULL,NULL);
+        Pos * curr = &C->my_player->client_position;
+        request_action_init(&request,C,ACTION_DROP_FLAG,curr,curr);
         rc = doRPCCmd(&request);
     }
     else if(strncmp(cmd,"pickup shovel",sizeof("pickup shovel")-1)==0)
     {
-        request_action_init(&request,C,ACTION_PICKUP_SHOVEL,NULL,NULL);
+        Pos * curr = &C->my_player->client_position;
+        request_action_init(&request,C,ACTION_PICKUP_SHOVEL,curr,curr);
         rc = doRPCCmd(&request);
-
     }
     else if(strncmp(cmd,"drop shovel",sizeof("drop shovel")-1)==0)
     {
-        request_action_init(&request,C,ACTION_DROP_SHOVEL,NULL,NULL);
+        Pos * curr = &C->my_player->client_position;
+        request_action_init(&request,C,ACTION_DROP_SHOVEL,curr,curr);
         rc = doRPCCmd(&request);
     }
     else if(strncmp(cmd,"hello",sizeof("hello")-1)==0)

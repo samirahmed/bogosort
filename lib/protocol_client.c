@@ -266,7 +266,8 @@ do_action_request_rpc(Proto_Client_Handle ch, Proto_Msg_Hdr * hdr,Pos current, P
   
   s = &(c->rpc_session);
   proto_session_hdr_marshall(s,hdr);
-  if(hdr->gstate.v1.raw == ACTION_MOVE)
+  if( hdr->gstate.v1.raw >= ACTION_MOVE && 
+      hdr->gstate.v1.raw <= ACTION_PICKUP_SHOVEL)
   {
       proto_session_body_marshall_bytes(s,sizeof(Pos),(char*)&current);
       proto_session_body_marshall_bytes(s,sizeof(Pos),(char*)&next);
