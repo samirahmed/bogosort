@@ -915,3 +915,44 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
     }
     return 1;
 }
+
+extern void paint_old_pixel(UI* ui, Maze* maze,  int cur_x, int cur_y)
+{
+   int old_type;
+   old_type = maze->get[cur_x][cur_y].type;
+   int old_turf;
+   old_turf = maze->get[cur_x][cur_y].turf;
+   if(old_type == CELL_FLOOR)
+   {
+           ui_putnpixel(ui->screen, cur_x, cur_y,ui->isle_c);
+   }
+   if(old_type == CELL_WALL && old_turf == TEAM_BLUE)
+   {
+           ui_putnpixel(ui->screen, cur_x, cur_y, ui-> wall_teamb_c);
+   }
+   if(old_type == CELL_WALL && old_turf == TEAM_RED)
+   {
+           ui_putnpixel(ui->screen, cur_x, cur_y, ui->wall_teama_c);
+   }
+   if(old_type == CELL_JAIL)
+   {
+        ui_putnpixel(ui->screen, cur_x, cur_y, ui->jail_c);
+   }
+}
+
+
+extern void paint_new_pixel(UI *ui, Maze* maze, int x, int y, int color){
+
+    if(color == 1)
+    {
+      ui_putnpixel(ui->screen, x, y, ui-> yellow_c);
+    }
+    if(color == 2)
+    {
+      ui_putnpixel(ui->screen, x, y, ui-> player_teama_c);
+    }
+    if(color == 3)
+    {
+       ui_putnpixel(ui->screen, x, y, ui-> player_teamb_c);
+    }
+}
