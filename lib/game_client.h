@@ -34,6 +34,8 @@ typedef struct ClientBlockingStruct{
     Maze *maze;    
     pthread_mutex_t maze_lock;
     pthread_cond_t maze_updated;
+    int RPC_update_id;
+    int EC_update_id;
 } Blocking_Helper;
 
 typedef struct ClientState  {
@@ -82,7 +84,7 @@ extern void request_sync_init(Request* request, Client* client);
 extern int process_RPC_message(Client* c);
 extern int process_hello_request(Maze* maze, Player** my_player, Proto_Msg_Hdr* hdr);
 extern int process_goodbye_request(Proto_Msg_Hdr* hdr);
-extern int process_action_request(Player* my_player, Proto_Client_Handle ch);
+extern int process_action_request(Blocking_Helper* bh,Proto_Msg_Hdr* hdr, Proto_Client_Handle ch);
 extern int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr);
         
 //Updating Maze functions

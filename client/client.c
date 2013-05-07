@@ -46,6 +46,13 @@ static int update_handler(Proto_Session *s ){
     Game_State_Types state;
     proto_session_hdr_unmarshall(s,&hdr);
     Maze* maze = &c.maze;
+    
+    //Aquire Maze Lock
+    client_maze_lock(&c.bh);
+
+
+    // Get the update ID or timestamp from the event channel update
+    c.bh.EC_update_id = hdr.sver.raw;
 
     // Get the Game state from the update
     if(decompress_game_state(&state,&hdr.gstate.v0.raw)!=0)
@@ -72,11 +79,22 @@ static int update_handler(Proto_Session *s ){
     //If UI is turned on, paint the UI with new information
     if(do_ui)
         ui_paintmap(ui,&c.maze);
+
+    //Unlock the maze
+    client_maze_unlock(&c.bh);
+
     if(proto_debug())
     {
         fprintf(stderr,"Client position x:%d y:%d\n",c.my_player->client_position.x,c.my_player->client_position.y);
         fprintf(stderr,"Client id:%d\n",c.my_player->id);
     }
+
+    if(c.bh.EC_update_id >= c.bh.RPC_update_id)
+        client_maze_signal(&c.bh);
+
+    //Unlock the maze
+    client_maze_unlock(&c.bh);
+    
     c_log(PROTO_MT_EVENT_UPDATE,0,0,clk);
     return hdr.version;
 }
@@ -242,6 +260,7 @@ int docmd(Client *C, char* cmd)
     }
     else if(strncmp(cmd,"right",sizeof("right")-1)==0)
     {
+        client_maze_lock(&C->bh);
         Pos next;
         next.x = C->my_player->client_position.x+1;
         next.y = C->my_player->client_position.y;
@@ -250,6 +269,7 @@ int docmd(Client *C, char* cmd)
     }
     else if(strncmp(cmd,"left",sizeof("left")-1)==0)
     {
+        client_maze_lock(&C->bh);
         Pos next;
         next.x = C->my_player->client_position.x-1;
         next.y = C->my_player->client_position.y;
@@ -258,6 +278,7 @@ int docmd(Client *C, char* cmd)
     }
     else if(strncmp(cmd,"up",sizeof("up")-1)==0)
     {
+        client_maze_lock(&C->bh);
         Pos next;
         next.x = C->my_player->client_position.x;
         next.y = C->my_player->client_position.y-1;
@@ -266,6 +287,7 @@ int docmd(Client *C, char* cmd)
     }
     else if(strncmp(cmd,"down",sizeof("down")-1)==0)
     {
+        client_maze_lock(&C->bh);
         Pos next;
         next.x = C->my_player->client_position.x;
         next.y = C->my_player->client_position.y+1;
@@ -274,6 +296,7 @@ int docmd(Client *C, char* cmd)
     }
     else if(strncmp(cmd,"move",sizeof("move")-1)==0)
     {
+        client_maze_lock(&C->bh);
         char* pch;
         Pos next;
         pch = strtok(cmd+5," ");
@@ -286,27 +309,47 @@ int docmd(Client *C, char* cmd)
     }
     else if(strncmp(cmd,"pickup flag",sizeof("pickup flag")-1)==0)
     {
+<<<<<<< HEAD
         Pos * curr = &C->my_player->client_position;
         request_action_init(&request,C,ACTION_PICKUP_FLAG,curr,curr);
+=======
+        client_maze_lock(&C->bh);
+        request_action_init(&request,C,ACTION_PICKUP_FLAG,NULL,NULL);
+>>>>>>> Implemented Blocking and Signal for RPC + Event thread
         rc = doRPCCmd(&request);
 
     }
     else if(strncmp(cmd,"drop flag",sizeof("drop flag")-1)==0)
     {
+<<<<<<< HEAD
         Pos * curr = &C->my_player->client_position;
         request_action_init(&request,C,ACTION_DROP_FLAG,curr,curr);
+=======
+        client_maze_lock(&C->bh);
+        request_action_init(&request,C,ACTION_DROP_FLAG,NULL,NULL);
+>>>>>>> Implemented Blocking and Signal for RPC + Event thread
         rc = doRPCCmd(&request);
     }
     else if(strncmp(cmd,"pickup shovel",sizeof("pickup shovel")-1)==0)
     {
+<<<<<<< HEAD
         Pos * curr = &C->my_player->client_position;
         request_action_init(&request,C,ACTION_PICKUP_SHOVEL,curr,curr);
+=======
+        client_maze_lock(&C->bh);
+        request_action_init(&request,C,ACTION_PICKUP_SHOVEL,NULL,NULL);
+>>>>>>> Implemented Blocking and Signal for RPC + Event thread
         rc = doRPCCmd(&request);
     }
     else if(strncmp(cmd,"drop shovel",sizeof("drop shovel")-1)==0)
     {
+<<<<<<< HEAD
         Pos * curr = &C->my_player->client_position;
         request_action_init(&request,C,ACTION_DROP_SHOVEL,curr,curr);
+=======
+        client_maze_lock(&C->bh);
+        request_action_init(&request,C,ACTION_DROP_SHOVEL,NULL,NULL);
+>>>>>>> Implemented Blocking and Signal for RPC + Event thread
         rc = doRPCCmd(&request);
     }
     else if(strncmp(cmd,"hello",sizeof("hello")-1)==0)
@@ -314,7 +357,24 @@ int docmd(Client *C, char* cmd)
         request_hello_init(&request,C);
         rc = doRPCCmd(&request);
     }
-    return process_RPC_message(C);
+    rc = process_RPC_message(C);
+    
+
+    //Block the RPC thread until the corresponding event channel update arrives
+    //Only for action moves
+    if( request.action_type == ACTION_MOVE          ||
+        request.action_type == ACTION_PICKUP_FLAG   ||
+        request.action_type == ACTION_DROP_FLAG     ||
+        request.action_type == ACTION_PICKUP_SHOVEL ||
+        request.action_type == ACTION_DROP_SHOVEL)
+     {
+         while(C->bh.EC_update_id < C->bh.RPC_update_id)
+             client_maze_cond_wait(&C->bh);
+        client_maze_unlock(&C->bh);    
+     }
+    
+
+    return rc;
   }
   else
   {
