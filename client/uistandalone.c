@@ -44,11 +44,6 @@
 #define SPRITE_H 5
 #define SPRITE_W 5
 
-Maze * map_ptr;
-Maze maze;
-Plist red_players;
-Plist blue_players;
-Player p;
 int zoom_level = 1;
 int pan_offset_x = 0;
 int pan_offset_y = 0;
@@ -523,7 +518,7 @@ ui_process(UI *ui, Client* my_client)
 
 
 extern sval
-ui_zoom(UI *ui, int fac)
+ui_zoom(UI *ui, Client *c, int fac)
 {
     if(fac == 1){
 	    if(zoom_level > 1){
@@ -544,12 +539,13 @@ ui_zoom(UI *ui, int fac)
 	    }
     }
     fprintf(stderr, "%s:\n", __func__);
-    return 2;
+    ui_paintmap(ui, &c->maze);
+      return 2;
 
 }
 
 //paint the cells black for panning and zooming
-ui_paint_it_black(UI *ui){
+void ui_paint_it_black(UI *ui){
 	int x,y;
 	int scale_x, scale_y;
     for (x = 0; x < 200; x++)
@@ -563,7 +559,7 @@ ui_paint_it_black(UI *ui){
 }
 
 extern sval
-ui_pan(UI *ui, sval xdir, sval ydir)
+ui_pan(UI *ui, Client *c,  sval xdir, sval ydir)
 {
 	//guaranteed to only have xdir, ydir input as
 	// (1,0) (-1,0), (0,-1), (0,1)
@@ -580,12 +576,12 @@ ui_pan(UI *ui, sval xdir, sval ydir)
 	if(ydir == 1){
 		pan_offset_y+=3;
 	}
-	if(ydir == -3){
+	if(ydir == -1){
 
 		pan_offset_y-=3;
 	}
 
-
+    ui_paintmap(ui, &c->maze);
     fprintf(stderr, "%s:\n", __func__);
     return 2;
 }
@@ -913,12 +909,12 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
             return rc;
         }
         if (sym == SDLK_q) return -1;
-        if (sym == SDLK_z) return ui_zoom(ui, 1);
-        if (sym == SDLK_x) return ui_zoom(ui,-1); 
-	if (sym == SDLK_w) return ui_pan(ui, -1, 0);
-	if (sym == SDLK_s) return ui_pan(ui, 1, 0);
-	if (sym == SDLK_a) return ui_pan(ui, 0, -1);
-	if (sym == SDLK_d) return ui_pan(ui, 0, 1);
+        if (sym == SDLK_z) return ui_zoom(ui, my_client, 1);
+        if (sym == SDLK_x) return ui_zoom(ui, my_client, -1); 
+	if (sym == SDLK_w) return ui_pan(ui, my_client, -1, 0);
+	if (sym == SDLK_s) return ui_pan(ui, my_client, 1, 0);
+	if (sym == SDLK_a) return ui_pan(ui, my_client, 0, -1);
+	if (sym == SDLK_d) return ui_pan(ui, my_client, 0, 1);
         else
         {
             fprintf(stderr, "%s: key pressed: %d\n", __func__, sym);
