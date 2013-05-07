@@ -311,11 +311,11 @@ static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel)
 extern sval
 ui_paintmap(UI *ui,Maze* maze)
 {
-    printf("mapload is %d\n", init_mapload);
+    if (proto_debug()) fprintf(stderr,"mapload is %d\n", init_mapload);
 
     int type;
     Team_Types turf;
-    printf("cell types set");
+    if (proto_debug()) fprintf(stderr,"cell types set");
 
     Cell cur_cell;
     int x,y;
@@ -409,7 +409,7 @@ ui_init_sdl(UI *ui, int32_t h, int32_t w, int32_t d)
 
     map_h = h;
     map_w = w;
-    fprintf(stderr, "UI_init: Initializing SDL.\n");
+    if (proto_debug()) fprintf(stderr, "UI_init: Initializing SDL.\n");
 
     /* Initialize defaults, Video and Audio subsystems */
     if((SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER)==-1))
@@ -420,7 +420,7 @@ ui_init_sdl(UI *ui, int32_t h, int32_t w, int32_t d)
 
     atexit(SDL_Quit);
 
-    fprintf(stderr, "ui_init: h=%d w=%d d=%d\n", h, w, d);
+    if (proto_debug()) fprintf(stderr, "ui_init: h=%d w=%d d=%d\n", h, w, d);
 
     ui->depth = d;
     ui->screen = SDL_SetVideoMode(w, h, ui->depth, SDL_SWSURFACE);
@@ -430,8 +430,6 @@ ui_init_sdl(UI *ui, int32_t h, int32_t w, int32_t d)
                 SDL_GetError());
         return -1;
     }
-
-    fprintf(stderr, "UI_init: SDL initialized.\n");
 
 
     if (load_sprites(ui)<=0) return -1;
@@ -457,7 +455,7 @@ ui_init_sdl(UI *ui, int32_t h, int32_t w, int32_t d)
     ui->flag_teamb_c   = ui->white_c;
     ui->jackhammer_c   = ui->yellow_c;
 
-
+    fprintf(stdout, COLOR_OKGREEN "[%dx%d] UI Initialized" COLOR_END "\n",w,h);
     /* set keyboard repeat */
     SDL_EnableKeyRepeat(70, 70);
 
@@ -860,32 +858,32 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
     {
         if (sym == SDLK_LEFT && mod != KMOD_SHIFT)
         {
-            printf("move left\n");
-            fprintf(stderr, "%s: move left\n", __func__);
+            if (proto_debug()) printf("move left\n");
+            if (proto_debug() ) fprintf(stderr, "%s: move left\n", __func__);
             rc = ui_left(&request,my_client);
             return rc;
         }
         if (sym == SDLK_RIGHT && mod != KMOD_SHIFT)
         {
-            fprintf(stderr, "%s: move right\n", __func__);
+            if (proto_debug() ) fprintf(stderr, "%s: move right\n", __func__);
             rc = ui_right(&request,my_client);
             return rc;
         }
         if (sym == SDLK_UP && mod != KMOD_SHIFT)
         {
-            fprintf(stderr, "%s: move up\n", __func__);
+            if (proto_debug() )fprintf(stderr, "%s: move up\n", __func__);
             rc = ui_up(&request,my_client);
             return rc;
         }
         if (sym == SDLK_DOWN && mod != KMOD_SHIFT)
         {
-            fprintf(stderr, "%s: move down\n", __func__);
+            if (proto_debug() )fprintf(stderr, "%s: move down\n", __func__);
             rc = ui_down(&request,my_client);
             return rc;
         }
         if (sym == SDLK_r && mod != KMOD_SHIFT)
         {
-            fprintf(stderr, "%s: pickup flag\n", __func__);
+            if (proto_debug() )fprintf(stderr, "%s: pickup flag\n", __func__);
             if(my_client->my_player->flag==NULL)
                 rc = ui_pickup_flag(&request,my_client);
             else
@@ -894,7 +892,7 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
         }
         if (sym == SDLK_g && mod != KMOD_SHIFT)
         {
-            fprintf(stderr, "%s: pickup shovel\n", __func__);
+            if (proto_debug() )fprintf(stderr, "%s: pickup shovel\n", __func__);
             if(my_client->my_player->shovel==NULL)
                 rc = ui_pickup_shovel(&request,my_client);
             else
@@ -903,7 +901,7 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
         }
         if (sym == SDLK_j && mod != KMOD_SHIFT)
         {
-            fprintf(stderr, "%s: pickup shovel\n", __func__);
+            if (proto_debug() )fprintf(stderr, "%s: pickup shovel\n", __func__);
             rc = ui_join(&request,my_client);
             process_RPC_message(my_client);
             return rc;
@@ -917,12 +915,12 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
 	if (sym == SDLK_d) return ui_pan(ui, my_client, 0, 1);
         else
         {
-            fprintf(stderr, "%s: key pressed: %d\n", __func__, sym);
+           if (proto_debug() ) fprintf(stderr, "%s: key pressed: %d\n", __func__, sym);
         }
     }
     else
-    {
-        fprintf(stderr, "%s: key released: %d\n", __func__, sym);
+    { 
+          if (proto_debug() )  fprintf(stderr, "%s: key released: %d\n", __func__, sym);
     }
     return 1;
 }

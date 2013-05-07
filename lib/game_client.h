@@ -104,5 +104,7 @@ extern int client_maze_unlock(Blocking_Helper *bh);
 extern int client_maze_signal(Blocking_Helper *bh);
 extern int client_maze_cond_wait(Blocking_Helper *bh);
 
+// Logging helper
+extern void c_log(int cmd, int action, int rc, clock_t clk);
 
 #endif
