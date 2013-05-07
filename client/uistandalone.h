@@ -65,8 +65,9 @@ typedef struct UI_Struct UI;
 
 char map [201][201];
 
-sval ui_zoom(UI *ui, sval fac);
-sval ui_pan(UI *ui, sval xdir, sval ydir);
+sval ui_zoom(UI *ui, Client * my_client, int fac);
+sval ui_pan(UI *ui, Client * my_client, sval xdir, sval ydir);
+void ui_paint_it_black(UI *ui);
 sval ui_move(UI *ui, sval xdir, sval ydir);
 sval ui_keypress(UI *ui, SDL_KeyboardEvent *e, Client* my_client);
 void ui_update(UI *ui);
