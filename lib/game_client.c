@@ -5,10 +5,51 @@
 #include <poll.h>
 #include <pthread.h>
 #include <strings.h>
+#include <time.h>
 #include "net.h"
 #include "protocol.h"
 #include "protocol_session.h"
 #include "game_client.h"
+
+/*  client logging helper
+*/
+extern void c_log(int cmd, int action, int rc, clock_t clk)
+{
+  time_t raw;
+  int sec;
+  struct tm * tt;
+  char timestr[9];  
+  char rcstr[25];
+  
+  time(&raw); 
+  tt = localtime(&raw);
+  sprintf(timestr,"%.2d:%.2d:%.2d",tt->tm_hour,tt->tm_min,tt->tm_sec);
+  
+  if (rc >= 0)
+    sprintf(rcstr,COLOR_OKGREEN "%d" COLOR_END , rc); 
+  else
+    sprintf(rcstr,COLOR_FAIL "%d" COLOR_END , rc);
+  
+  sec = (int)(((float)(clock()-clk)/CLOCKS_PER_SEC)*1000);
+
+  char * cmdstr;
+  switch (cmd)
+  {
+      case PROTO_MT_EVENT_UPDATE: cmdstr = "UPD" ; break;
+      case PROTO_MT_REQ_SYNC: cmdstr = "SYN" ; break;
+      case PROTO_MT_REQ_HELLO: cmdstr = "HEL" ; break;
+      case PROTO_MT_REQ_ACTION: cmdstr = "ACT" ; break;
+      case PROTO_MT_REQ_GOODBYE: cmdstr = "BYE" ; break;
+      default: cmdstr = "UNK" ; break;
+  }
+
+  fprintf(stdout,
+    "%s\t"COLOR_YELLOW"%s"COLOR_END
+    "\t[%1d]\trc:%s\t%dms\n",
+   timestr,cmdstr,action,rcstr,sec);
+  fflush(stdout);
+
+}
 
 /*  update_players 
     Takes the player compress array and decompresses
@@ -518,7 +559,8 @@ int client_map_init(Client *C,char* filename)
 int doRPCCmd(Request* request) 
 {
   int rc=-1;
- 
+  clock_t clk = clock();
+  
   // Unpack the request
   Client *C;
   Proto_Msg_Hdr hdr;
@@ -528,38 +570,41 @@ int doRPCCmd(Request* request)
 
   switch (request->type) {
   case PROTO_MT_REQ_HELLO:  
-    fprintf(stderr,"HELLO COMMAND ISSUED");
+    if(proto_debug()) fprintf(stderr,"HELLO COMMAND ISSUED");
     hdr.type = request->type;
     rc = do_no_body_rpc(C->ph,&hdr);
     if (proto_debug()) fprintf(stderr,"hello: rc=%x\n", rc);
     if (rc < 0) fprintf(stderr, "Unable to connect");
     break;
   case PROTO_MT_REQ_ACTION:
-    fprintf(stderr,"Action COMMAND ISSUED");
+    if(proto_debug()) fprintf(stderr,"Action COMMAND ISSUED");
     hdr.type = request->type;
     hdr.gstate.v1.raw = request->action_type;
     hdr.pstate.v0.raw = C->my_player->id;
     rc = do_action_request_rpc(C->ph,&hdr,request->current,request->next);
     break;
   case PROTO_MT_REQ_SYNC:
-    fprintf(stderr,"Sync COMMAND ISSUED");
+    if (proto_debug() ) fprintf(stderr,"Sync COMMAND ISSUED");
     hdr.type = request->type;
     rc = do_no_body_rpc(C->ph,&hdr);
     break;
   case PROTO_MT_REQ_GOODBYE:
-    fprintf(stderr,"Goodbye COMMAND ISSUED");
+    if (proto_debug() ) fprintf(stderr,"Goodbye COMMAND ISSUED");
     hdr.type = request->type;
     rc = do_no_body_rpc(C->ph,&hdr);
     /*rc = proto_client_goodbye(C->ph);*/
     /*printf("Game Over - You Quit");*/
     break;
   default:
-    printf("%s: unknown command %d\n", __func__, request->type);
+    fprintf(stderr,"%s: unknown command %d\n", __func__, request->type);
   }
+  
+  c_log(request->type,request->action_type,rc,clk);
+
   // NULL MT OVERRIDE ;-)
   if(proto_debug()) fprintf(stderr,"%s: rc=0x%x\n", __func__, rc);
   if (rc == 0xdeadbeef) rc=1;
-  printf("rc=1\n");
+  if (proto_debug()) printf("rc=1\n");
   return rc;
 }
 

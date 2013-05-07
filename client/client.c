@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 #include "client.h"
 #include "uistandalone.h"
 #include "../lib/types.h"
@@ -40,6 +41,7 @@ static UI* ui;
 static int do_ui;
 
 static int update_handler(Proto_Session *s ){
+    clock_t clk = clock();
     Proto_Msg_Hdr hdr;
     proto_session_hdr_unmarshall(s,&hdr);
     Maze* maze = &c.maze;
@@ -57,6 +59,7 @@ static int update_handler(Proto_Session *s ){
         fprintf(stderr,"Client position x:%d y:%d\n",c.my_player->client_position.x,c.my_player->client_position.y);
         fprintf(stderr,"Client id:%d\n",c.my_player->id);
     }
+    c_log(PROTO_MT_EVENT_UPDATE,0,0,clk);
     return hdr.version;
 }
 
