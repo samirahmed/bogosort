@@ -45,6 +45,7 @@ static int update_handler(Proto_Session *s ){
     clock_t clk = clock();
     Proto_Msg_Hdr hdr;
     PixelUpdate pixels[PU_COUNT];
+    bzero(&pixels,sizeof(PixelUpdate)*PU_COUNT);
     Game_State_Types state;
     proto_session_hdr_unmarshall(s,&hdr);
     Maze* maze = &c.maze;
@@ -83,8 +84,11 @@ static int update_handler(Proto_Session *s ){
         int ii;
         for(ii=0; ii<PU_COUNT ;ii++)
         {
-          ui_paintcell(ui,maze,pixels[ii].older.x,pixels[ii].older.y); 
-          ui_paintcell(ui,maze,pixels[ii].newer.x,pixels[ii].newer.y); 
+          if (pixels[ii].valid)
+          {
+            ui_paintcell(ui,maze,pixels[ii].older.x,pixels[ii].older.y,1); 
+            ui_paintcell(ui,maze,pixels[ii].newer.x,pixels[ii].newer.y,1); 
+          }
         }
         /*ui_paintmap(ui,&c.maze);*/
     }

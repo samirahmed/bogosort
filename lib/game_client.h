@@ -66,6 +66,7 @@ typedef struct GlobalsInfo {
 typedef struct{
     Pos     older;
     Pos     newer;
+    int     valid;
 } PixelUpdate;
 
 //Initilization Functions

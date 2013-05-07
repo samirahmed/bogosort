@@ -298,20 +298,19 @@ static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel)
     {
         for(w = x; w < x+SPRITE_W; w++)
         {
-		tw = w + pan_offset_x;
-		th = h + pan_offset_y;
-		if(0 <= th && th < map_h && 0 <= tw && tw < map_w){
-			ui_putpixel(surface, th, tw, pixel);
-                       
-
-
-		}
+            tw = w + pan_offset_x;
+            th = h + pan_offset_y;
+            if(0 <= th && th < map_h && 0 <= tw && tw < map_w)
+            {
+              ui_putpixel(surface, th, tw, pixel);
+            }
         }
     }
 }
 
 // paint the cell at x,y 
-extern void ui_paintcell(UI* ui, Maze * maze, int x, int y){
+extern void ui_paintcell(UI* ui, Maze * maze, int x, int y, int update)
+{
 	Cell cur_cell;
 	int type;
 	Team_Types turf;
@@ -382,18 +381,13 @@ extern void ui_paintcell(UI* ui, Maze * maze, int x, int y){
 		    }
 		}
 	    }
+    
+    if(update) 
+    {
+      SDL_UpdateRect(ui->screen,x+pan_offset_x,y+pan_offset_y, SPRITE_W, SPRITE_H);
+    }
 
 }
-
-
-
-
-
-
-
-
-
-
 
 
 extern sval
@@ -408,7 +402,7 @@ ui_paintmap(UI *ui,Maze* maze)
     {
         for (y = 0; y < 200; y++)
         {
-            ui_paintcell(ui, maze, x, y);
+            ui_paintcell(ui, maze, x, y, 0);
 	}
     }	
 
