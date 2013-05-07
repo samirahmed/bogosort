@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <poll.h>
 #include <pthread.h>
-#include <strings.h>
+#include <string.h>
 #include "net.h"
 #include "types.h"
 #include "protocol.h"
@@ -107,10 +107,11 @@ extern int* server_request_walls(Maze*m, int* length)
   for(xx=0; xx<m->max.x ;xx++) for(yy=0; yy<m->max.y ;yy++) if (m->wall[xx][yy]) count++;
   
   list = (int*) malloc(sizeof(int)*count);
+  memset(list,0,sizeof(int)*count);
 
   for(xx=0; xx<m->max.x ;xx++) for(yy=0; yy<m->max.y ;yy++) if (m->wall[xx][yy])
   {
-    compress_broken_wall(&m->get[xx][yy].pos,&list[ii]);
+    compress_broken_wall(&m->get[xx][yy].pos,&list[ii++]);
   }
 
   server_wall_unlock(m);  
