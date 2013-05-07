@@ -302,34 +302,21 @@ static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel)
 		th = h + pan_offset_y;
 		if(0 <= th && th < map_h && 0 <= tw && tw < map_w){
 			ui_putpixel(surface, th, tw, pixel);
+                       
+
+
 		}
         }
     }
 }
 
-
-extern sval
-ui_paintmap(UI *ui,Maze* maze)
-{
-    if (proto_debug()) fprintf(stderr,"mapload is %d\n", init_mapload);
-
-    int type;
-    Team_Types turf;
-    if (proto_debug()) fprintf(stderr,"cell types set");
-
-    Cell cur_cell;
-    int x,y;
-
-    y = 0;
-    x = 0;
-    int scale_x, scale_y;
-
-    for (x = 0; x < 200; x++)
-    {
-        for (y = 0; y < 200; y++)
-        {
-            ui_paintcell()
-            cur_cell = maze->get[y][x];
+// paint the cell at x,y 
+extern void ui_paintcell(UI* ui, Maze * maze, int x, int y){
+	Cell cur_cell;
+	int type;
+	Team_Types turf;
+	int scale_x, scale_y;
+	cur_cell = maze->get[y][x];
 
             scale_x = x * zoom_level;
             scale_y = y * zoom_level;
@@ -391,16 +378,41 @@ ui_paintmap(UI *ui,Maze* maze)
                         else
                         {
                             ui_putnpixel(ui->screen, scale_x, scale_y, ui->orange_c);
-                        }
-                    }
+			}
+		    }
+		}
+	    }
 
-                }
-            }
-        }
-    }
+}
 
-    SDL_UpdateRect(ui->screen, 0, 0, ui->screen->w, ui->screen->h);
 
+
+
+
+
+
+
+
+
+
+
+extern sval
+ui_paintmap(UI *ui,Maze* maze)
+{
+    if (proto_debug()) fprintf(stderr,"mapload is %d\n", init_mapload); 
+    if (proto_debug()) fprintf(stderr,"cell types set");
+    int x,y;
+    y = 0;
+    x = 0;
+    for (x = 0; x < 200; x++)
+    {
+        for (y = 0; y < 200; y++)
+        {
+            ui_paintcell(ui, maze, x, y);
+	}
+    }	
+
+    SDL_UpdateRect(ui->screen, 0, 0, ui->screen->h, ui->screen->w);
     return 1;
 }
 
@@ -917,8 +929,4 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
     return 1;
 }
 
-extern void ui_paintcell(UI* ui, Maze* maze, int x, int y)
-{
 
-
-}

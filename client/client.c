@@ -83,8 +83,8 @@ static int update_handler(Proto_Session *s ){
         int ii;
         for(ii=0; ii<PU_COUNT ;ii++)
         {
-          ui_paintcell(ui,&c,maze,&pixels[ii]->older); 
-          ui_paintcell(ui,&c,maze,&pixels[ii]->newer); 
+          ui_paintcell(ui,maze,pixels[ii].older.x,pixels[ii].older.y); 
+          ui_paintcell(ui,maze,pixels[ii].newer.x,pixels[ii].newer.y); 
         }
         /*ui_paintmap(ui,&c.maze);*/
     }
