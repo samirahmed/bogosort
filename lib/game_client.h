@@ -28,6 +28,7 @@
 #include "./protocol_utils.h"
 #include <pthread.h>
 #define STRLEN 81
+#define PU_COUNT 7
 
 
 typedef struct ClientBlockingStruct{
@@ -63,9 +64,11 @@ typedef struct GlobalsInfo {
   PortType port;
 }Globals;
 
-
-
-
+typedef struct{
+    Pos     older;
+    Pos     newer;
+    int     valid;
+} PixelUpdate;
 
 //Initilization Functions
 extern void globals_init(int argc, char argv[][STRLEN]);//Had to Change function header to make this work
@@ -89,9 +92,9 @@ extern int process_action_request(Blocking_Helper* bh,Proto_Msg_Hdr* hdr, Proto_
 extern int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr);
         
 //Updating Maze functions
-extern void update_players(int num_elements,int* player_compress,Maze* maze);
-extern void update_objects(int num_elements,int* object_compress,Maze* maze);
-extern void update_walls(int num_elements,int* game_compress,Maze* maze);
+extern void update_players(int num_elements,int* player_compress,Maze* maze, PixelUpdate*pu);
+extern void update_objects(int num_elements,int* object_compress,Maze* maze, PixelUpdate*pu);
+extern void update_walls(int num_elements,int* game_compress,Maze* maze, PixelUpdate*pu);
 
 
 // Init Methods

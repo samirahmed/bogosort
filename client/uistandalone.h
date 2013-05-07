@@ -91,4 +91,5 @@ int ui_join(Request *request,Client* my_client);
 //Paint the map
 sval ui_paintmap(UI *ui,Maze* maze);
 
+void ui_paintcell(UI* ui, Maze * maze, int x, int y, int update);
 #endif

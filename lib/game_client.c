@@ -60,7 +60,7 @@ extern void c_log(int cmd, int action, int rc, clock_t clk)
     parameter: maze            pointer to client version of the maze
     return:    void
 */
-void update_players(int num_elements,int* player_compress, Maze* maze)
+void update_players(int num_elements,int* player_compress, Maze* maze, PixelUpdate*pu)
 {
     int ii,new_x,new_y,cur_x,cur_y;
     Player player;
@@ -100,10 +100,15 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
                //Get current position of the player
                cur_x = player_ptr->client_position.x;
                cur_y = player_ptr->client_position.y;
-               
+               pu->older.x = cur_x;
+               pu->older.y = cur_y;
+
                //Get next position of the player
                new_x = player.client_position.x;
                new_y = player.client_position.y; 
+               pu->newer.x = new_x;
+               pu->newer.y = new_y;
+               pu->valid = 1;
 
                //Update player's client position to new coordinates
                player_ptr->client_position.x = new_x;
@@ -146,7 +151,7 @@ void update_players(int num_elements,int* player_compress, Maze* maze)
     parameter: maze            pointer to client version of the maze
     return:    void
 */
-void update_objects(int num_elements,int* object_compress, Maze* maze)
+void update_objects(int num_elements,int* object_compress, Maze* maze, PixelUpdate *pu)
 {
     int ii,new_x,new_y,cur_x,cur_y;
     int cur_has_player;
@@ -183,7 +188,14 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
             cur_has_player = object_ptr->client_has_player;
             
 
-            
+ 	       pu->older.x = cur_x;
+               pu->older.y = cur_y;
+               
+               //Get next position of the player
+               pu->newer.x = new_x;
+               pu->newer.y = new_y;
+            pu->valid =1;
+          
             
             //Object Dropped
             if(cur_has_player && !object.client_has_player)
@@ -266,7 +278,7 @@ void update_objects(int num_elements,int* object_compress, Maze* maze)
     parameter: maze            pointer to client version of the maze
     return:    void
 */
-void update_walls(int num_elements,int* game_compress, Maze* maze)
+void update_walls(int num_elements,int* game_compress, Maze* maze, PixelUpdate *pu)
 {
     Pos pos;
     int ii,x,y;
@@ -278,6 +290,12 @@ void update_walls(int num_elements,int* game_compress, Maze* maze)
            x = pos.x;
            y = pos.y; 
            maze->get[x][y].type = CELL_FLOOR;
+	   pu->older.x = x;
+           pu->older.y = y;
+           pu->newer.x = x;
+           pu->newer.y = y;
+           pu->valid =1;
+
             if(proto_debug())
             {
                 fprintf(stderr,"Broken Wall Update x:%d y:%d\n",x,y);
@@ -469,10 +487,11 @@ int process_sync_request(Maze* maze, Proto_Client_Handle ch, Proto_Msg_Hdr* hdr)
     offset = get_compress_from_body(ch, offset, num_walls, broken_walls_compress);
     offset = get_compress_from_body(ch, offset, num_players, player_compress);
     offset = get_compress_from_body(ch, offset, 4, object_compress);
+    PixelUpdate pu; //null pointer to get the below to work
+    update_objects(4,object_compress,maze, &pu);
+    update_walls(num_walls,broken_walls_compress,maze, &pu);
 
-    update_objects(4,object_compress,maze);
-    update_walls(num_walls,broken_walls_compress,maze);
-    update_players(num_players,player_compress,maze);
+    update_players(num_players,player_compress,maze, &pu);
 
 
     //De-allocate the malloced variables
