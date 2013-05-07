@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <X11/Xlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
@@ -442,6 +443,7 @@ int main(int argc, char **argv)
   else //Turn on the ui
   {
     do_ui = 1;
+      XInitThreads();
       pthread_attr_t tattr;
       pthread_attr_init(&tattr);
       pthread_attr_setdetachstate(&tattr,PTHREAD_CREATE_DETACHED);
