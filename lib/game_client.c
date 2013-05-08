@@ -291,7 +291,7 @@ void update_walls(int num_elements,int* game_compress, Maze* maze, PixelUpdate *
     {
         if(!decompress_is_ignoreable(&game_compress[ii])) 
         {
-            decompress_broken_wall(&pos,&game_compress[ii]);
+           decompress_broken_wall(&pos,&game_compress[ii]);
            x = pos.x;
            y = pos.y; 
            maze->get[x][y].type = CELL_FLOOR;

@@ -275,6 +275,11 @@ int docmd(Client *C, char* cmd)
         next.x = C->my_player->client_position.x+1;
         next.y = C->my_player->client_position.y;
         request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        if(C->maze.get[next.x][next.y].type == CELL_WALL && C->my_player->shovel==NULL)
+        {
+            client_maze_unlock(&C->bh);    
+            return ERR_WALL;        
+        }
         rc = doRPCCmd(&request);
     }
     else if(strncmp(cmd,"left",sizeof("left")-1)==0)
@@ -284,6 +289,11 @@ int docmd(Client *C, char* cmd)
         next.x = C->my_player->client_position.x-1;
         next.y = C->my_player->client_position.y;
         request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        if(C->maze.get[next.x][next.y].type == CELL_WALL && C->my_player->shovel==NULL)
+        {
+            client_maze_unlock(&C->bh);    
+            return ERR_WALL;        
+        }
         rc = doRPCCmd(&request);
     }
     else if(strncmp(cmd,"up",sizeof("up")-1)==0)
@@ -293,6 +303,11 @@ int docmd(Client *C, char* cmd)
         next.x = C->my_player->client_position.x;
         next.y = C->my_player->client_position.y-1;
         request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        if(C->maze.get[next.x][next.y].type == CELL_WALL && C->my_player->shovel==NULL)
+        {
+            client_maze_unlock(&C->bh);    
+            return ERR_WALL;        
+        }
         rc = doRPCCmd(&request);
     }
     else if(strncmp(cmd,"down",sizeof("down")-1)==0)
@@ -302,6 +317,11 @@ int docmd(Client *C, char* cmd)
         next.x = C->my_player->client_position.x;
         next.y = C->my_player->client_position.y+1;
         request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        if(C->maze.get[next.x][next.y].type == CELL_WALL && C->my_player->shovel==NULL)
+        {
+            client_maze_unlock(&C->bh);    
+            return ERR_WALL;        
+        }
         rc = doRPCCmd(&request);
     }
     else if(strncmp(cmd,"move",sizeof("move")-1)==0)
@@ -314,6 +334,11 @@ int docmd(Client *C, char* cmd)
         pch = strtok(NULL," ");
         next.y = atoi(pch);
         request_action_init(&request,C,ACTION_MOVE,&C->my_player->client_position,&next);
+        if(C->maze.get[next.x][next.y].type == CELL_WALL && C->my_player->shovel==NULL)
+        {
+            client_maze_unlock(&C->bh);    
+            return ERR_WALL;        
+        }
         rc = doRPCCmd(&request);
 
     }
