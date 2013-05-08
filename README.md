@@ -10,6 +10,8 @@ Members:
 
 See all the planning and specifications for the game in this [google doc](https://docs.google.com/document/d/1k-GoO7uVXnsxbEDet3T3o6b-2WuqdsMCtxiKncwQ33o/edit?usp=sharing)
 
+Currently Bogosort CTF is not supported on OSX (linux only)
+
 ## UI
 | command | description |
 |---------|-------------|
@@ -107,7 +109,7 @@ For Testing, some test might require over 1000 files open (2*500 clients)
 For normal usage the server would need ` 375 * 2 ` or **1000** to be safe.
 
 You can check the limit by running `$ ulimit -n`
-On both OSX and Linux you can set the limit with `$ ulimit -n 2048`
+On both OSX (no long supported :( ) and Linux you can set the limit with `$ ulimit -n 2048`
 
 ## Make commands
 
