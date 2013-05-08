@@ -319,12 +319,12 @@ extern int server_game_action(Maze*maze , GameRequest* request)
     break;
       
     case ACTION_PICKUP_FLAG: 
-      rc = _server_action_pickup_object(maze,player);
+      rc = _server_action_pickup_object(maze,player,OBJECT_FLAG);
       if (rc>=0) object= player->flag;
     break;
 
     case ACTION_PICKUP_SHOVEL: 
-      rc = _server_action_pickup_object(maze,player);
+      rc = _server_action_pickup_object(maze,player,OBJECT_SHOVEL);
       if (rc>=0) object= player->shovel;
     break;
 
@@ -1151,7 +1151,7 @@ extern int _server_action_drop_shovel(Maze*m , Player*player)
    return 0;
 }
 
-extern int _server_action_pickup_object(Maze*m, Player* player)
+extern int _server_action_pickup_object(Maze*m, Player* player, Object_Types otype)
 {
     if (!player) return ERR_NO_PLAYER;
     Cell* cell = player->cell;
@@ -1159,6 +1159,9 @@ extern int _server_action_pickup_object(Maze*m, Player* player)
     if (!player->cell->object) return ERR_NO_OBJECT;  // nothing to pickup
     Object * object = player->cell->object;
     
+    if (otype == OBJECT_SHOVEL && object->type == OBJECT_FLAG) return ERR_NO_OBJECT;
+
+    if (otype == OBJECT_FLAG && object->type == OBJECT_SHOVEL) return ERR_NO_OBJECT;
     
     if (player->flag && object->type == OBJECT_FLAG ) return ERR_NO_FLAG_SPACE;  // already has a flag
     if (player->shovel && object->type == OBJECT_SHOVEL ) return ERR_NO_SHOVEL_SPACE; // already has a shovel

@@ -145,7 +145,7 @@ extern void server_plist_drop_player_by_id(Maze*m, Plist* plist, int id );
 extern int _server_action_drop_shovel(Maze*m , Player*player);
 extern int _server_action_drop_flag(Maze*m , Player* player, Update*update);
 extern int _server_action_player_reset_shovel(Maze*m, Player*player,Update*update);
-extern int _server_action_pickup_object(Maze*m, Player* player);
+extern int _server_action_pickup_object(Maze*m, Player* player, Object_Types type);
 extern int _server_action_update_cell(Maze*m, Object* object, Cell* newcell );
 extern int _server_action_update_cell_and_player(Maze*m, Object* object, Cell* newcell, Player* player);
 extern int _server_action_update_player(Maze*m, Player*player, Cell*newcell);
