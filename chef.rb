@@ -47,7 +47,7 @@ def log(id,delay,cmdstr,verbose,fd)
 end
 
 def rand_aisle
-  if (rand(2))
+  if (rand(2)==0)
     "#{rand(180)+10} #{[49,50,149,150].sample}"
   else
     "#{[51,52,151,152].sample} #{rand(180)+10}"

@@ -47,10 +47,10 @@ static int  teleport;
 // HELPER CODE  //
 //////////////////
 
-void slog(char*cmd,int*action,int fd,int* team,int* id,int rc,clock_t clk)
+void slog(char*cmd,int*action,int fd,int* team,int* id,int rc,long double start,long long* timestamp)
 {
   time_t raw;
-  int sec;
+  double sec;
   struct tm * tt;
   char rcstr[25];
   
@@ -63,25 +63,40 @@ void slog(char*cmd,int*action,int fd,int* team,int* id,int rc,clock_t clk)
   else
     sprintf(rcstr,COLOR_FAIL "%d" COLOR_END , rc);
   
-  sec = (int)(((float)(clock()-clk)/CLOCKS_PER_SEC)*1000);
+  long double stop = tick();
+  sec = (double) (stop-start)*1000.0;
 
-  if (team && id && action )
+  if (team && id && action && timestamp)
 	fprintf(stdout,
     "%s\t"COLOR_YELLOW"%s"COLOR_END
     "\t[%1d]\tfd:%05d\tteam:"
     COLOR_BLUE"%1d"COLOR_END"\tid:"
-    COLOR_BLUE"%03d"COLOR_END"\trc:%s\t%dms\n",
+    COLOR_BLUE"%03d"COLOR_END"\trc:%s\t%.1fms\t[%lld]\n",
+   timestr,cmd,*action,fd,*team,*id,rcstr,sec,*timestamp);
+  else if (team && id && action )
+	fprintf(stdout,
+    "%s\t"COLOR_YELLOW"%s"COLOR_END
+    "\t[%1d]\tfd:%05d\tteam:"
+    COLOR_BLUE"%1d"COLOR_END"\tid:"
+    COLOR_BLUE"%03d"COLOR_END"\trc:%s\t%.1fms\n",
    timestr,cmd,*action,fd,*team,*id,rcstr,sec);
+  else if (team && id && timestamp)
+	fprintf(stdout,
+    "%s\t"COLOR_YELLOW"%s"COLOR_END
+    "\t\tfd:%05d\tteam:"
+    COLOR_BLUE"%1d"COLOR_END"\tid:"
+    COLOR_BLUE"%03d"COLOR_END"\trc:%s\t%.1fms\t[%lld]\n",
+    timestr,cmd,fd,*team,*id,rcstr,sec,*timestamp);
   else if (team && id)
 	fprintf(stdout,
     "%s\t"COLOR_YELLOW"%s"COLOR_END
     "\t\tfd:%05d\tteam:"
     COLOR_BLUE"%1d"COLOR_END"\tid:"
-    COLOR_BLUE"%03d"COLOR_END"\trc:%s\t%dms\n",
+    COLOR_BLUE"%03d"COLOR_END"\trc:%s\t%.1fms\n",
     timestr,cmd,fd,*team,*id,rcstr,sec);
   else
 	fprintf(stdout,
-    "%s\t"COLOR_YELLOW"%s"COLOR_END"\t\tfd:%05d\tteam:_\tid:___\trc:%s\t%dms\n",
+    "%s\t"COLOR_YELLOW"%s"COLOR_END"\t\tfd:%05d\tteam:_\tid:___\trc:%s\t%.1fms\n",
     timestr,cmd,fd,rcstr,sec);
     
   fflush(stdout);
@@ -143,14 +158,13 @@ int doUpdateClients(Update *update)
 int client_lost_handler( Proto_Session * s)
 {
   int id,team,rc,fd;
-  clock_t clk;
-  clk = clock();
+  long double clk = tick();
 
   fd = (int)s->fd;
   rc =server_fd_to_id_and_team(&maze,fd,&team,&id);
   if (rc <0) 
   {
-    slog("DIS",NULL,fd,NULL,NULL,0,clk);
+    slog("DIS",NULL,fd,NULL,NULL,0,clk,NULL);
     return -1;
   }
 
@@ -163,7 +177,7 @@ int client_lost_handler( Proto_Session * s)
   /// EVENT UPDATE GOES HERE
   doUpdateClients(&update);
 	
-  slog("DRP",NULL,fd,&team,&id,0,clk);
+  slog("DRP",NULL,fd,&team,&id,0,clk,&update.timestamp);
   return -1;
 }
 
@@ -173,9 +187,8 @@ int client_lost_handler( Proto_Session * s)
 
 int hello_handler( Proto_Session *s)
 {
-  clock_t clk;
   int rc,rpc;
-  clk = clock();
+  long double clk = tick();
   Player*player;
   Update update;
   bzero(&update,sizeof(Update));
@@ -184,7 +197,7 @@ int hello_handler( Proto_Session *s)
   if(rc<0)
   {
     rpc = reply(s,PROTO_MT_REP_HELLO,rc,(size_t)NULL);
-	  slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc,clk);
+	  slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc,clk,NULL);
     return rpc;
   }
 
@@ -200,7 +213,7 @@ int hello_handler( Proto_Session *s)
   doUpdateClients(&update);
 
   rpc= reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
-	slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc,clk);
+	slog("HEL",NULL,s->fd,(int*)&player->team,(int*)&player->id,rc,clk,&update.timestamp);
   return rpc;
 }
 
@@ -213,8 +226,8 @@ int goodbye_handler( Proto_Session *s)
 
 int sync_handler( Proto_Session *s)
 {
-  clock_t clk = clock();
-  
+  long double clk = tick();
+
   Proto_Msg_Hdr h;
   bzero(&h, sizeof(Proto_Msg_Hdr));
   int *walls, *rlist, *blist, blen, rlen, wlen, 
@@ -250,13 +263,13 @@ int sync_handler( Proto_Session *s)
   put_hdr(s,&h);
 	
   rpc = reply(s,(size_t)NULL,(size_t)NULL,(size_t)NULL);
-  slog("SYN",NULL,s->fd,NULL,NULL,0,clk);
+  slog("SYN",NULL,s->fd,NULL,NULL,0,clk,NULL);
   return rpc; 
 }
 
 int action_handler( Proto_Session *s)
 {
-  clock_t clk = clock();
+  long double clk = tick();
   Proto_Msg_Hdr h;
   int rc,id,team,action,fd,rpc;
   Pos current,next;
@@ -280,7 +293,7 @@ int action_handler( Proto_Session *s)
   if (rc<0)
   {
     rpc = reply(s,PROTO_MT_REP_ACTION,rc,-1);
-    slog("ACT",&action,fd,&team,&id,rc,clk);
+    slog("ACT",&action,fd,&team,&id,rc,clk,NULL);
     return rpc;
   }
   
@@ -288,7 +301,7 @@ int action_handler( Proto_Session *s)
   if (rc<0)
   {
     rpc = reply(s,PROTO_MT_REP_ACTION,rc,-1);
-    slog("ACT",&action,fd,&team,&id,rc,clk);
+    slog("ACT",&action,fd,&team,&id,rc,clk,NULL);
     return rpc;
   }
 
@@ -296,7 +309,7 @@ int action_handler( Proto_Session *s)
   doUpdateClients(&request.update);
   
   rpc = reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
-  slog("ACT",&action,fd,&team,&id,rc,clk);
+  slog("ACT",&action,fd,&team,&id,rc,clk,&request.update.timestamp);
   usleep((size_t)1);
   return rpc;
 }

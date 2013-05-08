@@ -191,4 +191,5 @@ extern int decompress_game_state(Game_State_Types* gstate, int* compressed);
 extern void compress_broken_wall(Pos * position, int* compressed);
 extern void decompress_broken_wall(Pos * position, int* compressed);
 
+extern long double tick();
 #endif

@@ -5,12 +5,14 @@
 #include <poll.h>
 #include <pthread.h>
 #include <string.h>
+#include <sys/time.h>
 #include "net.h"
 #include "protocol.h"
 #include "protocol_utils.h"
 #include "protocol_session.h"
 #include "game_commons.h"
 #include "types.h"
+
 /******************/
 /* UTIL   METHODS */
 /******************/
@@ -18,6 +20,13 @@
 extern Team_Types opposite_team(Team_Types team)
 {
   return (team == TEAM_RED ? TEAM_BLUE: TEAM_RED);
+}
+
+extern long double tick()
+{
+  struct timeval tval;
+  gettimeofday(&tval,NULL);
+  return (long double)tval.tv_sec + (long double)(tval.tv_usec/1000000.0);
 }
 
 /******************/
