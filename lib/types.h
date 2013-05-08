@@ -25,6 +25,7 @@
 #include <stdint.h>
 
 #define PTHREAD_STACK_SIZE 16384
+#define HZ 500
 
 #define COLOR_HEADER  "\033[95m" 
 #define COLOR_OKBLUE  "\033[94m"

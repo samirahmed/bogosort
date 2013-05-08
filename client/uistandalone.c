@@ -44,9 +44,9 @@
 #define SPRITE_H 5
 #define SPRITE_W 5
 
-int zoom_level = 1;
-int pan_offset_x = 0;
-int pan_offset_y = 0;
+int zoom_level = 3;
+int pan_offset_x = 50;
+int pan_offset_y = 50;
 int map_h;
 int map_w;
 int init_mapload = 0;

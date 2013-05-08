@@ -37,6 +37,8 @@
 #include "../lib/protocol_server.h"
 #include "../lib/protocol_utils.h"
 
+#define HZ 500
+
 static Maze maze; 		
 static char timestr[9];
 static int  teleport;
@@ -295,6 +297,7 @@ int action_handler( Proto_Session *s)
   
   rpc = reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
   slog("ACT",&action,fd,&team,&id,rc,clk);
+  usleep((size_t)1);
   return rpc;
 }
 
