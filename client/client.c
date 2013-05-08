@@ -42,7 +42,7 @@ static UI* ui;
 static int do_ui;
 
 static int update_handler(Proto_Session *s ){
-    clock_t clk = clock();
+    long double clk = tick();
     Proto_Msg_Hdr hdr;
     PixelUpdate pixels[PU_COUNT];
     bzero(&pixels,sizeof(PixelUpdate)*PU_COUNT);

@@ -30,7 +30,6 @@
 #define STRLEN 81
 #define PU_COUNT 7
 
-
 typedef struct ClientBlockingStruct{
     Maze *maze;    
     pthread_mutex_t maze_lock;
@@ -111,6 +110,6 @@ extern int client_maze_signal(Blocking_Helper *bh);
 extern int client_maze_cond_wait(Blocking_Helper *bh);
 
 // Logging helper
-extern void c_log(int cmd, int action, int rc, clock_t clk);
+extern void c_log(int cmd, int action, int rc, long double clk);
 
 #endif

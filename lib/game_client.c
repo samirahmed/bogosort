@@ -13,10 +13,9 @@
 
 /*  client logging helper
 */
-extern void c_log(int cmd, int action, int rc, clock_t clk)
+extern void c_log(int cmd, int action, int rc, long double clk)
 {
   time_t raw;
-  int sec;
   struct tm * tt;
   char timestr[9];  
   char rcstr[25];
@@ -30,7 +29,8 @@ extern void c_log(int cmd, int action, int rc, clock_t clk)
   else
     sprintf(rcstr,COLOR_FAIL "%d" COLOR_END , rc);
   
-  sec = (int)(((float)(clock()-clk)/CLOCKS_PER_SEC)*1000);
+  long double stop = tick();
+  double sec = (double) (stop-clk)*1000.0;
 
   char * cmdstr;
   switch (cmd)
@@ -45,7 +45,7 @@ extern void c_log(int cmd, int action, int rc, clock_t clk)
 
   fprintf(stdout,
     "%s\t"COLOR_YELLOW"%s"COLOR_END
-    "\t[%1d]\trc:%s\t%dms\n",
+    "\t[%1d]\trc:%s\t%.1fms\n",
    timestr,cmdstr,action,rcstr,sec);
   fflush(stdout);
 
@@ -612,7 +612,7 @@ int client_map_init(Client *C,char* filename)
 int doRPCCmd(Request* request) 
 {
   int rc=-1;
-  clock_t clk = clock();
+  long double clk = tick();
   
   // Unpack the request
   Client *C;
