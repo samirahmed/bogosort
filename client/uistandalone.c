@@ -912,10 +912,10 @@ ui_keypress(UI *ui, SDL_KeyboardEvent *e,Client* my_client)
         if (sym == SDLK_q) return -1;
         if (sym == SDLK_z) return ui_zoom(ui, my_client, 1);
         if (sym == SDLK_x) return ui_zoom(ui, my_client, -1); 
-	if (sym == SDLK_w) return ui_pan(ui, my_client, -1, 0);
-	if (sym == SDLK_s) return ui_pan(ui, my_client, 1, 0);
-	if (sym == SDLK_a) return ui_pan(ui, my_client, 0, -1);
-	if (sym == SDLK_d) return ui_pan(ui, my_client, 0, 1);
+	if (sym == SDLK_w) return ui_pan(ui, my_client, 0, -1);
+	if (sym == SDLK_s) return ui_pan(ui, my_client, 0, 1);
+	if (sym == SDLK_a) return ui_pan(ui, my_client, -1, 0);
+	if (sym == SDLK_d) return ui_pan(ui, my_client, 1, 0);
         else
         {
            if (proto_debug() ) fprintf(stderr, "%s: key pressed: %d\n", __func__, sym);
