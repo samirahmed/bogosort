@@ -1,5 +1,25 @@
 # Meeting Log
 
+## 5-7-2013
+
+### Attendees:
+
+Samir A, Katsutoshi K. Will S.
+
+### Questions: none;
+
+### Todo:
+
+nothing critical... we have some buggy things but we wont be able to fix everything
+
+### Comments/Notes:
+
+Wrapped up almost everything... 
+
+- testing
+- benchmarking
+- blocking on client side
+
 ## 5-2-2013
 
 ### Attendees:
