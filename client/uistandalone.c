@@ -303,12 +303,14 @@ static void ui_putnpixel(SDL_Surface *surface, int x, int y, uint32_t pixel, int
             if(0 <= th && th < map_h && 0 <= tw && tw < map_w)
             {
               ui_putpixel(surface, tw, th, pixel);
-			if(update) 
-    			{
-      			SDL_UpdateRect(surface, tw,th,1,1);
-    			}
             }
         }
+    }
+    if(update) 
+    {
+        int first_x = x+pan_offset_x;
+        int first_y = y+pan_offset_y;
+        SDL_UpdateRect(surface, first_x, first_y,tw-first_x+1,th-first_y+1);
     }
 }
 

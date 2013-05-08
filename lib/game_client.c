@@ -80,6 +80,11 @@ void update_players(int num_elements,int* player_compress, Maze* maze, PixelUpda
                //Get current position of the player
                cur_x = player_ptr->client_position.x;
                cur_y = player_ptr->client_position.y;
+               pu->older.x = cur_x;
+               pu->older.y = cur_y;
+               pu->newer.x = cur_x;
+               pu->newer.y = cur_y;
+               pu->valid = 1;
                
                bzero(player_ptr,sizeof(Player));
                

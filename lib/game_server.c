@@ -142,7 +142,6 @@ extern int server_request_init(Maze*m,GameRequest*request,int fd,Action_Types ac
   if ( action > ACTION_PICKUP_SHOVEL ) return ERR_BAD_ACTION;
   
   request->action = action;
-  
   return 0;
 }
 
