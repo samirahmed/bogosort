@@ -310,7 +310,7 @@ int action_handler( Proto_Session *s)
   
   rpc = reply(s,PROTO_MT_REP_ACTION,rc,request.update.timestamp);
   slog("ACT",&action,fd,&team,&id,rc,clk,&request.update.timestamp);
-  usleep((size_t)1);
+  usleep((size_t)100);
   return rpc;
 }
 

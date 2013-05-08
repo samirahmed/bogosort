@@ -70,9 +70,9 @@ void object_init(Maze*m, Object_Types object, Team_Types team)
       ry = 99;
       
       // Uncomment for randomized starting position
-      /*int size =(m->max.x / NUM_TEAMS);*/
-      /*rx = randint()%(size+(team*size));*/
-      /*ry = randint()%(m->max.y);*/
+      int size =(m->max.x / NUM_TEAMS);
+      rx = randint()%(size+(team*size));
+      ry = randint()%(m->max.y);
       
       if (rx >= m->max.x || ry >= m->max.y ) continue;
       if (m->get[rx][ry].type != CELL_FLOOR) continue;
